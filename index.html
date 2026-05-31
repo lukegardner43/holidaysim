@@ -357,6 +357,96 @@ function buildVillaWorld(){
   for(let i=0;i<7;i++){const x=-150+i*48+(Math.random()*20-10);mountain(x,150+Math.random()*30,34+Math.random()*22,30+Math.random()*14,i%2?0x6f8a4e:0x7d9657);}
   for(let i=0;i<6;i++){const x=-160+i*58;mountain(x,200+Math.random()*40,50+Math.random()*30,40+Math.random()*18,0x8a9a86);} // hazier back range
 
+  // ===== side scenery: Andalusian coastal landscape =====
+
+  // umbrella/stone pine (pino piñonero — classic silhouette of the Spanish coast)
+  function stonePine(x,z,s){
+    const g=new T.Group();
+    const tr=cyl(0.22*s,0.30*s,6*s,0x7a5535,8);tr.position.y=3*s;g.add(tr);
+    const crown=new T.Mesh(new T.SphereGeometry(3.2*s,10,5),mat(0x2a6030,{roughness:0.9}));crown.scale.y=0.42;crown.position.y=7.2*s;g.add(crown);
+    g.position.set(x,0,z);return g;
+  }
+
+  // olive tree
+  function oliveTree(x,z){
+    const g=new T.Group();
+    const tr=cyl(0.14,0.20,4,0x7a5e38,6);tr.position.y=2;g.add(tr);
+    const cm=mat(0x8aaa5e,{roughness:0.95});
+    for(let i=0;i<4;i++){const a=i/4*Math.PI*2;const f=new T.Mesh(new T.SphereGeometry(1.5,8,5),cm);f.scale.set(1.1,0.75,1.0);f.position.set(Math.cos(a)*0.9,4.2,Math.sin(a)*0.9);g.add(f);}
+    g.position.set(x,0,z);return g;
+  }
+
+  // whitewashed Andalusian house with terracotta roof and teal shutters
+  function andaHouse(x,z,w,d,rot){
+    const g=new T.Group();const h=w*0.52+1.4;
+    const body=box(w,h,d,0xf4efe6);body.position.y=h/2;g.add(body);
+    const roof=new T.Mesh(new T.BoxGeometry(w+0.4,0.55,d+0.4),mat(0xbe5828));roof.position.y=h+0.28;g.add(roof);
+    const win=box(1.0,1.1,0.12,0x2a5e50);win.position.set(0,h*0.58,d/2+0.06);g.add(win);
+    const sl=box(0.36,1.1,0.07,0x1e4a3c);sl.position.set(-0.65,h*0.58,d/2+0.10);g.add(sl);
+    const sr=box(0.36,1.1,0.07,0x1e4a3c);sr.position.set(0.65,h*0.58,d/2+0.10);g.add(sr);
+    g.position.set(x,0,z);g.rotation.y=rot||0;return g;
+  }
+
+  // -- right side: holiday villa strip, stone pines, olive grove, windmill --
+  [[74,16,4.8,3.0,0],[88,9,3.6,2.8,0.2],[82,30,5.2,3.4,-0.15],
+   [98,22,4.0,3.0,0.3],[110,13,3.8,2.6,0],[77,42,3.4,2.6,-0.2],
+   [100,38,4.4,3.2,0.1],[120,26,4.2,3.0,-0.1]
+  ].forEach(function(p){world.add(andaHouse(p[0],p[1],p[2],p[3],p[4]));});
+
+  [[82,-6,0.95],[96,2,1.1],[108,-4,0.85],[116,8,1.0],
+   [86,54,1.05],[102,60,0.9],[118,48,1.0]
+  ].forEach(function(p){world.add(stonePine(p[0],p[1],p[2]));});
+
+  for(let i=0;i<8;i++){world.add(oliveTree(84+i*9+Math.random()*4,54+Math.random()*22));}
+
+  // windmill (right inland, classic La Mancha/Andalusia)
+  {const g=new T.Group();
+   const twr=cyl(1.2,1.9,8.5,0xf2ede4,14);twr.position.y=4.25;g.add(twr);
+   const cap=new T.Mesh(new T.ConeGeometry(1.5,2.4,12),mat(0x7a5530));cap.position.y=9.7;g.add(cap);
+   for(let i=0;i<4;i++){const a=i*Math.PI/2;
+     const sail=new T.Mesh(new T.BoxGeometry(0.45,3.8,0.14),mat(0xe8e0cc));
+     sail.position.set(Math.cos(a)*1.9,9+Math.sin(a)*1.9,1.6);sail.rotation.z=a;g.add(sail);}
+   g.position.set(130,0,68);world.add(g);}
+
+  // -- left side: pueblo blanco cluster + church bell tower + stone pines + olives --
+  [[-78,26,5.0,3.2,0.1],[-90,16,4.4,3.0,0],[-96,36,3.8,2.8,-0.15],
+   [-84,44,4.2,3.0,0.2],[-106,28,3.6,2.6,0.05],[-76,52,3.2,2.8,-0.1],
+   [-100,46,5.2,3.6,0.15],[-114,34,4.0,3.0,0],[-88,58,3.4,2.6,-0.05],[-120,22,4.6,3.2,0.1]
+  ].forEach(function(p){world.add(andaHouse(p[0],p[1],p[2],p[3],p[4]));});
+
+  // church bell tower for the pueblo
+  {const g=new T.Group();
+   const base=box(4.8,9.5,4.8,0xf0ece0);base.position.y=4.75;g.add(base);
+   const bfry=box(5.2,3.2,5.2,0xe8e4d8);bfry.position.y=11.1;g.add(bfry);
+   [-1.5,1.5].forEach(function(bx){const arch=box(1.3,2.2,5.4,0x181410);arch.position.set(bx,11.1,0);g.add(arch);});
+   const dome=new T.Mesh(new T.SphereGeometry(2.7,12,8),mat(0x1e4ea0));dome.scale.y=0.58;dome.position.y=13.1;g.add(dome);
+   const cv=box(0.2,1.8,0.2,0xd0c8b0);cv.position.y=15.0;g.add(cv);
+   const ch=box(1.0,0.2,0.2,0xd0c8b0);ch.position.set(0,14.4,0);g.add(ch);
+   g.position.set(-90,0,24);world.add(g);}
+
+  [[-74,-6,0.9],[-86,3,1.05],[-98,-4,0.85],[-110,7,1.0],
+   [-80,58,1.1],[-94,65,0.9],[-116,52,0.95]
+  ].forEach(function(p){world.add(stonePine(p[0],p[1],p[2]));});
+
+  for(let i=0;i<7;i++){world.add(oliveTree(-82-i*8+Math.random()*3,60+Math.random()*20));}
+
+  // distant hilltop pueblo (left, far inland) — like a classic Andalusian white hill-town
+  {const hx=-135,hz=118,htop=14;
+   const hbase=new T.Mesh(new T.ConeGeometry(30,htop,6,1),mat(0x8a8560,{flatShading:true}));hbase.position.set(hx,htop/2-1,hz);world.add(hbase);
+   for(let i=0;i<14;i++){const a=Math.random()*Math.PI*2,r=Math.random()*18;const hh=2.2+Math.random()*2.4;
+     const hs=box(2.4,hh,2.4,Math.random()>0.4?0xf4efe6:0xe8e2d4);hs.position.set(hx+Math.cos(a)*r,htop+hh/2-1,hz+Math.sin(a)*r);world.add(hs);
+     const hr2=new T.Mesh(new T.ConeGeometry(1.8,1.1,4),mat(0xb44428));hr2.rotation.y=Math.PI/4;hr2.position.set(hx+Math.cos(a)*r,htop+hh-0.5,hz+Math.sin(a)*r);world.add(hr2);}
+   const ct=box(3.2,11,3.2,0xe8e4d4);ct.position.set(hx-6,htop+4.5,hz-5);world.add(ct);
+   const ctt=new T.Mesh(new T.ConeGeometry(2.3,2.2,4),mat(0xb24020));ctt.rotation.y=Math.PI/4;ctt.position.set(hx-6,htop+11,hz-5);world.add(ctt);}
+
+  // colourful fishing boats pulled up on the left side of the beach
+  [[-58,-40,0xe04848],[-48,-43,0x2858a0],[-43,-38,0xe8a820]].forEach(function(p){
+    const bg=new T.Group();
+    const hull=box(3.2,0.9,1.3,p[2]);hull.position.y=0.55;bg.add(hull);
+    const keel=box(3.2,0.3,0.35,0x3a2818);keel.position.y=0.1;bg.add(keel);
+    const mast=cyl(0.07,0.07,3.8,0xc8b880,6);mast.position.y=2.2;bg.add(mast);
+    bg.position.set(p[0],0.05,p[1]);bg.rotation.y=(Math.random()-0.5)*0.5;world.add(bg);});
+
   spots.push({x:0,z:-42,r:200,id:'sea',label:'paddle in the sea',shore:true});
 }
 
