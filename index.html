@@ -142,6 +142,15 @@ function init(){
   // sky dome — always-present sky behind everything
   const skyDome=new T.Mesh(new T.SphereGeometry(8000,16,12),new T.MeshBasicMaterial({color:0x9fcfe0,side:T.BackSide,fog:false}));
   scene.add(skyDome);scene.userData.skyDome=skyDome;
+  // visible sun disk
+  const sunMesh=new T.Mesh(new T.SphereGeometry(85,16,16),new T.MeshBasicMaterial({color:0xfffde0,fog:false}));
+  const sunGlow=new T.Mesh(new T.SphereGeometry(150,12,12),new T.MeshBasicMaterial({color:0xffaa30,transparent:true,opacity:0.22,fog:false}));
+  sunMesh.add(sunGlow);scene.add(sunMesh);scene.userData.sunMesh=sunMesh;
+  // star field
+  {const n=2000,sp=new Float32Array(n*3);for(let i=0;i<n;i++){const th=Math.random()*Math.PI*2,v=Math.random(),ph=Math.acos(1-v),r=7600;sp[i*3]=r*Math.sin(ph)*Math.cos(th);sp[i*3+1]=r*Math.cos(ph);sp[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
+  const sg=new T.BufferGeometry();sg.setAttribute('position',new T.BufferAttribute(sp,3));
+  const sf=new T.Points(sg,new T.PointsMaterial({color:0xffffff,size:2,sizeAttenuation:false,fog:false}));
+  sf.visible=false;scene.add(sf);scene.userData.stars=sf;}
   scene.add(new T.HemisphereLight(0xcfeaff,0xd8b483,0.65));
   sun=new T.DirectionalLight(0xfff1d6,1.25);
   sun.position.set(40,60,20);sun.castShadow=true;
@@ -197,9 +206,9 @@ function buildVillaWorld(){
   const wet=new T.Mesh(new T.PlaneGeometry(240,8),mat(0xcdb277));wet.rotation.x=-Math.PI/2;wet.position.set(0,0.035,-43);wet.receiveShadow=true;world.add(wet);
   const foam=new T.Mesh(new T.PlaneGeometry(240,2.6),new T.MeshStandardMaterial({color:0xffffff,roughness:0.6,transparent:true,opacity:0.85}));foam.rotation.x=-Math.PI/2;foam.position.set(0,0.05,-45.6);world.add(foam);
   // ---- sea (turquoise, gently waving) ----
-  const seaGeo=new T.PlaneGeometry(1400,900,40,40);
-  const sea=new T.Mesh(seaGeo,new T.MeshStandardMaterial({color:0x1f9fc4,roughness:0.35,metalness:0.15,flatShading:false}));
-  sea.rotation.x=-Math.PI/2;sea.position.set(0,0.12,-497);sea.receiveShadow=false;world.add(sea);world.userData.sea=sea;
+  const seaGeo=new T.PlaneGeometry(8000,5000,40,40);
+  const sea=new T.Mesh(seaGeo,new T.MeshStandardMaterial({color:0x1f9fc4,roughness:0.28,metalness:0.25,flatShading:false}));
+  sea.rotation.x=-Math.PI/2;sea.position.set(0,0.12,-2547);sea.receiveShadow=false;world.add(sea);world.userData.sea=sea;
   // beach parasols + towels
   const para=(x,z,c)=>{const gp=new T.Group();const pole=cyl(0.06,0.06,3,0xb08d5a,6);pole.position.y=1.5;gp.add(pole);const top=new T.Mesh(new T.ConeGeometry(2.0,1.0,12),mat(c));top.position.y=3;top.castShadow=true;gp.add(top);const tw=box(2.2,0.06,1.2,0xf2e9d6);tw.position.set(0.4,0.05,1.4);gp.add(tw);gp.position.set(x,0,z);return gp;};
   world.add(para(-42,-30,0xe05a4a));world.add(para(-22,-35,0xefb13a));world.add(para(36,-31,0x4aa3c2));world.add(para(56,-36,0xe05a4a));
@@ -689,6 +698,8 @@ function update(dt){
   const dsx=drunk>1?Math.sin(performance.now()*0.003)*(drunk-1)*1.6:0;
   cam.lookAt(player.position.x+dsx,player.position.y+2+camPitch,player.position.z);
   if(scene.userData.skyDome)scene.userData.skyDome.position.copy(cam.position);
+  if(scene.userData.stars)scene.userData.stars.position.copy(cam.position);
+  if(scene.userData.sunMesh&&scene.userData.sunMesh.visible){const a=(timeOfDay/24)*Math.PI*2-Math.PI/2;scene.userData.sunMesh.position.set(cam.position.x+Math.cos(a)*7400,cam.position.y+Math.sin(a)*7400,cam.position.z-1600);}
 
   // transition
   if(fadeDir===1){fade+=dt*2.2;if(fade>=1){fade=1;setScene(pending);fadeDir=-1;}}
@@ -714,16 +725,45 @@ function setScene(to){
   tods.forEach((t,i)=>t.grp.position.set(player.position.x+(i-1.5)*1.6,0,player.position.z+3));
 }
 function applyTime(){
-  // subtle warm->cool tint of light + fog by time
-  let i,fc;
-  if(timeOfDay<6||timeOfDay>=21){i=0.35;fc=0x3a4a6e;sun.color.setHex(0x9fb0ff);}
-  else if(timeOfDay<8){i=0.8;fc=0xe9c6a0;sun.color.setHex(0xffd9a0);}
-  else if(timeOfDay>=18){i=0.9;fc=0xe8b78c;sun.color.setHex(0xffc070);}
-  else{i=1.15;fc=0x9fcfe0;sun.color.setHex(0xfff1d6);}
-  sun.intensity=i;scene.fog.color.setHex(fc);scene.background=new T.Color(fc);if(scene.userData.skyDome)scene.userData.skyDome.material.color.setHex(fc);
-  // rotate sun across sky
-  const ang=(timeOfDay/24)*Math.PI*2 - Math.PI/2;
-  sun.position.set(Math.cos(ang)*60,Math.max(8,Math.sin(ang)*70),20);
+  const ang=(timeOfDay/24)*Math.PI*2-Math.PI/2;
+  const sa=Math.sin(ang);
+  let i,fc,seaCol;
+  const sk=scene.userData.skyTex;
+  if(sk&&sk.image){
+    const ctx=sk.image.getContext('2d');
+    const gr=ctx.createLinearGradient(0,0,0,256);
+    if(timeOfDay<6||timeOfDay>=21){
+      i=0.35;fc='#0e1a2e';sun.color.setHex(0x9fb0ff);seaCol=0x0a3042;
+      gr.addColorStop(0,'#040810');gr.addColorStop(0.55,'#0b1428');gr.addColorStop(1,'#0e1a2e');
+    }else if(timeOfDay<8){
+      i=0.8;fc='#d4845c';sun.color.setHex(0xffd9a0);seaCol=0x1a6878;
+      gr.addColorStop(0,'#1a306e');gr.addColorStop(0.35,'#8a3820');gr.addColorStop(0.68,'#d07030');gr.addColorStop(1,'#f0a060');
+    }else if(timeOfDay>=18){
+      i=1.0;fc='#f0a030';sun.color.setHex(0xff9030);seaCol=0x1a7870;
+      gr.addColorStop(0,'#7a1406');gr.addColorStop(0.26,'#bf3610');gr.addColorStop(0.54,'#e07018');gr.addColorStop(0.78,'#f5a820');gr.addColorStop(1,'#f8c840');
+    }else{
+      i=1.15;fc='#b8dff0';sun.color.setHex(0xfff1d6);seaCol=0x1f9fc4;
+      gr.addColorStop(0,'#1e5fa0');gr.addColorStop(0.40,'#5ab0d8');gr.addColorStop(0.74,'#a8d8f0');gr.addColorStop(1,'#c8e8f8');
+    }
+    ctx.fillStyle=gr;ctx.fillRect(0,0,16,256);sk.needsUpdate=true;
+    scene.background=sk;
+  }
+  sun.intensity=i;
+  scene.fog.color.set(fc);
+  if(scene.userData.skyDome)scene.userData.skyDome.material.color.set(fc);
+  if(world&&world.userData.sea)world.userData.sea.material.color.setHex(seaCol);
+  if(scene.userData.stars)scene.userData.stars.visible=(timeOfDay<6||timeOfDay>=21);
+  const sm=scene.userData.sunMesh;
+  if(sm){
+    sm.visible=sa>-0.06;
+    if(sm.visible){
+      const warm=timeOfDay>=18||timeOfDay<8;
+      sm.material.color.setHex(warm?0xfff0a0:0xfffce0);
+      sm.children[0].material.color.setHex(warm?0xff8820:0xffe050);
+      sm.children[0].material.opacity=warm?0.28:0.18;
+    }
+  }
+  sun.position.set(Math.cos(ang)*60,Math.max(8,sa*70),-30);
   sun.target.position.copy(player.position);sun.target.updateMatrixWorld();
 }
 
