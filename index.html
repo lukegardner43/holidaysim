@@ -128,7 +128,7 @@ function init(){
   gr.addColorStop(0,'#2e6ea0');gr.addColorStop(0.5,'#7fb4d4');gr.addColorStop(0.66,'#bfe0ec');gr.addColorStop(1,'#9fcfe0');
   sc.fillStyle=gr;sc.fillRect(0,0,16,256);
   const skyTex=new T.CanvasTexture(sky);scene.background=skyTex;scene.userData.skyTex=skyTex;
-  scene.fog=new T.FogExp2(0x9fcfe0,0.0016);
+  scene.fog=new T.FogExp2(0x9fcfe0,0.002);
 
   cam=new T.PerspectiveCamera(55,innerWidth/innerHeight,0.1,16000);
   renderer=new T.WebGLRenderer({canvas:$('c'),antialias:true});
@@ -194,20 +194,20 @@ function carMesh(col){const g=new T.Group();const b=box(2.2,0.9,4.4,col);b.posit
 
 function buildVillaWorld(){
   world=new T.Group();scene.add(world);
-  const ground=new T.Mesh(new T.PlaneGeometry(360,200),mat(0xe7d2a0));ground.rotation.x=-Math.PI/2;ground.position.set(0,0,53);ground.receiveShadow=true;world.add(ground);
+  const ground=new T.Mesh(new T.PlaneGeometry(2000,200),mat(0xe7d2a0));ground.rotation.x=-Math.PI/2;ground.position.set(0,0,53);ground.receiveShadow=true;world.add(ground);
   const lawn=new T.Mesh(new T.PlaneGeometry(120,64),mat(0x9fbc63));lawn.rotation.x=-Math.PI/2;lawn.position.set(0,0.02,20);lawn.receiveShadow=true;world.add(lawn);
   // ---- promenade (tiled) + low wall + La Barrosa-style navy lamps ----
   const prom=new T.Mesh(new T.PlaneGeometry(220,8),mat(0xdccdb2));prom.rotation.x=-Math.PI/2;prom.position.set(0,0.03,-15);prom.receiveShadow=true;world.add(prom);
   const pwall=box(190,0.9,0.6,0xeae0c8);pwall.position.set(0,0.45,-18.7);world.add(pwall);
   for(let lx=-72;lx<=72;lx+=24){const lg=new T.Group();const blade=box(0.35,6,0.5,0x223a5e);blade.rotation.x=0.18;blade.position.set(0,3,0);blade.castShadow=true;lg.add(blade);const arm=box(2.0,0.25,0.25,0x223a5e);arm.position.set(0.85,5.6,-0.3);lg.add(arm);const head=box(0.9,0.4,0.7,0xf2efe0);head.position.set(1.7,5.4,-0.3);lg.add(head);lg.position.set(lx,0,-17.6);world.add(lg);}
   // ---- golden beach + wet sand + foam ----
-  const beach=new T.Mesh(new T.PlaneGeometry(240,30),mat(0xe9d6a3));beach.rotation.x=-Math.PI/2;beach.position.set(0,0.025,-32);beach.receiveShadow=true;world.add(beach);
-  const wet=new T.Mesh(new T.PlaneGeometry(240,8),mat(0xcdb277));wet.rotation.x=-Math.PI/2;wet.position.set(0,0.035,-43);wet.receiveShadow=true;world.add(wet);
-  const foam=new T.Mesh(new T.PlaneGeometry(240,2.6),new T.MeshStandardMaterial({color:0xffffff,roughness:0.6,transparent:true,opacity:0.85}));foam.rotation.x=-Math.PI/2;foam.position.set(0,0.05,-45.6);world.add(foam);
+  const beach=new T.Mesh(new T.PlaneGeometry(2000,30),mat(0xe9d6a3));beach.rotation.x=-Math.PI/2;beach.position.set(0,0.025,-32);beach.receiveShadow=true;world.add(beach);
+  const wet=new T.Mesh(new T.PlaneGeometry(2000,8),mat(0xcdb277));wet.rotation.x=-Math.PI/2;wet.position.set(0,0.035,-43);wet.receiveShadow=true;world.add(wet);
+  const foam=new T.Mesh(new T.PlaneGeometry(2000,2.6),new T.MeshStandardMaterial({color:0xffffff,roughness:0.6,transparent:true,opacity:0.85}));foam.rotation.x=-Math.PI/2;foam.position.set(0,0.05,-45.6);world.add(foam);
   // ---- sea (turquoise, gently waving) ----
-  const seaGeo=new T.PlaneGeometry(8000,5000,40,40);
+  const seaGeo=new T.PlaneGeometry(2000,4000,40,40);
   const sea=new T.Mesh(seaGeo,new T.MeshStandardMaterial({color:0x1f9fc4,roughness:0.28,metalness:0.25,flatShading:false}));
-  sea.rotation.x=-Math.PI/2;sea.position.set(0,0.12,-2547);sea.receiveShadow=false;world.add(sea);world.userData.sea=sea;
+  sea.rotation.x=-Math.PI/2;sea.position.set(0,0.12,-2047);sea.receiveShadow=false;world.add(sea);world.userData.sea=sea;
   // beach parasols + towels
   const para=(x,z,c)=>{const gp=new T.Group();const pole=cyl(0.06,0.06,3,0xb08d5a,6);pole.position.y=1.5;gp.add(pole);const top=new T.Mesh(new T.ConeGeometry(2.0,1.0,12),mat(c));top.position.y=3;top.castShadow=true;gp.add(top);const tw=box(2.2,0.06,1.2,0xf2e9d6);tw.position.set(0.4,0.05,1.4);gp.add(tw);gp.position.set(x,0,z);return gp;};
   world.add(para(-42,-30,0xe05a4a));world.add(para(-22,-35,0xefb13a));world.add(para(36,-31,0x4aa3c2));world.add(para(56,-36,0xe05a4a));
@@ -674,7 +674,7 @@ function update(dt){
   // water shimmer
   if(world.userData.sea){const sg=world.userData.sea.geometry;const pa=sg.attributes.position;const tm=performance.now()*0.001;
     for(let k=0;k<pa.count;k++){const xx=pa.getX(k),yy=pa.getY(k);
-      const taper=Math.min(1,Math.max(0,(yy+120)/350));        // ~0 near shore, full swell toward horizon
+      const taper=Math.min(1,Math.max(0,(yy+1670)/500));        // ~0 near shore, full swell toward horizon
       const swell=Math.sin(yy*0.16 + tm*2.0) + 0.5*Math.sin(yy*0.33 + xx*0.05 + tm*2.7);
       const ripple=Math.sin(xx*0.10 + tm*1.5)*0.35;
       let disp=(swell+ripple)*0.45*taper;                     // amplitude scales from 0 at shore
@@ -741,13 +741,16 @@ function applyTime(){
       i=1.0;fc='#f0a030';sun.color.setHex(0xff9030);seaCol=0x1a7870;
       gr.addColorStop(0,'#7a1406');gr.addColorStop(0.26,'#bf3610');gr.addColorStop(0.54,'#e07018');gr.addColorStop(0.78,'#f5a820');gr.addColorStop(1,'#f8c840');
     }else{
-      i=1.15;fc='#b8dff0';sun.color.setHex(0xfff1d6);seaCol=0x1f9fc4;
-      gr.addColorStop(0,'#1e5fa0');gr.addColorStop(0.40,'#5ab0d8');gr.addColorStop(0.74,'#a8d8f0');gr.addColorStop(1,'#c8e8f8');
+      i=1.15;fc='#a8e0f8';sun.color.setHex(0xfff1d6);seaCol=0x1f9fc4;
+      gr.addColorStop(0,'#1860b0');gr.addColorStop(0.38,'#3da0e0');gr.addColorStop(0.70,'#90d0f0');gr.addColorStop(1,'#c0ecff');
     }
     ctx.fillStyle=gr;ctx.fillRect(0,0,16,256);sk.needsUpdate=true;
     scene.background=sk;
   }
   sun.intensity=i;
+  // lighter fog during daytime so scenery stays crisp
+  const fogDensity=(timeOfDay>=8&&timeOfDay<18)?0.0012:0.002;
+  scene.fog.density=fogDensity;
   scene.fog.color.set(fc);
   if(scene.userData.skyDome)scene.userData.skyDome.material.color.set(fc);
   if(world&&world.userData.sea)world.userData.sea.material.color.setHex(seaCol);
