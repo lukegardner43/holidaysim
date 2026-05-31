@@ -68,7 +68,6 @@
 </div>
 <button id="act">DO<br>IT</button>
 
-<div id="dbg" style="position:fixed;left:14px;bottom:200px;z-index:9;background:rgba(13,20,33,.78);color:#9fe;font:11px/1.5 monospace;padding:8px 10px;border-radius:8px;pointer-events:none;border:1px solid #2f6f9e"></div>
 <div id="loadmsg">Building your villa…</div>
 
 <div class="screen hidden" id="title">
@@ -780,20 +779,9 @@ function exitBedroom(){
   tods.forEach((t,i)=>{t.grp.rotation.set(0,0,0);t.grp.position.set(player.position.x+(i-1.5)*1.6,0,player.position.z+3);});
 }
 let last=performance.now();
-function dbg(){
-  const d=document.getElementById('dbg'); if(!d) return;
-  const p=player.position, c=cam.position;
-  d.innerHTML='scene: <b>'+scn+'</b><br>'+
-    'player x'+p.x.toFixed(1)+' y'+p.y.toFixed(1)+' z'+p.z.toFixed(1)+'<br>'+
-    'camera x'+c.x.toFixed(1)+' y'+c.y.toFixed(1)+' z'+c.z.toFixed(1)+'<br>'+
-    'yaw '+(camYaw*57.3).toFixed(0)+'° pitch '+camPitch.toFixed(1)+'<br>'+
-    'facing: '+(Math.cos(camYaw)>0?'SOUTH (+z, inland)':'NORTH (-z, sea)')+'<br>'+
-    'sea mesh: '+(world.userData.sea?'yes':'no')+' visible:'+(world.visible);
-}
 function animate(now){
   const dt=Math.min(0.05,(now-last)/1000);last=now;
   if(started)update(dt);
-  dbg();
   renderer.render(scene,cam);
   requestAnimationFrame(animate);
 }
