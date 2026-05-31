@@ -196,7 +196,13 @@ function buildVillaWorld(){
   // ---- promenade (tiled) + low wall + La Barrosa-style navy lamps ----
   const prom=new T.Mesh(new T.PlaneGeometry(220,8),mat(0xdccdb2));prom.rotation.x=-Math.PI/2;prom.position.set(0,0.03,-15);prom.receiveShadow=true;world.add(prom);
   const pwall=box(190,0.9,0.6,0xeae0c8);pwall.position.set(0,0.45,-18.7);world.add(pwall);
-  for(let lx=-72;lx<=72;lx+=24){const lg=new T.Group();const blade=box(0.35,6,0.5,0x223a5e);blade.rotation.x=0.18;blade.position.set(0,3,0);blade.castShadow=true;lg.add(blade);const arm=box(2.0,0.25,0.25,0x223a5e);arm.position.set(0.85,5.6,-0.3);lg.add(arm);const head=box(0.9,0.4,0.7,0xf2efe0);head.position.set(1.7,5.4,-0.3);lg.add(head);lg.position.set(lx,0,-17.6);world.add(lg);}
+  const lampLights=[];
+  for(let lx=-72;lx<=72;lx+=24){const lg=new T.Group();const blade=box(0.35,6,0.5,0x223a5e);blade.rotation.x=0.18;blade.position.set(0,3,0);blade.castShadow=true;lg.add(blade);const arm=box(2.0,0.25,0.25,0x223a5e);arm.position.set(0.85,5.6,-0.3);lg.add(arm);const head=box(0.9,0.4,0.7,0xf2efe0);head.position.set(1.7,5.4,-0.3);lg.add(head);lg.position.set(lx,0,-17.6);world.add(lg);
+    // point light + halo glow sphere at each lamp head
+    const pl=new T.PointLight(0xffdd88,0,20,2);pl.position.set(lx+1.7,5.1,-17.9);world.add(pl);
+    const halo=new T.Mesh(new T.SphereGeometry(0.55,8,8),new T.MeshBasicMaterial({color:0xffee99,transparent:true,opacity:0,fog:false}));halo.position.set(lx+1.7,5.4,-17.9);world.add(halo);
+    lampLights.push({pl:pl,halo:halo});}
+  world.userData.lampLights=lampLights;
   // ---- golden beach + wet sand + foam ----
   const beach=new T.Mesh(new T.PlaneGeometry(2000,30),mat(0xe9d6a3));beach.rotation.x=-Math.PI/2;beach.position.set(0,0.025,-32);beach.receiveShadow=true;world.add(beach);
   const wet=new T.Mesh(new T.PlaneGeometry(2000,8),mat(0xcdb277));wet.rotation.x=-Math.PI/2;wet.position.set(0,0.035,-43);wet.receiveShadow=true;world.add(wet);
@@ -233,6 +239,10 @@ function buildVillaWorld(){
   const deck=box(pw+4,0.3,pd+5,0xe6dabb);deck.position.set(px,0.14,pz+0.5);world.add(deck);
   const coping=box(pw+1,0.34,pd+1,0xdccba6);coping.position.set(px,0.18,pz);world.add(coping);
   const water=new T.Mesh(new T.BoxGeometry(pw,0.5,pd),new T.MeshStandardMaterial({color:0x1a7fa6,roughness:0.12,metalness:0.35,transparent:true,opacity:0.92}));water.position.set(px,0.34,pz);world.add(water);world.userData.water=water;
+  // underwater pool light
+  const poolPL=new T.PointLight(0x20aaee,0,14,1.8);poolPL.position.set(px,0.5,pz);world.add(poolPL);world.userData.poolPL=poolPL;
+  // soft glow plane at water surface
+  const poolGlow=new T.Mesh(new T.PlaneGeometry(pw,pd),new T.MeshBasicMaterial({color:0x40ccff,transparent:true,opacity:0,fog:false,depthWrite:false}));poolGlow.rotation.x=-Math.PI/2;poolGlow.position.set(px,0.36,pz);world.add(poolGlow);world.userData.poolGlow=poolGlow;
   solids.push({x:px,z:pz,rx:pw/2+0.6,rz:pd/2+0.6});
   spots.push({x:px,z:pz-pd/2-2,r:5,id:'pool',label:'dive into the heated pool'});
   // jacuzzi at the far end
@@ -349,7 +359,13 @@ function buildVillaWorld(){
   // a little hilltop church tower
   const ch=box(2.4,7,2.4,0xf2ece0);ch.position.set(HLx-10,HLtop+3.5,HLz-6);world.add(ch);const cht=new T.Mesh(new T.ConeGeometry(1.7,2.4,4),mat(0xb24e2a));cht.rotation.y=Math.PI/4;cht.position.set(HLx-10,HLtop+8,HLz-6);world.add(cht);
   const sailboat=(x,z,s)=>{const gb=new T.Group();const hull=box(3,0.8,1.2,0xf2efe6);hull.position.y=0.6;gb.add(hull);const mast=cyl(0.06,0.06,4,0xddd5c0,6);mast.position.set(0,2.6,0);gb.add(mast);const sail=new T.Mesh(new T.PlaneGeometry(2.4,3.2),new T.MeshStandardMaterial({color:0xffffff,side:T.DoubleSide,roughness:0.7}));sail.position.set(0.1,2.6,0);sail.rotation.y=Math.PI/2;gb.add(sail);gb.position.set(x,0.2,z);gb.scale.setScalar(s||1);return gb;};
-  world.add(sailboat(-30,-72,1.3));world.add(sailboat(28,-80,1.6));world.add(sailboat(60,-68,1.1));
+  // store sailboats with orbit params {mesh, cx, cz, r, speed, angle}
+  world.userData.sailboats=[
+    {mesh:sailboat(-30,-72,1.3),cx:-30,cz:-120,r:52,spd:0.018,a:0},
+    {mesh:sailboat(28,-80,1.6), cx: 20,cz:-130,r:60,spd:0.013,a:2.1},
+    {mesh:sailboat(60,-68,1.1), cx: 55,cz:-110,r:44,spd:0.022,a:4.3}
+  ];
+  world.userData.sailboats.forEach(function(b){world.add(b.mesh);});
   // a couple of pier posts
   for(let i=0;i<6;i++){const pp=cyl(0.2,0.24,2,0x6e4a2c,6);pp.position.set(-50+i*4,0.6,-46);world.add(pp);}
   // distant hills behind the villa (inland)
@@ -762,6 +778,9 @@ function update(dt){
   // hearts
   for(let i=hearts.length-1;i>=0;i--){const h=hearts[i];h.grp.position.y+=dt*1.6;h.life-=dt;h.grp.scale.setScalar(Math.max(0.01,h.life));if(h.life<=0){scene.remove(h.grp);hearts.splice(i,1);}}
 
+  // sailboat orbits
+  if(world.userData.sailboats){world.userData.sailboats.forEach(function(b){b.a+=b.spd*dt;b.mesh.position.x=b.cx+Math.cos(b.a)*b.r;b.mesh.position.z=b.cz+Math.sin(b.a)*b.r;b.mesh.rotation.y=-b.a+Math.PI/2;});}
+
   // water shimmer
   if(world.userData.sea){const sg=world.userData.sea.geometry;const pa=sg.attributes.position;const tm=performance.now()*0.001;
     for(let k=0;k<pa.count;k++){const xx=pa.getX(k),yy=pa.getY(k);
@@ -863,6 +882,14 @@ function applyTime(){
     sun.position.set(Math.sin(va)*hr,Math.max(8,elev*70),-Math.cos(va)*hr);
   }else{sun.position.set(0,-20,-30);}
   sun.target.position.copy(player.position);sun.target.updateMatrixWorld();
+  // night lights: smooth fade in after 20:00, fade out after 07:00
+  const nb=timeOfDay<6?1:timeOfDay<7?7-timeOfDay:timeOfDay<20?0:timeOfDay<21?timeOfDay-20:1;
+  if(world){
+    (world.userData.lampLights||[]).forEach(function(e){e.pl.intensity=nb*1.8;e.halo.material.opacity=nb*0.45;});
+    if(world.userData.poolPL)world.userData.poolPL.intensity=nb*1.2;
+    if(world.userData.poolGlow)world.userData.poolGlow.material.opacity=nb*0.22;
+    if(world.userData.water){world.userData.water.material.emissive.setHex(0x0077bb);world.userData.water.material.emissiveIntensity=nb*0.40;}
+  }
 }
 
 function enterBedroom(){
