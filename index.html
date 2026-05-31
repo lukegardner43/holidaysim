@@ -122,12 +122,12 @@ function spawnHeart(x,z){const g=new T.Group();const m=new T.Mesh(new T.SphereGe
 // ===================== INIT =====================
 function init(){
   scene=new T.Scene();
-  // gradient sky
-  const sky=document.createElement('canvas');sky.width=16;sky.height=256;const sc=sky.getContext('2d');
-  const gr=sc.createLinearGradient(0,0,0,256);
-  gr.addColorStop(0,'#2e6ea0');gr.addColorStop(0.5,'#7fb4d4');gr.addColorStop(0.66,'#bfe0ec');gr.addColorStop(1,'#9fcfe0');
-  sc.fillStyle=gr;sc.fillRect(0,0,16,256);
-  const skyTex=new T.CanvasTexture(sky);scene.background=skyTex;scene.userData.skyTex=skyTex;
+  // gradient sky — 2×1024 canvas, no mipmaps to keep gradient crisp
+  const sky=document.createElement('canvas');sky.width=2;sky.height=1024;const sc=sky.getContext('2d');
+  const gr=sc.createLinearGradient(0,0,0,1024);
+  gr.addColorStop(0,'#1860b0');gr.addColorStop(0.38,'#3da0e0');gr.addColorStop(0.70,'#90d0f0');gr.addColorStop(1,'#c0ecff');
+  sc.fillStyle=gr;sc.fillRect(0,0,2,1024);
+  const skyTex=new T.CanvasTexture(sky);skyTex.generateMipmaps=false;skyTex.minFilter=THREE.LinearFilter;scene.background=skyTex;scene.userData.skyTex=skyTex;
   scene.fog=new T.FogExp2(0x9fcfe0,0.002);
 
   cam=new T.PerspectiveCamera(55,innerWidth/innerHeight,0.1,16000);
@@ -726,7 +726,7 @@ function applyTime(){
   const sk=scene.userData.skyTex;
   if(sk&&sk.image){
     const ctx=sk.image.getContext('2d');
-    const gr=ctx.createLinearGradient(0,0,0,256);
+    const gr=ctx.createLinearGradient(0,0,0,1024);
     if(timeOfDay<6||timeOfDay>=21){
       i=0.35;fc='#0e1a2e';sun.color.setHex(0x9fb0ff);seaCol=0x0a3042;
       gr.addColorStop(0,'#040810');gr.addColorStop(0.55,'#0b1428');gr.addColorStop(1,'#0e1a2e');
@@ -740,7 +740,7 @@ function applyTime(){
       i=1.15;fc='#a8e0f8';sun.color.setHex(0xfff1d6);seaCol=0x1f9fc4;
       gr.addColorStop(0,'#1860b0');gr.addColorStop(0.38,'#3da0e0');gr.addColorStop(0.70,'#90d0f0');gr.addColorStop(1,'#c0ecff');
     }
-    ctx.fillStyle=gr;ctx.fillRect(0,0,16,256);sk.needsUpdate=true;
+    ctx.fillStyle=gr;ctx.fillRect(0,0,2,1024);sk.needsUpdate=true;
     scene.background=sk;
   }
   sun.intensity=i;
