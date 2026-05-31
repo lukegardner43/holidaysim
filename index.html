@@ -431,13 +431,17 @@ function buildVillaWorld(){
   for(let i=0;i<7;i++){world.add(oliveTree(-82-i*8+Math.random()*3,60+Math.random()*20));}
 
   // distant hilltop pueblo (left, far inland) — like a classic Andalusian white hill-town
-  {const hx=-135,hz=118,htop=14;
-   const hbase=new T.Mesh(new T.ConeGeometry(30,htop,6,1),mat(0x8a8560,{flatShading:true}));hbase.position.set(hx,htop/2-1,hz);world.add(hbase);
-   for(let i=0;i<14;i++){const a=Math.random()*Math.PI*2,r=Math.random()*18;const hh=2.2+Math.random()*2.4;
-     const hs=box(2.4,hh,2.4,Math.random()>0.4?0xf4efe6:0xe8e2d4);hs.position.set(hx+Math.cos(a)*r,htop+hh/2-1,hz+Math.sin(a)*r);world.add(hs);
-     const hr2=new T.Mesh(new T.ConeGeometry(1.8,1.1,4),mat(0xb44428));hr2.rotation.y=Math.PI/4;hr2.position.set(hx+Math.cos(a)*r,htop+hh-0.5,hz+Math.sin(a)*r);world.add(hr2);}
-   const ct=box(3.2,11,3.2,0xe8e4d4);ct.position.set(hx-6,htop+4.5,hz-5);world.add(ct);
-   const ctt=new T.Mesh(new T.ConeGeometry(2.3,2.2,4),mat(0xb24020));ctt.rotation.y=Math.PI/4;ctt.position.set(hx-6,htop+11,hz-5);world.add(ctt);}
+  {const hx=-135,hz=118,htop=14,hradius=30;
+   const hbase=new T.Mesh(new T.ConeGeometry(hradius,htop,6,1),mat(0x8a8560,{flatShading:true}));hbase.position.set(hx,htop/2-1,hz);world.add(hbase);
+   // y of the cone surface at radial distance r from the hill axis
+   const coneY=function(r){return (htop-1)-(r/hradius)*htop;};
+   for(let i=0;i<14;i++){const a=Math.random()*Math.PI*2,r=Math.random()*17;const hh=2.2+Math.random()*2.4;
+     const rx=Math.cos(a)*r,rz=Math.sin(a)*r,ys=coneY(r);
+     const hs=box(2.4,hh,2.4,Math.random()>0.4?0xf4efe6:0xe8e2d4);hs.position.set(hx+rx,ys+hh/2,hz+rz);world.add(hs);
+     const hr2=new T.Mesh(new T.ConeGeometry(1.8,1.1,4),mat(0xb44428));hr2.rotation.y=Math.PI/4;hr2.position.set(hx+rx,ys+hh,hz+rz);world.add(hr2);}
+   const tyr=Math.sqrt(36+25),tys=coneY(tyr);
+   const ct=box(3.2,11,3.2,0xe8e4d4);ct.position.set(hx-6,tys+5.5,hz-5);world.add(ct);
+   const ctt=new T.Mesh(new T.ConeGeometry(2.3,2.2,4),mat(0xb24020));ctt.rotation.y=Math.PI/4;ctt.position.set(hx-6,tys+12.2,hz-5);world.add(ctt);}
 
   // colourful fishing boats pulled up on the left side of the beach
   [[-58,-40,0xe04848],[-48,-43,0x2858a0],[-43,-38,0xe8a820]].forEach(function(p){
