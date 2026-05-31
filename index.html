@@ -748,8 +748,7 @@ function applyTime(){
     scene.background=sk;
   }
   sun.intensity=i;
-  // lighter fog during daytime so scenery stays crisp
-  const fogDensity=(timeOfDay>=8&&timeOfDay<18)?0.0012:0.002;
+  const fogDensity=(timeOfDay>=8&&timeOfDay<18)?0.0003:0.002;
   scene.fog.density=fogDensity;
   scene.fog.color.set(fc);
   if(scene.userData.skyDome)scene.userData.skyDome.material.color.set(fc);
