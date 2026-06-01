@@ -816,9 +816,9 @@ function buildTerminal(){
   const signTxt=box(16,1.4,0.1,0xfff5e0);signTxt.position.set(0,7.2,22.7);terminal.add(signTxt);
 
   // baggage carousel — oval ring of dark boxes
-  for(let i=0;i<20;i++){const a=i/20*Math.PI*2;const rx2=9,rz2=5.5;const cx2=T.MathUtils.mapLinear(Math.cos(a),-1,1,0,0)+Math.cos(a)*rx2;const cz2=Math.sin(a)*rz2;const seg=box(2.8,0.5,1.4,0x555555,{roughness:0.7});seg.position.set(-6+cx2,0.35,9+cz2);seg.rotation.y=a+Math.PI/2;seg.castShadow=true;terminal.add(seg);}
-  // carousel label sign
-  const cslbl=box(3,0.8,0.1,0x2a3a6a);cslbl.position.set(-6,1.0,9);terminal.add(cslbl);
+  for(let i=0;i<20;i++){const a=i/20*Math.PI*2;const rx2=9,rz2=5.5;const cx2=Math.cos(a)*rx2;const cz2=Math.sin(a)*rz2;const seg=box(2.8,0.5,1.4,0x555555,{roughness:0.7});seg.position.set(-6+cx2,0.35,9+cz2);seg.rotation.y=a+Math.PI/2;seg.castShadow=true;terminal.add(seg);}
+  // carousel collision — block the whole oval
+  terminalSolids.push({x:-6,z:9,rx:10,rz:6.5});
 
   // benches along back and sides
   const benchPositions=[[-14,19],[0,19],[14,19],[-22,8],[-22,-4],[-22,-14],[22,8],[22,-4],[22,-14]];
@@ -826,15 +826,17 @@ function buildTerminal(){
     const bn=box(3.2,0.5,0.9,0x8a6a44,{roughness:0.8});bn.position.set(p[0],0.55,p[1]);terminal.add(bn);
     const bk=box(3.2,0.8,0.18,0x7a5a38,{roughness:0.8});bk.position.set(p[0],1.15,p[1]+0.36);terminal.add(bk);
   });
-  // bench collision strips
+  // bench collision — all positions
   terminalSolids.push({x:-14,z:19,rx:2,rz:1.2},{x:0,z:19,rx:2,rz:1.2},{x:14,z:19,rx:2,rz:1.2});
+  terminalSolids.push({x:-22,z:8,rx:1.2,rz:2},{x:-22,z:-4,rx:1.2,rz:2},{x:-22,z:-14,rx:1.2,rz:2});
+  terminalSolids.push({x:22,z:8,rx:1.2,rz:2},{x:22,z:-4,rx:1.2,rz:2},{x:22,z:-14,rx:1.2,rz:2});
 
   // pillars
   [[-18,0],[18,0],[-18,-10],[18,-10]].forEach(p=>{const pl=cyl(0.6,0.6,9,0xd0ccc4,8);pl.position.set(p[0],4.5,p[1]);terminal.add(pl);terminalSolids.push({x:p[0],z:p[1],rx:1.2,rz:1.2});});
 
-  // departure/arrivals board above carousel
-  const brd=box(12,2,0.2,0x1a2040);brd.position.set(-6,8,6);terminal.add(brd);
-  const brdTxt=box(10,1.4,0.1,0x223366);brdTxt.position.set(-6,8,6.15);terminal.add(brdTxt);
+  // departure board mounted on back wall
+  const brd=box(14,2.5,0.3,0x1a2040);brd.position.set(0,6.5,22.6);terminal.add(brd);
+  const brdTxt=box(12,1.8,0.1,0x223366);brdTxt.position.set(0,6.5,22.8);terminal.add(brdTxt);
 
   // exit road — simple ground plane outside the doors
   const road=new T.Mesh(new T.PlaneGeometry(24,18),mat(0x4a4a4a,{roughness:0.9}));road.rotation.x=-Math.PI/2;road.position.set(0,-0.05,-32);road.receiveShadow=true;terminal.add(road);
@@ -1137,7 +1139,7 @@ function update(dt){
   if(world.userData.waveCrests){const tm3=performance.now()*0.001;world.userData.waveCrests.forEach(function(wc,wi){const phase=((tm3*0.55+wi*0.25)%1);wc.position.z=-54+phase*9;wc.material.opacity=Math.sin(phase*Math.PI)*0.68;});}
 
   // clock
-  timeOfDay+=dt*0.025;if(timeOfDay>=24){timeOfDay-=24;day++;}
+  if(scn!=='terminal'){timeOfDay+=dt*0.025;if(timeOfDay>=24){timeOfDay-=24;day++;}}
   applyTime();
   drunk=Math.max(0,drunk-dt*0.00833); // ~3 game-hours per unit to sober up
 
@@ -1192,8 +1194,11 @@ function updateItinerary(){
   }
 }
 function setScene(to){
+  const from=scn;
   scn=to;
   world.visible=(to==='villa');plaza.visible=(to==='plaza');terminal.visible=(to==='terminal');if(kidsRoom)kidsRoom.visible=false;
+  if(to==='terminal'){timeOfDay=10.5;}
+  else if(to==='villa'&&from==='terminal'){timeOfDay=18.0;}
   if(to==='plaza'){player.position.set(0,0,24);camYaw=Math.PI;}
   else if(to==='terminal'){player.position.set(0,0,5);camYaw=Math.PI;camPitch=5;}
   else{player.position.set(-18,0,22);camYaw=Math.PI;}
