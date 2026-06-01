@@ -48,11 +48,14 @@
   .hidden{display:none!important}
   @media(hover:hover) and (pointer:fine){#pad{opacity:.4}}
   #loadmsg{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:#16243b;color:#f6e3b8;font-family:'Fraunces';font-weight:900;font-size:1.2rem}
-  #itinerary{background:rgba(13,20,33,.72);backdrop-filter:blur(10px);border:1.5px solid rgba(246,227,184,.22);border-radius:18px;padding:12px 14px;min-width:200px;max-width:240px;pointer-events:auto;transition:opacity .4s}
-  #itin-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:pointer}
-  #itin-toggle{background:none;border:1px solid rgba(246,227,184,.3);color:#f6e3b8;border-radius:7px;padding:1px 7px;font-size:.68rem;font-family:inherit;font-weight:800;cursor:pointer;pointer-events:auto;line-height:1.4}
+  #itinerary{background:rgba(13,20,33,.72);backdrop-filter:blur(10px);border:1.5px solid rgba(246,227,184,.22);border-radius:12px;padding:6px 10px;min-width:0;max-width:220px;pointer-events:auto}
+  #itin-head{display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+  #itin-title{font-family:'Fraunces';font-weight:900;font-size:.72rem;color:#f9d56e}
+  #itin-period{font-size:.55rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#bcd0dd;flex:1}
+  #itin-toggle{background:none;border:none;color:#f6e3b8;font-size:.7rem;font-family:inherit;font-weight:800;cursor:pointer;padding:0 2px;line-height:1}
   #itinerary.collapsed #itin-list{display:none}
-  #itinerary.collapsed{padding-bottom:12px}
+  #itin-list{margin-top:6px}
+  #itin-list li{font-size:.74rem;font-weight:700;color:#e7eef3;line-height:1.3;padding:2px 0 2px 7px;border-left:2px solid rgba(249,213,110,.3)}
   #itin-title{font-family:'Fraunces';font-weight:900;font-size:.82rem;color:#f9d56e;letter-spacing:.04em}
   #itin-period{font-size:.58rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#bcd0dd}
   #itin-list{list-style:none;display:flex;flex-direction:column;gap:5px}
@@ -64,8 +67,8 @@
 
 <div class="hud" id="topL">
   <div class="meter"><div class="lab"><span>Holiday vibes</span><span id="vibesPct">0%</span></div><div class="bar"><i id="vibesFill"></i></div><div class="tods" id="tods"></div></div>
-  <div id="itinerary">
-    <div id="itin-head"><span id="itin-title">📋 Today's plan</span><span id="itin-period"></span><button id="itin-toggle">−</button></div>
+  <div id="itinerary" class="collapsed">
+    <div id="itin-head"><span id="itin-title">📋</span><span id="itin-period"></span><button id="itin-toggle">+</button></div>
     <ul id="itin-list"></ul>
   </div>
 </div>
@@ -705,8 +708,9 @@ function bindInput(){
   cvs.addEventListener('touchmove',e=>{if(e.touches[0])mvh(e.touches[0].clientX,e.touches[0].clientY);},{passive:true});
   cvs.addEventListener('touchend',up);
   $('startBtn').addEventListener('click',()=>{started=true;$('title').classList.add('hidden');});
-  $('itin-toggle').addEventListener('click',function(e){e.stopPropagation();const el=$('itinerary');const c=el.classList.toggle('collapsed');this.textContent=c?'+':'−';});
-  $('itin-head').addEventListener('click',function(){const el=$('itinerary');const c=el.classList.toggle('collapsed');$('itin-toggle').textContent=c?'+':'−';});
+  function toggleItin(e){if(e)e.stopPropagation();const el=$('itinerary');const c=el.classList.toggle('collapsed');$('itin-toggle').textContent=c?'+':'−';$('itin-title').textContent=c?'📋':'📋 Today\'s plan';}
+  $('itin-toggle').addEventListener('click',toggleItin);
+  $('itin-head').addEventListener('click',toggleItin);
 }
 function onResize(){cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
 
