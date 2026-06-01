@@ -837,6 +837,41 @@ function buildTerminal(){
   // pillars
   [[-18,0],[18,0],[-18,-10],[18,-10]].forEach(p=>{const pl=cyl(0.6,0.6,9,0xd0ccc4,8);pl.position.set(p[0],4.5,p[1]);terminal.add(pl);terminalSolids.push({x:p[0],z:p[1],rx:1.2,rz:1.2});});
 
+  // ---- canvas-texture signs ----
+  function mkTex(cw,ch,bg,lines){
+    const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+    const ctx=cv.getContext('2d');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,cw,ch);
+    lines.forEach(l=>{ctx.fillStyle=l.c||'#fff';ctx.font=(l.b?'bold ':'')+l.s+'px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(l.t,cw/2,l.y);});
+    const tx=new T.CanvasTexture(cv);tx.generateMipmaps=false;tx.minFilter=T.LinearFilter;return tx;
+  }
+  function signMesh(w,h,tex){return new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({map:tex,fog:false,side:T.DoubleSide}));}
+
+  // airport name — large banner hanging from ceiling, facing the player
+  const airTex=mkTex(512,80,'#003DA5',[{t:'   Aeropuerto de Jerez de la Frontera',s:34,y:40,b:true}]);
+  const airSign=signMesh(22,3.4,airTex);airSign.position.set(0,8.7,1);terminal.add(airSign);
+  // sign frame
+  const airFrame=box(22.6,3.8,0.15,0x001a5a);airFrame.position.set(0,8.7,0.9);terminal.add(airFrame);
+  // hanging rods
+  [-9,9].forEach(x=>{const r=cyl(0.06,0.06,0.6,0xa0a090,4);r.position.set(x,9.15,1);terminal.add(r);});
+
+  // LLEGADAS / ARRIVALS — green sign above baggage carousel
+  const arrTex=mkTex(480,72,'#1d6b35',[
+    {t:'LLEGADAS   ARRIVALS',s:30,y:26,b:true},
+    {t:'Recogida de equipajes  ·  Baggage claim',s:18,y:54,b:false,c:'rgba(255,255,255,.8)'}
+  ]);
+  const arrSign=signMesh(13,2,arrTex);arrSign.position.set(-6,5.2,9);terminal.add(arrSign);
+  const arrFrame=box(13.4,2.2,0.12,0x144d26);arrFrame.position.set(-6,5.2,8.9);terminal.add(arrFrame);
+
+  // SALIDA / EXIT — green directional sign above glass doors
+  const exitTex=mkTex(360,72,'#1d6b35',[{t:'SALIDA    EXIT  >>',s:32,y:36,b:true}]);
+  const exitSign=signMesh(10,2,exitTex);exitSign.position.set(0,5.2,-18);terminal.add(exitSign);
+  const exitFrame=box(10.4,2.2,0.12,0x144d26);exitFrame.position.set(0,5.2,-18.1);terminal.add(exitFrame);
+
+  // floor direction arrows pointing toward exit
+  const arrowTex=mkTex(64,128,'rgba(0,0,0,0)',[{t:'>>',s:72,y:64,b:true,c:'#e8d840'}]);
+  [-2,2].forEach(x=>{[-8,-14].forEach(z=>{const ar=signMesh(1.4,2.8,arrowTex);ar.rotation.x=-Math.PI/2;ar.rotation.z=-Math.PI/2;ar.position.set(x,0.01,z);terminal.add(ar);});});
+
   // departure board mounted on back wall
   const brd=box(14,2.5,0.3,0x1a2040);brd.position.set(0,6.5,22.6);terminal.add(brd);
   const brdTxt=box(12,1.8,0.1,0x223366);brdTxt.position.set(0,6.5,22.8);terminal.add(brdTxt);
@@ -1207,7 +1242,7 @@ function setScene(to){
   const from=scn;
   scn=to;
   world.visible=(to==='villa');plaza.visible=(to==='plaza');terminal.visible=(to==='terminal');if(kidsRoom)kidsRoom.visible=false;
-  if(to==='terminal'){timeOfDay=10.5;}
+  if(to==='terminal'){timeOfDay=10.5;setTimeout(()=>toast('🚗 Your rental car is waiting outside — head for the exit!'),600);}
   else if(to==='villa'&&from==='terminal'){timeOfDay=18.0;}
   if(to==='plaza'){player.position.set(0,0,24);camYaw=Math.PI;}
   else if(to==='terminal'){player.position.set(0,0,5);camYaw=Math.PI;camPitch=5;}
