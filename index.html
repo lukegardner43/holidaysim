@@ -686,7 +686,7 @@ function nearest(){
   if(scn==='bed'){
     const ex=kidsRoom.userData.exit;
     if(Math.hypot(px-ex.x,pz-ex.z)<4){
-      if(todsAsleep&&timeOfDay>=6&&timeOfDay<21) return {id:'wakeup',label:'wake the toddlers ☀️'};
+      if(todsAsleep&&timeOfDay>=6&&timeOfDay<13) return {id:'wakeup',label:'wake the toddlers ☀️'};
       return {id:'leaveroom',label:'tiptoe out 🤫'};
     }
     return null;
@@ -707,7 +707,8 @@ function nearest(){
   // override bed spot label/availability based on toddler state
   if(best&&best.id==='bed'){
     if(todsAsleep&&(timeOfDay<6||timeOfDay>=21)) return null;  // night: don't disturb
-    if(todsAsleep) return {id:'bed',label:'go wake the toddlers ☀️'};
+    if(todsAsleep&&timeOfDay>=6&&timeOfDay<13) return {id:'bed',label:'go wake the toddlers ☀️'};
+    if(todsAsleep) return null;  // evening after bedtime: spot inactive
   }
   return best;
 }
