@@ -276,7 +276,7 @@ function buildVillaWorld(){
 
   // ===== white outdoor furniture =====
   world.add(lounger(-6,9.4,Math.PI));world.add(lounger(-2,9.4,Math.PI));world.add(lounger(2,9.4,Math.PI));
-  spots.push({x:-2,z:10.5,r:4,id:'lounge',label:'flop on a sun lounger'});
+  spots.push({x:-2,z:10.5,r:3,id:'lounge',label:'flop on a sun lounger'});
   // sangria table by the pool
   const dtbl=cyl(0.9,0.9,1.0,0x8a6a44,12);dtbl.position.set(5.5,0.6,9.0);world.add(dtbl);
   const jug=cyl(0.45,0.5,0.7,0x9c2b3a,12);jug.position.set(5.5,1.45,9.0);world.add(jug);
@@ -284,16 +284,16 @@ function buildVillaWorld(){
   spots.push({x:5.5,z:7.2,r:3.2,id:'sangria',label:'pour a sangria 🍷'});
   const sofa=(sx,sz)=>{const gp=new T.Group();const seat=box(4,0.6,1.6,0xfbfbf7);seat.position.y=0.5;gp.add(seat);const back=box(4,0.9,0.4,0xfbfbf7);back.position.set(0,1.0,-0.7);gp.add(back);const c=box(3.6,0.25,1.3,0xeae3d2);c.position.y=0.85;gp.add(c);gp.position.set(sx,0,sz);return gp;};
   world.add(sofa(-6.5,13.5));const sf2=sofa(-9.5,12.2);sf2.rotation.y=Math.PI/2;world.add(sf2);
-  const tbl=box(5,0.2,1.6,0x6b4f33);tbl.position.set(5,1.0,13.5);world.add(tbl);
-  [[-1.6,0.9],[0,0.9],[1.6,0.9],[-1.6,-0.9],[0,-0.9],[1.6,-0.9]].forEach(p=>{const ch=box(0.8,1.0,0.8,0xf2efe7);ch.position.set(5+p[0],0.5,13.5+p[1]);world.add(ch);});
+  const tbl=box(5,0.2,1.6,0x6b4f33);tbl.position.set(19,1.0,14);world.add(tbl);
+  [[-1.6,0.9],[0,0.9],[1.6,0.9],[-1.6,-0.9],[0,-0.9],[1.6,-0.9]].forEach(p=>{const ch=box(0.8,1.0,0.8,0xf2efe7);ch.position.set(19+p[0],0.5,14+p[1]);world.add(ch);});
 
-  // ===== BBQ =====
-  const bx=11.5,bz=13;const bbq=box(2.2,1.2,1.4,0x3a3a3a);bbq.position.set(bx,0.9,bz);world.add(bbq);
+  // ===== BBQ + paella — east terrace, clear of the entrance path =====
+  const bx=22,bz=11;const bbq=box(2.2,1.2,1.4,0x3a3a3a);bbq.position.set(bx,0.9,bz);world.add(bbq);
   const grill=box(1.8,0.2,1.1,0x111111);grill.position.set(bx,1.55,bz);world.add(grill);
   solids.push({x:bx,z:bz,rx:1.4,rz:1.0});
-  spots.push({x:bx,z:bz-2,r:3.5,id:'bbq',label:'fire up the BBQ'});
+  spots.push({x:bx,z:bz+2,r:3,id:'bbq',label:'fire up the BBQ'});
   // paella station beside the BBQ
-  const qx=9.0,qz=13.4;
+  const qx=17.5,qz=11;
   const wtop=box(3.2,0.2,1.8,0xd9cdb0);wtop.position.set(qx,1.0,qz);world.add(wtop);
   [[-1.4,0.7],[1.4,0.7],[-1.4,-0.7],[1.4,-0.7]].forEach(p=>{const lg=box(0.18,1.0,0.18,0x8a8a8a);lg.position.set(qx+p[0],0.5,qz+p[1]);world.add(lg);});
   const burner=cyl(0.9,0.95,0.25,0x2a2a2a,18);burner.position.set(qx,1.2,qz);world.add(burner);
@@ -301,7 +301,7 @@ function buildVillaWorld(){
   const rice=cyl(1.35,1.35,0.12,0xe9b94a,24);rice.position.set(qx,1.5,qz);world.add(rice);
   [[0.5,0.3,0xe0552f],[-0.4,0.5,0xe0552f],[0.2,-0.5,0xc23b2a],[-0.6,-0.2,0xd84f2a],[0.7,-0.3,0xf2a93a]].forEach(p=>{const b=new T.Mesh(new T.SphereGeometry(0.16,8,8),mat(p[2]));b.position.set(qx+p[0],1.62,qz+p[1]);world.add(b);});
   solids.push({x:qx,z:qz,rx:2.0,rz:1.2});
-  spots.push({x:qx,z:qz-2,r:3.5,id:'paella',label:'cook a giant paella 🥘'});
+  spots.push({x:qx,z:qz+2,r:3,id:'paella',label:'cook a giant paella 🥘'});
 
   // ===== beach ice cream shop (chiringuito) =====
   const ix=30,iz=-13;
@@ -342,10 +342,21 @@ function buildVillaWorld(){
   // exit marker in the room
   kidsRoom.userData.exit={x:0,z:5};
 
-  // nap at the entrance
-
-  spots.push({x:vx-3.5,z:vz-9,r:3.2,id:'nap',label:'nap inside (skip time)'});
-  spots.push({x:vx+4.5,z:vz-9,r:3.2,id:'bed',label:'put the toddlers to bed 😴'});
+  // ===== villa entrance path + door lights =====
+  // stone tile path leading to the front door
+  [-16,-12,-8,-4].forEach(dz=>{const tile=box(4,0.06,3,0xd9ccb2);tile.position.set(vx+0.5,0.03,vz-5+dz);world.add(tile);});
+  // warm wall-lights either side of the door (always on; halo fades day/night in applyTime)
+  const elPairs=[[-3.5,vz-5],[4.5,vz-5]];
+  const entrLights=[];
+  elPairs.forEach(function(ep){
+    const pl=new T.PointLight(0xffcc88,0,8,1.6);pl.position.set(ep[0],3.2,ep[1]);world.add(pl);
+    const halo=new T.Mesh(new T.SphereGeometry(0.22,8,8),new T.MeshBasicMaterial({color:0xffdd88,transparent:true,opacity:0,fog:false}));halo.position.set(ep[0],3.2,ep[1]);world.add(halo);
+    entrLights.push({pl,halo});
+  });
+  world.userData.entrLights=entrLights;
+  // nap and bed spots right at the doorstep
+  spots.push({x:vx-3.5,z:vz-5,r:2.4,id:'nap',label:'siesta inside 💤'});
+  spots.push({x:vx+3.5,z:vz-5,r:2.4,id:'bed',label:'put the toddlers to bed 😴'});
 
   // ===== private sauna cabin (per the brochure) =====
   const sxx=-12.5,szz=6.5;
@@ -958,6 +969,7 @@ function applyTime(){
   const nb=timeOfDay<6?1:timeOfDay<7?7-timeOfDay:timeOfDay<20?0:timeOfDay<21?timeOfDay-20:1;
   if(world){
     (world.userData.lampLights||[]).forEach(function(e){e.pl.intensity=nb*1.8;e.halo.material.opacity=nb*0.45;});
+    (world.userData.entrLights||[]).forEach(function(e){e.pl.intensity=nb*1.4;e.halo.material.opacity=nb*0.55;});
     if(world.userData.poolPL)world.userData.poolPL.intensity=nb*1.2;
     if(world.userData.poolGlow)world.userData.poolGlow.material.opacity=nb*0.22;
     if(world.userData.water){world.userData.water.material.emissive.setHex(0x0077bb);world.userData.water.material.emissiveIntensity=nb*0.40;}
