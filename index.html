@@ -118,6 +118,7 @@ let vibes=0, timeOfDay=18.0, day=1, won=false, drunk=0;
 let shellsTotal=0, orangesTotal=0;
 let sunscreenApplied=false, sunburnWarned=false;
 const solids=[];             // {x,z,rx,rz} keep-out boxes (villa world)
+const plazaSolids=[];        // keep-out boxes (plaza world)
 const spots=[];              // interaction points {x,z,r,id,label}
 let collectibles=[];         // {mesh,type,x,z}
 const hearts=[];
@@ -681,6 +682,21 @@ function buildPlaza(){
   // return car + photo marker
   const car=carMesh(0xc2562f);car.position.set(8,0,30);car.rotation.y=Math.PI;plaza.add(car);plaza.userData.car={x:8,z:30};
   const ring=new T.Mesh(new T.RingGeometry(2,2.6,32),new T.MeshBasicMaterial({color:0xe8a838,side:T.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.set(0,0.05,14);plaza.add(ring);plaza.userData.photo={x:0,z:14};
+
+  // ---- plaza collision boxes ----
+  // central fountain (basin radius ~6.4)
+  plazaSolids.push({x:0,z:-2,rx:6.5,rz:6.5});
+  // pavilion facade + slim towers (pav at world z=-44, body depth 6 centered at z=-41.4)
+  plazaSolids.push({x:0,z:-41,rx:12,rz:4});
+  plazaSolids.push({x:-9.5,z:-42,rx:2.5,rz:2.5});
+  plazaSolids.push({x:9.5,z:-42,rx:2.5,rz:2.5});
+  // grand end towers (at a0 and a1, R=44)
+  plazaSolids.push({x:Math.cos(a0)*R,z:Math.sin(a0)*R,rx:4,rz:4});
+  plazaSolids.push({x:Math.cos(a1)*R,z:Math.sin(a1)*R,rx:4,rz:4});
+  // arcade wall — overlapping boxes every 0.2 rad along the arc at R=44
+  for(let ang=a0;ang<=a1;ang+=0.2) plazaSolids.push({x:Math.cos(ang)*R,z:Math.sin(ang)*R,rx:3.2,rz:3.2});
+  // canal inner balustrade — boxes every 0.25 rad at radius Rc-cw/2-0.5 ≈ 32.2
+  for(let ang=a0;ang<=a1;ang+=0.25) plazaSolids.push({x:Math.cos(ang)*32.2,z:Math.sin(ang)*32.2,rx:2.5,rz:2.5});
 }
 
 function buildPlayer(){
@@ -807,7 +823,8 @@ function doAction(s){
 
 // ===================== UPDATE =====================
 function collide(){
-  for(const s of solids){
+  const list=scn==='plaza'?plazaSolids:solids;
+  for(const s of list){
     const dx=player.position.x-s.x, dz=player.position.z-s.z;
     if(Math.abs(dx)<s.rx&&Math.abs(dz)<s.rz){
       const ox=s.rx-Math.abs(dx), oz=s.rz-Math.abs(dz);
@@ -838,7 +855,7 @@ function update(dt){
   const minZ=scn==='bed'?-4.5:(scn==='plaza'?-40:-44); const maxZ=scn==='bed'?5.5:(scn==='plaza'?40:46); const lim=scn==='bed'?6.4:(scn==='plaza'?44:58);
   player.position.x=Math.max(-lim,Math.min(lim,player.position.x));
   player.position.z=Math.max(minZ,Math.min(maxZ,player.position.z));
-  if(scn==='villa')collide();
+  if(scn==='villa'||scn==='plaza')collide();
   // walk bob
   player.children[0].position.y=0.9+Math.abs(Math.sin(performance.now()*0.01))*(len>0?0.08:0);
 
