@@ -907,7 +907,7 @@ function update(dt){
   const dsx=drunk>1?Math.sin(performance.now()*0.003)*(drunk-1)*1.6:0;
   cam.lookAt(player.position.x+dsx,player.position.y+2+camPitch,player.position.z);
   if(scene.userData.stars)scene.userData.stars.position.copy(cam.position);
-  if(scene.userData.sunMesh&&scene.userData.sunMesh.visible){const td=timeOfDay;if(td>=6&&td<18){const elev=Math.sin((td-6)/12*Math.PI);const va=(18-td)/12*Math.PI/2;const hr=7400*Math.cos(elev*Math.PI/2);scene.userData.sunMesh.position.set(cam.position.x+Math.sin(va)*hr,cam.position.y+elev*7400,cam.position.z-Math.cos(va)*hr);}}
+  if(scene.userData.sunMesh&&scene.userData.sunMesh.visible){const td=timeOfDay;if(td>=6&&td<20){const elev=Math.max(0,Math.sin((td-6)/12*Math.PI));const va=(18-td)/12*Math.PI/2;const hr=7400*Math.cos(elev*Math.PI/2);scene.userData.sunMesh.position.set(cam.position.x+Math.sin(va)*hr,cam.position.y+elev*7400,cam.position.z-Math.cos(va)*hr);}}
   if(scene.userData.moonMesh&&scene.userData.moonMesh.visible){const td=timeOfDay;const nt=td>=21?(td-21)/9:(td+3)/9;const melev=Math.sin(nt*Math.PI);const maz=(0.5-nt)*Math.PI;const mr=7200*Math.cos(melev*Math.PI/2);scene.userData.moonMesh.position.set(cam.position.x+Math.sin(maz)*mr,cam.position.y+melev*7200,cam.position.z-Math.cos(maz)*mr);}
 
   // transition
@@ -992,12 +992,12 @@ function applyTime(){
   // sun disk visibility
   const sm=scene.userData.sunMesh;
   if(sm){
-    sm.visible=(timeOfDay>=6&&timeOfDay<18);
+    sm.visible=(timeOfDay>=6&&timeOfDay<20);
     if(sm.visible){
-      const warm=timeOfDay>=17;
-      sm.material.color.setHex(warm?0xfff090:0xfffce0);
-      sm.children[0].material.color.setHex(warm?0xff8020:0xffe050);
-      sm.children[0].material.opacity=warm?0.30:0.15;
+      const setting=timeOfDay>=18;const warm=timeOfDay>=17;
+      sm.material.color.setHex(setting?0xff5500:warm?0xfff090:0xfffce0);
+      sm.children[0].material.color.setHex(setting?0xff2200:warm?0xff8020:0xffe050);
+      sm.children[0].material.opacity=setting?0.50:warm?0.30:0.15;
     }
   }
   // directional light: rises east (+x), sets north over sea (-z)
