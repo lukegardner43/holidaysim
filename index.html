@@ -83,12 +83,15 @@
   @keyframes rl{0%{transform:translateX(-50%) translateY(0);opacity:1}100%{transform:translateX(-50%) translateY(220px);opacity:0}}
   .ip-cap{font-family:'Fraunces';font-weight:900;font-size:1.4rem;color:#fff;text-align:center;text-shadow:0 2px 14px rgba(0,0,0,.6);padding:0 20px;position:relative;z-index:2}
   .ip-sub{font-size:.74rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.76);margin-top:5px;text-align:center;position:relative;z-index:2}
+  #skip-intro{position:fixed;bottom:28px;right:24px;z-index:35;background:rgba(0,0,0,.45);border:1.5px solid rgba(255,255,255,.4);color:rgba(255,255,255,.85);font-family:'Karla';font-weight:800;font-size:.82rem;letter-spacing:.08em;padding:9px 18px;border-radius:30px;cursor:pointer;backdrop-filter:blur(6px);transition:background .15s}
+  #skip-intro:active{background:rgba(255,255,255,.2)}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 
 <!-- ===== airplane intro animation ===== -->
+<button id="skip-intro" class="hidden">skip ›</button>
 <div id="intro" class="hidden">
   <!-- Panel 1: cabin interior -->
   <div class="ip" id="ip1">
@@ -880,16 +883,23 @@ function playIntro(){
   started=true;
   $('title').classList.add('hidden');
   const intro=$('intro');
+  const skip=$('skip-intro');
   intro.classList.remove('hidden');
+  skip.classList.remove('hidden');
   const p1=$('ip1'),p2=$('ip2'),p3=$('ip3');
+  const timers=[];
+  function endIntro(){
+    timers.forEach(clearTimeout);
+    intro.classList.add('hidden');
+    skip.classList.add('hidden');
+    setScene('terminal');
+  }
+  skip.onclick=endIntro;
   // panel 1 fades in immediately
   requestAnimationFrame(()=>p1.classList.add('show'));
-  // transition to wing view
-  setTimeout(()=>{p1.classList.remove('show');p1.classList.add('gone');requestAnimationFrame(()=>p2.classList.add('show'));},4000);
-  // transition to landing
-  setTimeout(()=>{p2.classList.remove('show');p2.classList.add('gone');requestAnimationFrame(()=>p3.classList.add('show'));},8000);
-  // hide intro, enter terminal
-  setTimeout(()=>{intro.classList.add('hidden');setScene('terminal');},11500);
+  timers.push(setTimeout(()=>{p1.classList.remove('show');p1.classList.add('gone');requestAnimationFrame(()=>p2.classList.add('show'));},4000));
+  timers.push(setTimeout(()=>{p2.classList.remove('show');p2.classList.add('gone');requestAnimationFrame(()=>p3.classList.add('show'));},8000));
+  timers.push(setTimeout(endIntro,11500));
 }
 
 // ===================== INPUT =====================
