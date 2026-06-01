@@ -48,6 +48,12 @@
   .hidden{display:none!important}
   @media(hover:hover) and (pointer:fine){#pad{opacity:.4}}
   #loadmsg{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:#16243b;color:#f6e3b8;font-family:'Fraunces';font-weight:900;font-size:1.2rem}
+  #itinerary{position:fixed;bottom:200px;right:24px;z-index:6;background:rgba(13,20,33,.72);backdrop-filter:blur(10px);border:1.5px solid rgba(246,227,184,.22);border-radius:18px;padding:12px 14px;min-width:210px;max-width:248px;pointer-events:none;transition:opacity .4s}
+  #itin-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  #itin-title{font-family:'Fraunces';font-weight:900;font-size:.82rem;color:#f9d56e;letter-spacing:.04em}
+  #itin-period{font-size:.58rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#bcd0dd}
+  #itin-list{list-style:none;display:flex;flex-direction:column;gap:5px}
+  #itin-list li{font-size:.78rem;font-weight:700;color:#e7eef3;line-height:1.3;padding-left:4px;border-left:2px solid rgba(249,213,110,.35)}
 </style>
 </head>
 <body>
@@ -62,6 +68,10 @@
 </div>
 <div id="prompt"></div>
 <div id="toasts"></div>
+<div id="itinerary">
+  <div id="itin-head"><span id="itin-title">📋 Today's plan</span><span id="itin-period"></span></div>
+  <ul id="itin-list"></ul>
+</div>
 
 <div id="pad">
   <div class="pbtn" id="up">▲</div><div class="pbtn" id="down">▼</div><div class="pbtn" id="left">◀</div><div class="pbtn" id="right">▶</div>
@@ -354,6 +364,8 @@ function buildVillaWorld(){
     entrLights.push({pl,halo});
   });
   world.userData.entrLights=entrLights;
+  // glowing doorstep ring — daytime gold, always visible, pulses gently
+  const dring=new T.Mesh(new T.RingGeometry(1.6,2.2,36),new T.MeshBasicMaterial({color:0xf5c842,transparent:true,opacity:0.55,side:T.DoubleSide,depthWrite:false,fog:false}));dring.rotation.x=-Math.PI/2;dring.position.set(vx+0.5,0.04,vz-5.5);world.add(dring);world.userData.dring=dring;
   // nap and bed spots right at the doorstep
   spots.push({x:vx-3.5,z:vz-5,r:2.4,id:'nap',label:'siesta inside 💤'});
   spots.push({x:vx+3.5,z:vz-5,r:2.4,id:'bed',label:'put the toddlers to bed 😴'});
@@ -900,9 +912,30 @@ function update(dt){
   $('day').textContent='Day '+day+' · '+part;
   const td=$('tods');tods.forEach((t,i)=>td.children[i].classList.toggle('happy',t.mood>55));
   const tip=$('tipsy');if(tip)tip.textContent=drunk>=1?(' · 🍷×'+Math.ceil(drunk)):'';
+  updateItinerary();
   if(vibes>=100&&!won){won=true;toast('🎉 Best. Holiday. Ever.');}
 }
 
+let _lastItinPeriod='';
+function updateItinerary(){
+  const tod=timeOfDay;
+  let period,items;
+  if(tod>=5&&tod<9){period='dawn / morning';items=['☀️ '+(todsAsleep?'Go collect the toddlers from bed':'Morning swim — pool is warm'),'🏖️ Walk on La Barrosa beach','🍦 Grab ice creams from the chiringuito','🐚 Collect shells along the shore'];}
+  else if(tod>=9&&tod<13){period='mid-morning';items=['💦 Dive into the heated pool','😎 Sun loungers are free','🥘 Fire up the paella station','🍷 First sangria of the day?'];}
+  else if(tod>=13&&tod<17){period='afternoon';items=['🧖 Sauna session — then cold pool','🏖️ Beach time with the toddlers','🍦 Second ice cream run (why not)','😎 Horizontal excellence on the lounger'];}
+  else if(tod>=17&&tod<19){period='golden hour';items=['🌅 Watch the sunset from the terrace','🍤 BBQ on the east terrace','🛁 Jacuzzi while the kids play','🍷 Sangria + sunset — essential'];}
+  else if(tod>=19&&tod<21){period='evening';items=[todsAsleep?'✅ Toddlers tucked in — nice work':'😬 Toddler bedtime is now — get them to bed!','🍷 Nightcap on the terrace','🛁 Jacuzzi under the stars','⭐ Stars are out — look up'];}
+  else{period='night';items=[todsAsleep?'✅ Toddlers sleeping soundly':'🛏️ Toddlers still need to go to bed!','⭐ Star-gazing from the pool terrace','🛁 Jacuzzi to wind down','😴 Siesta when ready — inside the villa'];}
+  if(period!==_lastItinPeriod){
+    _lastItinPeriod=period;
+    $('itin-period').textContent=period;
+    const ul=$('itin-list');ul.innerHTML='';
+    items.forEach(function(t){const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
+  } else {
+    // refresh first item if toddler state changed (bedtime warning)
+    const first=$('itin-list').children[0];if(first&&items[0])first.textContent=items[0];
+  }
+}
 function setScene(to){
   scn=to;
   world.visible=(to==='villa');plaza.visible=(to==='plaza');if(kidsRoom)kidsRoom.visible=false;
@@ -969,7 +1002,8 @@ function applyTime(){
   const nb=timeOfDay<6?1:timeOfDay<7?7-timeOfDay:timeOfDay<20?0:timeOfDay<21?timeOfDay-20:1;
   if(world){
     (world.userData.lampLights||[]).forEach(function(e){e.pl.intensity=nb*1.8;e.halo.material.opacity=nb*0.45;});
-    (world.userData.entrLights||[]).forEach(function(e){e.pl.intensity=nb*1.4;e.halo.material.opacity=nb*0.55;});
+    (world.userData.entrLights||[]).forEach(function(e){e.pl.intensity=nb*1.4+(1-nb)*0.3;e.halo.material.opacity=nb*0.55+(1-nb)*0.18;});
+    if(world.userData.dring){const pt=performance.now()*0.001;world.userData.dring.material.opacity=0.38+0.22*Math.sin(pt*1.6);}
     if(world.userData.poolPL)world.userData.poolPL.intensity=nb*1.2;
     if(world.userData.poolGlow)world.userData.poolGlow.material.opacity=nb*0.22;
     if(world.userData.water){world.userData.water.material.emissive.setHex(0x0077bb);world.userData.water.material.emissiveIntensity=nb*0.40;}
