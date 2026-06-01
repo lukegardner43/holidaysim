@@ -732,7 +732,7 @@ function nearest(){
   if(scn==='bed'){
     const ex=kidsRoom.userData.exit;
     if(Math.hypot(px-ex.x,pz-ex.z)<4){
-      if(todsAsleep&&timeOfDay>=6&&timeOfDay<13) return {id:'wakeup',label:'wake the toddlers ☀️'};
+      if(todsAsleep&&timeOfDay>=6&&timeOfDay<21) return {id:'wakeup',label:'wake the toddlers ☀️'};
       return {id:'leaveroom',label:'tiptoe out 🤫'};
     }
     return null;
@@ -753,8 +753,8 @@ function nearest(){
   // override bed spot label/availability based on toddler state
   if(best&&best.id==='bed'){
     if(todsAsleep&&(timeOfDay<6||timeOfDay>=21)) return null;  // night: don't disturb
-    if(todsAsleep&&timeOfDay>=6&&timeOfDay<13) return {id:'bed',label:'go wake the toddlers ☀️'};
-    if(todsAsleep) return null;  // evening after bedtime: spot inactive
+    if(todsAsleep&&timeOfDay>=6&&timeOfDay<21) return {id:'bed',label:'go wake the toddlers ☀️'};
+    if(todsAsleep) return null;  // deep night: spot inactive
   }
   return best;
 }
@@ -1028,7 +1028,7 @@ function applyTime(){
     (world.userData.lampLights||[]).forEach(function(e){e.pl.intensity=nb*1.8;e.halo.material.opacity=nb*0.45;});
     (world.userData.entrLights||[]).forEach(function(e){e.pl.intensity=nb*1.4+(1-nb)*0.3;e.halo.material.opacity=nb*0.55+(1-nb)*0.18;});
     if(world.userData.dring){const pt=performance.now()*0.001;world.userData.dring.material.opacity=0.38+0.22*Math.sin(pt*1.6);}
-    if(world.userData.doorArrow){const da=world.userData.doorArrow;const showBed=!todsAsleep&&timeOfDay>=19;const showWake=todsAsleep&&timeOfDay>=6&&timeOfDay<13;da.visible=scn==='villa'&&(showBed||showWake);if(da.visible){const pt=performance.now()*0.001;da.position.y=11+Math.sin(pt*2.2)*0.6;const col=showBed?0xff5020:0x44dd44;da.children.forEach(function(c){c.material.color.setHex(col);});}}
+    if(world.userData.doorArrow){const da=world.userData.doorArrow;const showBed=!todsAsleep&&timeOfDay>=19;const showWake=todsAsleep&&timeOfDay>=6&&timeOfDay<21;da.visible=scn==='villa'&&(showBed||showWake);if(da.visible){const pt=performance.now()*0.001;da.position.y=11+Math.sin(pt*2.2)*0.6;const col=showBed?0xff5020:0x44dd44;da.children.forEach(function(c){c.material.color.setHex(col);});}}
     if(world.userData.poolPL)world.userData.poolPL.intensity=nb*1.2;
     if(world.userData.poolGlow)world.userData.poolGlow.material.opacity=nb*0.22;
     if(world.userData.water){world.userData.water.material.emissive.setHex(0x0077bb);world.userData.water.material.emissiveIntensity=nb*0.40;}
