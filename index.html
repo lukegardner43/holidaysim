@@ -885,17 +885,17 @@ function buildTerminal(){
 
   // airport name — big banner hung over the centre of the hall, double-sided
   const airTex=mkTex(620,84,'#003DA5',[{t:'Aeropuerto de Jerez de la Frontera',s:36,y:42,b:true}]);
-  hangSign(22,3.0,airTex,0,9.6,-2,0x001a5a);
+  hangSign(22,2.4,airTex,0,11.7,-2,0x001a5a);
   // ✈ glyph plates either side of the banner
   const planeTex=mkTex(96,96,null,[{t:'✈',s:70,y:54,b:true,c:'#ffffff'}]);
-  [-12.6,12.6].forEach(x=>{const p=signMesh(2.4,2.4,planeTex);p.position.set(x,9.6,-1.9);terminal.add(p);});
+  [-12.6,12.6].forEach(x=>{const p=signMesh(2.2,2.2,planeTex);p.position.set(x,11.7,-1.9);terminal.add(p);});
 
   // LLEGADAS / ARRIVALS — green sign hung over the baggage carousel
   const arrTex=mkTex(560,84,'#1d6b35',[
     {t:'LLEGADAS · ARRIVALS',s:32,y:32,b:true},
     {t:'Recogida de equipajes — Baggage claim',s:18,y:62,c:'rgba(255,255,255,.85)'}
   ]);
-  hangSign(14,2.1,arrTex,-6,9.0,2.5,0x144d26);
+  hangSign(14,2.1,arrTex,-6,11.6,2.5,0x144d26);
 
   // SALIDA / EXIT — green sign mounted FLUSH on the lintel above the doors
   const exitTex=mkTex(420,84,'#1d6b35',[{t:'SALIDA · EXIT  ➜',s:34,y:46,b:true}]);
