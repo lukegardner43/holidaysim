@@ -223,8 +223,10 @@ function buildVillaWorld(){
   world.userData.birds=birds;}
   // ---- sea (turquoise, gently waving) ----
   const seaGeo=new T.PlaneGeometry(2000,4000,40,40);
-  const sea=new T.Mesh(seaGeo,new T.MeshStandardMaterial({color:0x1f9fc4,roughness:0.06,metalness:0.68,flatShading:false,emissive:0x1a7fa0,emissiveIntensity:0.0}));
+  const sea=new T.Mesh(seaGeo,new T.MeshStandardMaterial({color:0x1f9fc4,roughness:0.06,metalness:0.68,flatShading:false,emissive:0x99ccee,emissiveIntensity:0.0}));
   sea.rotation.x=-Math.PI/2;sea.position.set(0,0.12,-2047);sea.receiveShadow=false;world.add(sea);world.userData.sea=sea;
+  // shimmer canvas texture (wave lines + sparkles, updated per-frame)
+  {const shCv=document.createElement('canvas');shCv.width=128;shCv.height=128;const shCtx=shCv.getContext('2d');const shTex=new T.CanvasTexture(shCv);shTex.wrapS=shTex.wrapT=T.RepeatWrapping;shTex.repeat.set(5,10);shTex.generateMipmaps=false;shTex.minFilter=T.LinearFilter;sea.material.emissiveMap=shTex;world.userData.shimCtx=shCtx;world.userData.shimTex=shTex;}
   // beach parasols + towels
   const para=(x,z,c)=>{const gp=new T.Group();const pole=cyl(0.06,0.06,3,0xb08d5a,6);pole.position.y=1.5;gp.add(pole);const top=new T.Mesh(new T.ConeGeometry(2.0,1.0,12),mat(c));top.position.y=3;top.castShadow=true;gp.add(top);const tw=box(2.2,0.06,1.2,0xf2e9d6);tw.position.set(0.4,0.05,1.4);gp.add(tw);gp.position.set(x,0,z);return gp;};
   world.add(para(-42,-30,0xe05a4a));world.add(para(-22,-35,0xefb13a));world.add(para(36,-31,0x4aa3c2));world.add(para(56,-36,0xe05a4a));
@@ -806,10 +808,21 @@ function update(dt){
       let disp=(swell+ripple)*0.45*taper;                     // amplitude scales from 0 at shore
       if(disp<-0.06) disp=-0.06;                                // clamp troughs so they never undercut the sand
       pa.setZ(k,disp);}
-    pa.needsUpdate=true;sg.computeVertexNormals();sg.computeBoundingSphere();
-    // emissive shimmer (daylight sparkle)
+    pa.needsUpdate=true;sg.computeVertexNormals();sg.computeBoundingSphere();}
+  // sea shimmer canvas (wave lines + sparkles)
+  if(world.userData.shimCtx){
+    const sc=world.userData.shimCtx,sw=128,sh=128,tm=performance.now()*0.001;
     const dayB=timeOfDay>=8&&timeOfDay<18?1:timeOfDay>=6&&timeOfDay<8?(timeOfDay-6)/2:timeOfDay>=18&&timeOfDay<20?(20-timeOfDay)/2:0;
-    world.userData.sea.material.emissiveIntensity=dayB*(0.22+0.14*Math.sin(tm*2.1+0.5*Math.sin(tm*0.7)));}
+    sc.fillStyle='#000000';sc.fillRect(0,0,sw,sh);
+    if(dayB>0){
+      // scrolling wave highlight lines
+      for(let wi=0;wi<7;wi++){const prog=((wi/7+tm*0.035)%1);const yt=prog*sh;const al=Math.sin(prog*Math.PI)*0.60*dayB;if(al<0.04)continue;sc.strokeStyle='rgba(255,255,255,'+al+')';sc.lineWidth=1.2;sc.beginPath();for(let x=0;x<=sw;x+=3){const y=yt+Math.sin(x*0.13+tm*0.9+wi*1.5)*3.5;x===0?sc.moveTo(x,y):sc.lineTo(x,y);}sc.stroke();}
+      // sparkle spots
+      for(let si=0;si<22;si++){const sx=((Math.sin(si*1.73+tm*0.22))*0.5+0.5)*sw;const sy=((Math.sin(si*2.31+tm*0.17))*0.5+0.5)*sh;const sa=Math.max(0,Math.sin(si*0.83+tm*1.4))*0.72*dayB;if(sa<0.08)continue;const gr=sc.createRadialGradient(sx,sy,0,sx,sy,5);gr.addColorStop(0,'rgba(255,255,255,'+sa+')');gr.addColorStop(1,'rgba(0,0,0,0)');sc.fillStyle=gr;sc.fillRect(sx-5,sy-5,10,10);}
+    }
+    world.userData.shimTex.needsUpdate=true;
+    world.userData.sea.material.emissiveIntensity=dayB*0.38;
+  }
   // rolling shore waves
   if(world.userData.waveCrests){const tm3=performance.now()*0.001;world.userData.waveCrests.forEach(function(wc,wi){const phase=((tm3*0.55+wi*0.25)%1);wc.position.z=-54+phase*9;wc.material.opacity=Math.sin(phase*Math.PI)*0.68;});}
 
