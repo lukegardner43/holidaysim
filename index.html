@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,900;1,500&family=Karla:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%;overflow:hidden;background:#0d1421;font-family:'Karla',system-ui,sans-serif;color:#fff;user-select:none}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+  html,body{height:100%;overflow:hidden;background:#0d1421;font-family:'Karla',system-ui,sans-serif;color:#fff;-webkit-touch-callout:none}
   #c{position:fixed;inset:0;display:block;touch-action:none}
   .hud{position:fixed;z-index:5;pointer-events:none}
   #topL{top:14px;left:14px;display:flex;flex-direction:column;gap:6px;max-width:min(220px,42vw)}
@@ -25,7 +25,7 @@
   #items{margin-top:8px;background:rgba(13,20,33,.5);backdrop-filter:blur(8px);border:1px solid rgba(255,250,240,.18);border-radius:14px;padding:7px 12px;font-weight:800;font-size:.85rem}
   #prompt{position:fixed;left:50%;bottom:215px;transform:translateX(-50%);z-index:6;pointer-events:none;background:rgba(13,20,33,.8);border:1.5px solid #e8a838;border-radius:40px;padding:10px 20px;font-weight:800;font-size:.95rem;opacity:0;transition:opacity .15s;white-space:nowrap;box-shadow:0 10px 30px -12px rgba(0,0,0,.6)}
   #prompt b{color:#f9d56e}
-  #toasts{position:fixed;left:50%;bottom:200px;transform:translateX(-50%);z-index:7;pointer-events:none;display:flex;flex-direction:column-reverse;gap:8px;align-items:center}
+  #toasts{position:fixed;left:50%;bottom:275px;transform:translateX(-50%);z-index:7;pointer-events:none;display:flex;flex-direction:column-reverse;gap:8px;align-items:center}
   .toast{background:rgba(46,111,158,.92);border:1px solid rgba(246,227,184,.5);color:#fff;font-weight:800;padding:9px 18px;border-radius:30px;font-size:.92rem;box-shadow:0 10px 26px -12px rgba(0,0,0,.6);animation:pop .35s ease, fade .5s ease 2.2s forwards}
   @keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
   @keyframes fade{to{opacity:0;transform:translateY(-10px)}}
@@ -110,6 +110,7 @@ let world, plaza, kidsRoom;  // groups
 let tucked=false;
 let todsAsleep=false;
 let bedtimeWarned=false, wakeupWarned=false;
+let bedtimeEntry=false; // true when we entered bedroom to put toddlers down (vs. to wake them)
 let scn='villa';
 let started=false;
 
@@ -751,7 +752,7 @@ function nearest(){
   if(scn==='bed'){
     const ex=kidsRoom.userData.exit;
     if(Math.hypot(px-ex.x,pz-ex.z)<4){
-      if(todsAsleep&&timeOfDay>=6&&timeOfDay<21) return {id:'wakeup',label:'wake the toddlers ☀️'};
+      if(!bedtimeEntry&&todsAsleep&&timeOfDay>=6&&timeOfDay<21) return {id:'wakeup',label:'wake the toddlers ☀️'};
       return {id:'leaveroom',label:'tiptoe out 🤫'};
     }
     return null;
@@ -1122,6 +1123,7 @@ function buildParentNPCs(){
   });
 }
 function enterBedroom(){
+  bedtimeEntry=!todsAsleep; // remember if we came in to put them down vs. to wake them
   scn='bed';world.visible=false;plaza.visible=false;kidsRoom.visible=true;
   player.position.set(0,0,4);camYaw=Math.PI;camPitch=8;
   tods.forEach(t=>t.grp.visible=true);
