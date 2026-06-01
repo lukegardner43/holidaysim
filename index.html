@@ -296,15 +296,19 @@ function buildVillaWorld(){
 
   // ===== white outdoor furniture =====
   world.add(lounger(-6,9.4,Math.PI));world.add(lounger(-2,9.4,Math.PI));world.add(lounger(2,9.4,Math.PI));
+  solids.push({x:-6,z:9.4,rx:0.7,rz:1.3});solids.push({x:-2,z:9.4,rx:0.7,rz:1.3});solids.push({x:2,z:9.4,rx:0.7,rz:1.3});
   spots.push({x:-2,z:10.5,r:3,id:'lounge',label:'flop on a sun lounger'});
   // sangria table by the pool
   const dtbl=cyl(0.9,0.9,1.0,0x8a6a44,12);dtbl.position.set(5.5,0.6,9.0);world.add(dtbl);
   const jug=cyl(0.45,0.5,0.7,0x9c2b3a,12);jug.position.set(5.5,1.45,9.0);world.add(jug);
   [[0.6,0.3],[-0.5,0.4],[0.2,-0.5]].forEach(p=>{const gl=cyl(0.18,0.16,0.35,0xd98aa0,8);gl.position.set(5.5+p[0],1.28,9.0+p[1]);world.add(gl);});
+  solids.push({x:5.5,z:9.0,rx:1.1,rz:1.1});
   spots.push({x:5.5,z:7.2,r:3.2,id:'sangria',label:'pour a sangria 🍷'});
   const sofa=(sx,sz)=>{const gp=new T.Group();const seat=box(4,0.6,1.6,0xfbfbf7);seat.position.y=0.5;gp.add(seat);const back=box(4,0.9,0.4,0xfbfbf7);back.position.set(0,1.0,-0.7);gp.add(back);const c=box(3.6,0.25,1.3,0xeae3d2);c.position.y=0.85;gp.add(c);gp.position.set(sx,0,sz);return gp;};
-  world.add(sofa(-6.5,13.5));const sf2=sofa(-9.5,12.2);sf2.rotation.y=Math.PI/2;world.add(sf2);
+  world.add(sofa(-6.5,13.5));solids.push({x:-6.5,z:13.5,rx:2.2,rz:1.0});
+  const sf2=sofa(-9.5,12.2);sf2.rotation.y=Math.PI/2;world.add(sf2);solids.push({x:-9.5,z:12.2,rx:1.0,rz:2.2});
   const tbl=box(5,0.2,1.6,0x6b4f33);tbl.position.set(19,1.0,14);world.add(tbl);
+  solids.push({x:19,z:14,rx:3.0,rz:1.8});
   [[-1.6,0.9],[0,0.9],[1.6,0.9],[-1.6,-0.9],[0,-0.9],[1.6,-0.9]].forEach(p=>{const ch=box(0.8,1.0,0.8,0xf2efe7);ch.position.set(19+p[0],0.5,14+p[1]);world.add(ch);});
 
   // ===== BBQ + paella — east terrace, clear of the entrance path =====
@@ -391,13 +395,13 @@ function buildVillaWorld(){
   spots.push({x:sxx,z:szz-2.4,r:3.2,id:'sauna',label:'warm up in the sauna'});
 
   // ===== tall palm cluster (like the brochure) =====
-  const palm2=(x,z,s)=>{const t=tree(x,z);t.scale.set(s,s*1.35,s);world.add(t);};
+  const palm2=(x,z,s)=>{const t=tree(x,z);t.scale.set(s,s*1.35,s);world.add(t);solids.push({x,z,rx:0.7*s,rz:0.7*s});};
   [[-15,4,1.2],[-18,9,1.35],[-20,15,1.2],[-16,19,1.1],[-22,2,1.25]].forEach(p=>palm2(p[0],p[1],p[2]));
-  [[24,4],[20,16],[16,-2]].forEach(p=>world.add(tree(p[0],p[1])));
+  [[24,4],[20,16],[16,-2]].forEach(p=>{world.add(tree(p[0],p[1]));solids.push({x:p[0],z:p[1],rx:0.7,rz:0.7});});
 
   // orange trees + oranges
   collectibles=[];
-  [[20,12],[26,14]].forEach(p=>world.add(tree(p[0],p[1])));
+  [[20,12],[26,14]].forEach(p=>{world.add(tree(p[0],p[1]));solids.push({x:p[0],z:p[1],rx:0.7,rz:0.7});});
   [[19,12],[21,13],[25,14],[27,15]].forEach(p=>{const o=new T.Mesh(new T.SphereGeometry(0.35,12,12),mat(0xf08a1c));o.position.set(p[0],1.4,p[1]);o.castShadow=true;world.add(o);collectibles.push({mesh:o,type:'orange',x:p[0],z:p[1]});});
   // shells on the beach
   for(let i=0;i<10;i++){const sx=-70+Math.random()*140,sz=-38+Math.random()*14;const sh=new T.Mesh(new T.SphereGeometry(0.3,8,8),mat(0xfff1dd));sh.scale.y=0.5;sh.position.set(sx,0.15,sz);world.add(sh);collectibles.push({mesh:sh,type:'shell',x:sx,z:sz});}
@@ -711,7 +715,7 @@ function bindInput(){
   cvs.addEventListener('touchstart',e=>{if(e.touches[0])dn(e.touches[0].clientX,e.touches[0].clientY);},{passive:true});
   cvs.addEventListener('touchmove',e=>{if(e.touches[0])mvh(e.touches[0].clientX,e.touches[0].clientY);},{passive:true});
   cvs.addEventListener('touchend',up);
-  $('startBtn').addEventListener('click',()=>{started=true;$('title').classList.add('hidden');});
+  $('startBtn').addEventListener('click',()=>{started=true;$('title').classList.add('hidden');setScene('villa');});
   function toggleItin(e){if(e)e.stopPropagation();const el=$('itinerary');const c=el.classList.toggle('collapsed');$('itin-toggle').textContent=c?'+':'−';$('itin-title').textContent=c?'📋':'📋 Today\'s plan';}
   $('itin-toggle').addEventListener('click',toggleItin);
   $('itin-head').addEventListener('click',toggleItin);
