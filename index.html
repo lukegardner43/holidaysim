@@ -215,6 +215,12 @@ function buildVillaWorld(){
   const waveCrests=[];
   for(let wi=0;wi<4;wi++){const wc=new T.Mesh(new T.PlaneGeometry(2000,3.5),new T.MeshStandardMaterial({color:0xffffff,roughness:0.5,transparent:true,opacity:0.0,depthWrite:false}));wc.rotation.x=-Math.PI/2;wc.position.set(0,0.09,-52);world.add(wc);waveCrests.push(wc);}
   world.userData.waveCrests=waveCrests;
+  // ---- daytime birds ----
+  {const mkBird=function(){const g=new T.Group();const bm=new T.MeshBasicMaterial({color:0x1a1a28,fog:false});g.add(new T.Mesh(new T.BoxGeometry(0.9,0.12,0.22),bm));const lw=new T.Mesh(new T.BoxGeometry(1.7,0.09,0.38),bm);lw.position.set(-1.1,0,0);g.add(lw);g.userData.lw=lw;const rw=new T.Mesh(new T.BoxGeometry(1.7,0.09,0.38),bm);rw.position.set(1.1,0,0);g.add(rw);g.userData.rw=rw;return g;};
+  const flocks=[{cx:0,cy:72,cz:-80,r:180,spd:0.18,n:4},{cx:-60,cy:95,cz:-50,r:140,spd:0.22,n:3},{cx:80,cy:58,cz:-20,r:100,spd:0.28,n:5}];
+  const birds=[];
+  flocks.forEach(function(fl){for(let bi=0;bi<fl.n;bi++){const b=mkBird();const off=bi*(Math.PI*2/fl.n);b.visible=false;world.add(b);birds.push({mesh:b,cx:fl.cx+(Math.random()-0.5)*12,cy:fl.cy+(Math.random()-0.5)*8,cz:fl.cz+(Math.random()-0.5)*12,r:fl.r,spd:fl.spd,a:off,fp:2.2+Math.random()*0.8,fa:Math.random()*Math.PI*2});}});
+  world.userData.birds=birds;}
   // ---- sea (turquoise, gently waving) ----
   const seaGeo=new T.PlaneGeometry(2000,4000,40,40);
   const sea=new T.Mesh(seaGeo,new T.MeshStandardMaterial({color:0x1f9fc4,roughness:0.06,metalness:0.68,flatShading:false,emissive:0x1a7fa0,emissiveIntensity:0.0}));
@@ -788,6 +794,8 @@ function update(dt){
 
   // sailboat orbits
   if(world.userData.sailboats){world.userData.sailboats.forEach(function(b){b.a+=b.spd*dt;b.mesh.position.x=b.cx+Math.cos(b.a)*b.r;b.mesh.position.z=b.cz+Math.sin(b.a)*b.r;b.mesh.rotation.y=-b.a+Math.PI/2;});}
+  // bird flight
+  if(world.userData.birds){const bt=performance.now()*0.001;world.userData.birds.forEach(function(b){b.a+=b.spd*dt;b.mesh.position.set(b.cx+Math.cos(b.a)*b.r,b.cy+Math.sin(b.a*0.3)*6,b.cz+Math.sin(b.a)*b.r);b.mesh.rotation.y=-b.a+Math.PI/2;const flap=Math.sin(bt*b.fp+b.fa)*0.42;b.mesh.userData.lw.rotation.z=flap;b.mesh.userData.rw.rotation.z=-flap;});}
 
   // water shimmer
   if(world.userData.sea){const sg=world.userData.sea.geometry;const pa=sg.attributes.position;const tm=performance.now()*0.001;
@@ -801,7 +809,7 @@ function update(dt){
     pa.needsUpdate=true;sg.computeVertexNormals();sg.computeBoundingSphere();
     // emissive shimmer (daylight sparkle)
     const dayB=timeOfDay>=8&&timeOfDay<18?1:timeOfDay>=6&&timeOfDay<8?(timeOfDay-6)/2:timeOfDay>=18&&timeOfDay<20?(20-timeOfDay)/2:0;
-    world.userData.sea.material.emissiveIntensity=dayB*(0.10+0.07*Math.sin(tm*2.1+0.5*Math.sin(tm*0.7)));}
+    world.userData.sea.material.emissiveIntensity=dayB*(0.22+0.14*Math.sin(tm*2.1+0.5*Math.sin(tm*0.7)));}
   // rolling shore waves
   if(world.userData.waveCrests){const tm3=performance.now()*0.001;world.userData.waveCrests.forEach(function(wc,wi){const phase=((tm3*0.55+wi*0.25)%1);wc.position.z=-54+phase*9;wc.material.opacity=Math.sin(phase*Math.PI)*0.68;});}
 
@@ -875,6 +883,7 @@ function applyTime(){
   scene.fog.density=(timeOfDay>=18&&timeOfDay<21)?0.0018:0;
   scene.fog.color.set(fc);
   if(world&&world.userData.sea)world.userData.sea.material.color.setHex(seaCol);
+  if(world&&world.userData.birds){const isDay=timeOfDay>=6&&timeOfDay<21;world.userData.birds.forEach(function(b){b.mesh.visible=isDay;});}
   if(scene.userData.stars)scene.userData.stars.visible=(timeOfDay<6||timeOfDay>=21);
   // moon visibility
   const mm=scene.userData.moonMesh;
