@@ -23,7 +23,7 @@
   #clock{background:rgba(13,20,33,.5);backdrop-filter:blur(8px);border:1px solid rgba(255,250,240,.18);border-radius:14px;padding:7px 12px;font-family:'Fraunces';font-weight:900;font-size:1rem}
   #clock small{display:block;font-family:'Karla';font-weight:800;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:#bcd0dd}
   #items{margin-top:8px;background:rgba(13,20,33,.5);backdrop-filter:blur(8px);border:1px solid rgba(255,250,240,.18);border-radius:14px;padding:7px 12px;font-weight:800;font-size:.85rem}
-  #prompt{position:fixed;left:50%;bottom:128px;transform:translateX(-50%);z-index:6;pointer-events:none;background:rgba(13,20,33,.8);border:1.5px solid #e8a838;border-radius:40px;padding:10px 20px;font-weight:800;font-size:.95rem;opacity:0;transition:opacity .15s;white-space:nowrap;box-shadow:0 10px 30px -12px rgba(0,0,0,.6)}
+  #prompt{position:fixed;left:50%;bottom:215px;transform:translateX(-50%);z-index:6;pointer-events:none;background:rgba(13,20,33,.8);border:1.5px solid #e8a838;border-radius:40px;padding:10px 20px;font-weight:800;font-size:.95rem;opacity:0;transition:opacity .15s;white-space:nowrap;box-shadow:0 10px 30px -12px rgba(0,0,0,.6)}
   #prompt b{color:#f9d56e}
   #toasts{position:fixed;left:50%;bottom:200px;transform:translateX(-50%);z-index:7;pointer-events:none;display:flex;flex-direction:column-reverse;gap:8px;align-items:center}
   .toast{background:rgba(46,111,158,.92);border:1px solid rgba(246,227,184,.5);color:#fff;font-weight:800;padding:9px 18px;border-radius:30px;font-size:.92rem;box-shadow:0 10px 26px -12px rgba(0,0,0,.6);animation:pop .35s ease, fade .5s ease 2.2s forwards}
@@ -68,7 +68,7 @@
 <div class="hud" id="topL">
   <div class="meter"><div class="lab"><span>Holiday vibes</span><span id="vibesPct">0%</span></div><div class="bar"><i id="vibesFill"></i></div><div class="tods" id="tods"></div></div>
   <div id="itinerary" class="collapsed">
-    <div id="itin-head"><span id="itin-title">📋</span><span id="itin-period"></span><button id="itin-toggle">+</button></div>
+    <div id="itin-head"><span id="itin-title">📋 Plan</span><span id="itin-period"></span><button id="itin-toggle">+</button></div>
     <ul id="itin-list"></ul>
   </div>
 </div>
@@ -120,6 +120,7 @@ let started=false;
 // ---- state ----
 let vibes=0, timeOfDay=18.0, day=1, won=false, drunk=0;
 let shellsTotal=0, orangesTotal=0;
+let sunscreenApplied=false, sunburnWarned=false;
 const solids=[];             // {x,z,rx,rz} keep-out boxes (villa world)
 const spots=[];              // interaction points {x,z,r,id,label}
 let collectibles=[];         // {mesh,type,x,z}
@@ -409,6 +410,12 @@ function buildVillaWorld(){
   [[19,12],[21,13],[25,14],[27,15]].forEach(p=>{const o=new T.Mesh(new T.SphereGeometry(0.35,12,12),mat(0xf08a1c));o.position.set(p[0],1.4,p[1]);o.castShadow=true;world.add(o);collectibles.push({mesh:o,type:'orange',x:p[0],z:p[1]});});
   // shells on the beach
   for(let i=0;i<10;i++){const sx=-70+Math.random()*140,sz=-38+Math.random()*14;const sh=new T.Mesh(new T.SphereGeometry(0.3,8,8),mat(0xfff1dd));sh.scale.y=0.5;sh.position.set(sx,0.15,sz);world.add(sh);collectibles.push({mesh:sh,type:'shell',x:sx,z:sz});}
+  // sandcastle on the beach (spot handled in nearest() — toddlers must be awake + daytime)
+  {const scg=new T.Group();const base=cyl(2.2,2.5,0.7,0xd4b96a,16);base.position.y=0.35;scg.add(base);[[0,0,1.6,1.2],[1.3,0,0.9,1.4],[-1.2,0.2,0.95,1.3],[0.4,0,1.1,1.5]].forEach(p=>{const t=cyl(p[2],p[2]*0.85,p[3],0xd4b96a,10);t.position.set(p[0],p[3]/2+0.7,p[1]);scg.add(t);const b=new T.Mesh(new T.ConeGeometry(p[2],0.5,10),mat(0xc9a85a));b.position.set(p[0],p[3]+0.95,p[1]);scg.add(b);});scg.position.set(-8,0.05,-38);world.add(scg);}
+  spots.push({x:-8,z:-38,r:7,id:'sandcastle',label:'build sandcastles with the toddlers 🏖️'});
+  // sunscreen bottle by the sun loungers
+  {const sb=new T.Group();const btl=cyl(0.18,0.18,0.65,0xffffff,10);btl.position.y=0.45;sb.add(btl);const cap=cyl(0.2,0.2,0.18,0xff6633,10);cap.position.y=0.87;sb.add(cap);sb.position.set(-4,0,8.5);world.add(sb);}
+  spots.push({x:-4,z:8.5,r:2.4,id:'sunscreen',label:'apply sunscreen 🧴'});
   // ---- background scenery: headland with a white town + boats ----
   // headland: a low flat-topped landmass across the bay, with a white town sitting flat on top
   const HLx=-70,HLz=-150,HLtop=7;
@@ -720,7 +727,7 @@ function bindInput(){
   cvs.addEventListener('touchmove',e=>{if(e.touches[0])mvh(e.touches[0].clientX,e.touches[0].clientY);},{passive:true});
   cvs.addEventListener('touchend',up);
   $('startBtn').addEventListener('click',()=>{started=true;$('title').classList.add('hidden');setScene('villa');});
-  function toggleItin(e){if(e)e.stopPropagation();const el=$('itinerary');const c=el.classList.toggle('collapsed');$('itin-toggle').textContent=c?'+':'−';$('itin-title').textContent=c?'📋':'📋 Today\'s plan';}
+  function toggleItin(e){if(e)e.stopPropagation();const el=$('itinerary');const c=el.classList.toggle('collapsed');$('itin-toggle').textContent=c?'+':'−';$('itin-title').textContent=c?'📋 Plan':'📋 Today\'s plan';}
   $('itin-toggle').addEventListener('click',toggleItin);
   $('itin-head').addEventListener('click',toggleItin);
 }
@@ -756,7 +763,18 @@ function nearest(){
     if(todsAsleep&&timeOfDay>=6&&timeOfDay<21) return {id:'bed',label:'go wake the toddlers ☀️'};
     if(todsAsleep) return null;  // deep night: spot inactive
   }
-  return best;
+  // sandcastle only available daytime with awake toddlers
+  if(best&&best.id==='sandcastle'&&(todsAsleep||timeOfDay<8||timeOfDay>=20)) return null;
+  // sunscreen only needed during daytime
+  if(best&&best.id==='sunscreen'&&(sunscreenApplied||timeOfDay<8||timeOfDay>=20)) return null;
+  if(best) return best;
+  // check for nearby parent NPC interaction
+  if(scn==='villa'&&world.userData.parentNPCs){
+    for(const n of world.userData.parentNPCs){
+      if(Math.hypot(px-n.mesh.position.x,pz-n.mesh.position.z)<3.2) return {id:'npc',label:n.act.label,npc:n};
+    }
+  }
+  return null;
 }
 let fade=0,fadeDir=0,pending=null;
 function transition(to){if(fadeDir!==0)return;fadeDir=1;pending=to;}
@@ -775,7 +793,7 @@ function doAction(s){
   switch(s.id){
     case'sangria':{drunk+=1;if(drunk<=1){addV(5);toast('🍷 One sangria in the sun. Lovely.');}else if(drunk<3){vibes=Math.max(0,vibes-6);toast('🍷🍷 Steady on… the garden is tilting.');}else{vibes=Math.max(0,vibes-12);toast('🍷🍷🍷 Whoa — everything is wonky now! 🤣');}cheer(2);break;}
     case'pool':addV(7);cheer(16);toast('💦 Cannonbaaall into the warm water!');break;
-    case'jacuzzi':addV(6);cheer(10);timeOfDay+=0.2;toast('🛁 Bubbles under the stars.');break;
+    case'jacuzzi':{const tod=timeOfDay;addV(6);cheer(10);timeOfDay+=0.2;toast(tod>=20||tod<7?'🛁 Bubbles under the stars.':'🛁 Hot water, blazing sun — absolute bliss.');break;}
     case'sauna':addV(6);cheer(6);timeOfDay+=0.2;toast('🧖 Sauna steam — toasty.');break;
     case'paella':addV(9);cheer(14);timeOfDay+=0.5;toast('🥘 Giant paella on the fire — saffron everywhere!');break;
     case'bbq':addV(9);cheer(8);timeOfDay+=0.4;toast('🍤 BBQ on — prawns & sardines.');break;
@@ -783,8 +801,11 @@ function doAction(s){
     case'sea':addV(6);cheer(14);toast('🌊 Warm Atlantic shallows.');break;
     case'ice':addV(4);cheer(26);drunk=Math.max(0,drunk-0.5);toast('🍦 Four ice creams, four happy faces.');break;
     case'nap':timeOfDay+=4;drunk=0;if(timeOfDay>=24){timeOfDay-=24;day++;}toast('😴 Siesta… time drifts on.');break;
-    case'bed':enterBedroom();return;  // enterBedroom handles both put-to-bed and morning entry
+    case'bed':enterBedroom();return;
     case'car':if(drunk>=1){vibes=Math.max(0,vibes-10);toast('🚗🍷 No driving after sangria — sober up first!');}else transition('plaza');break;
+    case'sandcastle':addV(10);cheer(22);timeOfDay+=0.4;toast('🏖️ Epic four-towered sandcastle — the toddlers are DELIGHTED.');break;
+    case'sunscreen':sunscreenApplied=true;sunburnWarned=false;addV(2);toast('🧴 Factor 50 on. You are protected from the Cádiz sun.');break;
+    case'npc':{const a=s.npc.act;addV(a.vibes);cheer(a.mood);toast(a.toast);break;}
   }
 }
 
@@ -851,6 +872,10 @@ function update(dt){
   }
   // reset bedtime warning each evening so it can fire the next day
   if(timeOfDay>=18&&timeOfDay<18.08) bedtimeWarned=false;
+  // sunburn: drain vibes if no sunscreen during peak sun hours
+  if(!sunscreenApplied&&scn==='villa'&&timeOfDay>=9&&timeOfDay<18){vibes=Math.max(0,vibes-dt*0.12);if(!sunburnWarned){sunburnWarned=true;toast('🔴 You\'re getting burnt! Find the sunscreen 🧴');}}
+  // reset sunscreen each morning
+  if(timeOfDay>=6&&timeOfDay<6.06){sunscreenApplied=false;sunburnWarned=false;}
 
   // toddlers follow (only when awake and in villa)
   if(scn!=='bed') tods.forEach((t,i)=>{
@@ -1042,6 +1067,15 @@ function makeParent(bc,hc,skin){
   if(hc!=null){const br=cyl(0.92,0.92,0.10,hc,12);br.position.y=2.32;g.add(br);const tp=cyl(0.52,0.56,0.38,hc,12);tp.position.y=2.52;g.add(tp);}
   return g;
 }
+const npcInteractions=[
+  {label:'tell a joke 😂',toast:'😂 "Why don\'t scientists trust atoms? They make up everything!" *groans*',vibes:3,mood:8},
+  {label:'give a compliment 💛',toast:'💛 "Seriously, you\'re smashing this holiday parenting thing."',vibes:3,mood:6},
+  {label:'challenge to a swim race 🏊',toast:'🏊 "Last one in buys the sangria!" *massive splash*',vibes:5,mood:10},
+  {label:'throw them in the pool 💦',toast:'💦 SPLASH! "I didn\'t even have my phone out of my pocket!!" 😂',vibes:6,mood:12},
+  {label:'swap holiday tips ✈️',toast:'✈️ "Dawn chiringuito — trust me, life-changing."',vibes:3,mood:5},
+  {label:'share travel gossip 🗣️',toast:'🗣️ Twenty minutes of pure, high-quality gossip. +vibes.',vibes:4,mood:7},
+  {label:'compare sunburns 🔴',toast:'🔴 You\'re both a very similar shade of lobster. Solidarity.',vibes:2,mood:5},
+];
 function buildParentNPCs(){
   const hotspots=[{x:2,z:3},{x:-8,z:-2},{x:8,z:-2},{x:0,z:-34},{x:-24,z:5},{x:24,z:5},{x:-14,z:20},{x:14,z:20},{x:0,z:-18}];
   world.userData.npcHotspots=hotspots;
@@ -1059,7 +1093,8 @@ function buildParentNPCs(){
     m.position.set(d.sx,0,d.sz);
     world.add(m);
     const h=hotspots[i%hotspots.length];
-    return {mesh:m,tx:h.x,tz:h.z,wait:Math.random()*3,yaw:0,seed:Math.random()*10};
+    const act=npcInteractions[i%npcInteractions.length];
+    return {mesh:m,tx:h.x,tz:h.z,wait:Math.random()*3,yaw:0,seed:Math.random()*10,act};
   });
 }
 function enterBedroom(){
