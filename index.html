@@ -693,10 +693,10 @@ function buildPlaza(){
   // grand end towers (at a0 and a1, R=44)
   plazaSolids.push({x:Math.cos(a0)*R,z:Math.sin(a0)*R,rx:4,rz:4});
   plazaSolids.push({x:Math.cos(a1)*R,z:Math.sin(a1)*R,rx:4,rz:4});
-  // arcade wall — overlapping boxes every 0.2 rad along the arc at R=44
-  for(let ang=a0;ang<=a1;ang+=0.2) plazaSolids.push({x:Math.cos(ang)*R,z:Math.sin(ang)*R,rx:3.2,rz:3.2});
-  // canal inner balustrade — boxes every 0.25 rad at radius Rc-cw/2-0.5 ≈ 32.2
-  for(let ang=a0;ang<=a1;ang+=0.25) plazaSolids.push({x:Math.cos(ang)*32.2,z:Math.sin(ang)*32.2,rx:2.5,rz:2.5});
+  // arcade wall — dense boxes every 0.12 rad, half-size 4 → continuous barrier (44*0.12=5.3 spacing, 4+4>5.3)
+  for(let ang=a0;ang<=a1;ang+=0.12) plazaSolids.push({x:Math.cos(ang)*R,z:Math.sin(ang)*R,rx:4,rz:4});
+  // canal — boxes centred on full canal width (Rc=35) every 0.1 rad, half-size 3.5 → covers 4.6-wide channel (35*0.1=3.5 spacing, 3.5+3.5>3.5)
+  for(let ang=a0;ang<=a1;ang+=0.1) plazaSolids.push({x:Math.cos(ang)*Rc,z:Math.sin(ang)*Rc,rx:3.5,rz:3.5});
 }
 
 function buildPlayer(){
