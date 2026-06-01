@@ -680,7 +680,7 @@ function buildPlaza(){
   for(let d=180;d<=360;d+=10){const a=d*Math.PI/180;if(Math.sin(a)>0.2)continue;plaza.add(tree(Math.cos(a)*70,Math.sin(a)*70));}
 
   // return car + photo marker
-  const car=carMesh(0xc2562f);car.position.set(8,0,30);car.rotation.y=Math.PI;plaza.add(car);plaza.userData.car={x:8,z:30};
+  const car=carMesh(0x2f6f9e);car.position.set(8,0,30);car.rotation.y=Math.PI;plaza.add(car);plaza.userData.car={x:8,z:30};
   const ring=new T.Mesh(new T.RingGeometry(2,2.6,32),new T.MeshBasicMaterial({color:0xe8a838,side:T.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.set(0,0.05,14);plaza.add(ring);plaza.userData.photo={x:0,z:14};
 
   // ---- plaza collision boxes ----
@@ -817,7 +817,18 @@ function doAction(s){
     case'car':if(drunk>=1){vibes=Math.max(0,vibes-10);toast('🚗🍷 No driving after sangria — sober up first!');}else transition('plaza');break;
     case'sandcastle':addV(10);cheer(22);timeOfDay+=0.4;toast('🏖️ Epic four-towered sandcastle — the toddlers are DELIGHTED.');break;
     case'sunscreen':sunscreenApplied=true;sunburnWarned=false;addV(2);toast('🧴 Factor 50 on. You are protected from the Cádiz sun.');break;
-    case'npc':{const a=s.npc.act;addV(a.vibes);cheer(a.mood);toast(a.toast);break;}
+    case'npc':{
+      if(drunk>=2){
+        vibes=Math.max(0,vibes-5);
+        const d2=['😬 "Mate, seriously… how many is that now?"','🙄 "Go drink some water, please."','😤 "Not in front of the toddlers — come on."','🫣 "You\'re embarrassing yourself a little bit."','😑 "I\'m not saying anything. I\'m just watching."'];
+        toast(d2[Math.floor(Math.random()*d2.length)]);
+      } else if(drunk>=1){
+        const a=s.npc.act;addV(Math.max(1,a.vibes-2));cheer(Math.max(2,a.mood-4));
+        toast('🍷 "You alright there? Maybe slow it down a notch…"');
+      } else {
+        const a=s.npc.act;addV(a.vibes);cheer(a.mood);toast(a.toast);
+      }
+      break;}
   }
 }
 
@@ -946,7 +957,7 @@ function update(dt){
   // clock
   timeOfDay+=dt*0.025;if(timeOfDay>=24){timeOfDay-=24;day++;}
   applyTime();
-  drunk=Math.max(0,drunk-dt*0.018);
+  drunk=Math.max(0,drunk-dt*0.00833); // ~3 game-hours per unit to sober up
 
   // camera follow (third person, camera-relative yaw)
   const dist=15,height=9;
