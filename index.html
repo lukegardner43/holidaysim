@@ -96,6 +96,8 @@ let player, playerYaw=0;
 const tods=[];
 let world, plaza, kidsRoom;  // groups
 let tucked=false;
+let todsAsleep=false;
+let bedtimeWarned=false, wakeupWarned=false;
 let scn='villa';
 let started=false;
 
@@ -163,6 +165,7 @@ function init(){
   buildPlaza();
   buildPlayer();
   buildTods();
+  buildParentNPCs();
 
   bindInput();
   addEventListener('resize',onResize);
@@ -682,7 +685,10 @@ function nearest(){
   const px=player.position.x,pz=player.position.z;
   if(scn==='bed'){
     const ex=kidsRoom.userData.exit;
-    if(Math.hypot(px-ex.x,pz-ex.z)<4) return {id:'leaveroom',label:'tiptoe out 🤫'};
+    if(Math.hypot(px-ex.x,pz-ex.z)<4){
+      if(todsAsleep&&timeOfDay>=6&&timeOfDay<21) return {id:'wakeup',label:'wake the toddlers ☀️'};
+      return {id:'leaveroom',label:'tiptoe out 🤫'};
+    }
     return null;
   }
   if(scn==='plaza'){
@@ -698,13 +704,22 @@ function nearest(){
     const range=s.shore?3:s.r;
     if(d<range&&d<bd){bd=d;best=s;}
   }
+  // override bed spot label/availability based on toddler state
+  if(best&&best.id==='bed'){
+    if(todsAsleep&&(timeOfDay<6||timeOfDay>=21)) return null;  // night: don't disturb
+    if(todsAsleep) return {id:'bed',label:'go wake the toddlers ☀️'};
+  }
   return best;
 }
 let fade=0,fadeDir=0,pending=null;
 function transition(to){if(fadeDir!==0)return;fadeDir=1;pending=to;}
 function doAction(s){
   if(!s)return;
-  if(scn==='bed'){ if(s&&s.id==='leaveroom') exitBedroom(); return; }
+  if(scn==='bed'){
+    if(s&&s.id==='leaveroom') exitBedroom();
+    if(s&&s.id==='wakeup'){todsAsleep=false;bedtimeWarned=false;wakeupWarned=false;addV(8);toast('☀️ Rise and shine! Four very excited toddlers.');exitBedroom();}
+    return;
+  }
   if(scn==='plaza'){
     if(s.id==='back')transition('villa');
     else if(s.id==='snap'){addV(8);cheer(20);toast('📸 "We will watch your career with great interest."');}
@@ -721,7 +736,7 @@ function doAction(s){
     case'sea':addV(6);cheer(14);toast('🌊 Warm Atlantic shallows.');break;
     case'ice':addV(4);cheer(26);drunk=Math.max(0,drunk-0.5);toast('🍦 Four ice creams, four happy faces.');break;
     case'nap':timeOfDay+=4;drunk=0;if(timeOfDay>=24){timeOfDay-=24;day++;}toast('😴 Siesta… time drifts on.');break;
-    case'bed':enterBedroom();return;
+    case'bed':enterBedroom();return;  // enterBedroom handles both put-to-bed and morning entry
     case'car':if(drunk>=1){vibes=Math.max(0,vibes-10);toast('🚗🍷 No driving after sangria — sober up first!');}else transition('plaza');break;
   }
 }
@@ -778,8 +793,22 @@ function update(dt){
   if(s){pr.style.opacity=1;pr.innerHTML='<b>[DO IT]</b> '+s.label;}else pr.style.opacity=0;
   if(actEdge){doAction(s);actEdge=false;}
 
-  // toddlers follow
+  // bedtime/wakeup penalties
+  if(!todsAsleep&&timeOfDay>=19){
+    vibes=Math.max(0,vibes-dt*0.35);
+    if(!bedtimeWarned){bedtimeWarned=true;toast('😬 Toddler bedtime was 7pm — get them to bed!');}
+  }
+  if(todsAsleep&&timeOfDay>=7&&timeOfDay<21){
+    vibes=Math.max(0,vibes-dt*0.22);
+    if(!wakeupWarned){wakeupWarned=true;toast('☀️ The toddlers need waking up — go collect them!');}
+  }
+  // reset bedtime warning each evening so it can fire the next day
+  if(timeOfDay>=18&&timeOfDay<18.08) bedtimeWarned=false;
+
+  // toddlers follow (only when awake and in villa)
   if(scn!=='bed') tods.forEach((t,i)=>{
+    if(todsAsleep){t.grp.visible=false;return;}
+    t.grp.visible=true;
     t.t+=dt;t.hop=Math.max(0,t.hop-dt*1.6);
     const tx=player.position.x+Math.cos(i*1.7+t.t*0.7)*2.4;
     const tz=player.position.z+2.4+Math.sin(i*2.1+t.t*0.6)*1.2;
@@ -796,6 +825,8 @@ function update(dt){
 
   // sailboat orbits
   if(world.userData.sailboats){world.userData.sailboats.forEach(function(b){b.a+=b.spd*dt;b.mesh.position.x=b.cx+Math.cos(b.a)*b.r;b.mesh.position.z=b.cz+Math.sin(b.a)*b.r;b.mesh.rotation.y=-b.a+Math.PI/2;});}
+  // parent NPC wander
+  if(world.userData.parentNPCs&&scn==='villa'){const pnpcs=world.userData.parentNPCs;const nt=performance.now()*0.001;pnpcs.forEach(function(n){if(n.wait>0){n.wait-=dt;n.mesh.children[0].position.y=0.9;return;}const dx=n.tx-n.mesh.position.x,dz=n.tz-n.mesh.position.z,dist=Math.hypot(dx,dz);if(dist<1.5){n.wait=3+Math.random()*5;const hs=world.userData.npcHotspots;const h=hs[Math.floor(Math.random()*hs.length)];n.tx=h.x+(Math.random()-0.5)*10;n.tz=h.z+(Math.random()-0.5)*10;}else{const spd=3.2;n.mesh.position.x+=dx/dist*spd*dt;n.mesh.position.z+=dz/dist*spd*dt;n.yaw+=(Math.atan2(dx,dz)-n.yaw)*Math.min(1,dt*8);n.mesh.rotation.y=n.yaw;n.mesh.children[0].position.y=0.9+Math.abs(Math.sin(nt*3.5+n.seed))*0.07;}});}
   // bird flight
   if(world.userData.birds){const bt=performance.now()*0.001;world.userData.birds.forEach(function(b){b.a+=b.spd*dt;b.mesh.position.set(b.cx+Math.cos(b.a)*b.r,b.cy+Math.sin(b.a*0.3)*6,b.cz+Math.sin(b.a)*b.r);b.mesh.rotation.y=-b.a+Math.PI/2;const flap=Math.sin(bt*b.fp+b.fa)*0.42;b.mesh.userData.lw.rotation.z=flap;b.mesh.userData.rw.rotation.z=-flap;});}
 
@@ -865,7 +896,8 @@ function setScene(to){
   world.visible=(to==='villa');plaza.visible=(to==='plaza');if(kidsRoom)kidsRoom.visible=false;
   if(to==='plaza'){player.position.set(0,0,24);camYaw=Math.PI;}
   else{player.position.set(-18,0,22);camYaw=Math.PI;}
-  tods.forEach((t,i)=>t.grp.position.set(player.position.x+(i-1.5)*1.6,0,player.position.z+3));
+  if(!todsAsleep){tods.forEach((t,i)=>{t.grp.visible=true;t.grp.position.set(player.position.x+(i-1.5)*1.6,0,player.position.z+3);});}
+  else{tods.forEach(t=>t.grp.visible=false);}
 }
 function applyTime(){
   const ang=(timeOfDay/24)*Math.PI*2-Math.PI/2;
@@ -931,17 +963,48 @@ function applyTime(){
   }
 }
 
+function makeParent(bc,hc,skin){
+  const g=new T.Group();
+  const body=cyl(0.55,0.6,1.5,bc,14);body.position.y=0.9;g.add(body);
+  const head=new T.Mesh(new T.SphereGeometry(0.5,14,14),mat(skin||0xf3c89a));head.position.y=2.0;head.castShadow=true;g.add(head);
+  if(hc!=null){const br=cyl(0.92,0.92,0.10,hc,12);br.position.y=2.32;g.add(br);const tp=cyl(0.52,0.56,0.38,hc,12);tp.position.y=2.52;g.add(tp);}
+  return g;
+}
+function buildParentNPCs(){
+  const hotspots=[{x:2,z:3},{x:-8,z:-2},{x:8,z:-2},{x:0,z:-34},{x:-24,z:5},{x:24,z:5},{x:-14,z:20},{x:14,z:20},{x:0,z:-18}];
+  world.userData.npcHotspots=hotspots;
+  const defs=[
+    {bc:0x2e7a2e,hc:0xddb64e,skin:0xf3c89a,sx:5,sz:2},
+    {bc:0x8b2525,hc:null,skin:0xe8b075,sx:-10,sz:8},
+    {bc:0x1a4a8a,hc:0xfafafa,skin:0xf3c89a,sx:18,sz:-28},
+    {bc:0x7a4010,hc:0x9a6030,skin:0xd4905a,sx:-14,sz:-22},
+    {bc:0x5a1a6a,hc:null,skin:0xf6d7b0,sx:22,sz:12},
+    {bc:0x1a6a58,hc:0xe8c87a,skin:0xe8b075,sx:-22,sz:-8},
+    {bc:0x9a8020,hc:null,skin:0xf3c89a,sx:28,sz:-14},
+  ];
+  world.userData.parentNPCs=defs.map(function(d,i){
+    const m=makeParent(d.bc,d.hc,d.skin);
+    m.position.set(d.sx,0,d.sz);
+    world.add(m);
+    const h=hotspots[i%hotspots.length];
+    return {mesh:m,tx:h.x,tz:h.z,wait:Math.random()*3,yaw:0,seed:Math.random()*10};
+  });
+}
 function enterBedroom(){
   scn='bed';world.visible=false;plaza.visible=false;kidsRoom.visible=true;
   player.position.set(0,0,4);camYaw=Math.PI;camPitch=8;
-  // lay the toddlers in their cots, asleep
+  tods.forEach(t=>t.grp.visible=true);
   kidsRoom.userData.beds.forEach((b,i)=>{tods[i].grp.position.set(b.x+0.4,1.4,b.z);tods[i].grp.rotation.set(0,0,Math.PI/2);tods[i].mood=100;});
-  tucked=true;addV(6);toast('😴 Four down, lights low. Bliss.');
+  if(!todsAsleep){todsAsleep=true;wakeupWarned=false;tucked=true;addV(6);toast('😴 Four down, lights low. Bliss.');}
 }
 function exitBedroom(){
   scn='villa';kidsRoom.visible=false;world.visible=true;
   player.position.set(0,0,-8);camYaw=Math.PI;camPitch=0;
-  tods.forEach((t,i)=>{t.grp.rotation.set(0,0,0);t.grp.position.set(player.position.x+(i-1.5)*1.6,0,player.position.z+3);});
+  if(todsAsleep){
+    tods.forEach(t=>t.grp.visible=false);  // stay hidden until morning wakeup
+  } else {
+    tods.forEach((t,i)=>{t.grp.visible=true;t.grp.rotation.set(0,0,0);t.grp.position.set(player.position.x+(i-1.5)*1.6,0,player.position.z+3);});
+  }
 }
 let last=performance.now();
 function animate(now){
