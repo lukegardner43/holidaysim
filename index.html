@@ -48,8 +48,11 @@
   .hidden{display:none!important}
   @media(hover:hover) and (pointer:fine){#pad{opacity:.4}}
   #loadmsg{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:#16243b;color:#f6e3b8;font-family:'Fraunces';font-weight:900;font-size:1.2rem}
-  #itinerary{position:fixed;bottom:200px;right:24px;z-index:6;background:rgba(13,20,33,.72);backdrop-filter:blur(10px);border:1.5px solid rgba(246,227,184,.22);border-radius:18px;padding:12px 14px;min-width:210px;max-width:248px;pointer-events:none;transition:opacity .4s}
-  #itin-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  #itinerary{position:fixed;bottom:200px;right:24px;z-index:6;background:rgba(13,20,33,.72);backdrop-filter:blur(10px);border:1.5px solid rgba(246,227,184,.22);border-radius:18px;padding:12px 14px;min-width:210px;max-width:248px;pointer-events:auto;transition:opacity .4s}
+  #itin-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:pointer}
+  #itin-toggle{background:none;border:1px solid rgba(246,227,184,.3);color:#f6e3b8;border-radius:7px;padding:1px 7px;font-size:.68rem;font-family:inherit;font-weight:800;cursor:pointer;pointer-events:auto;line-height:1.4}
+  #itinerary.collapsed #itin-list{display:none}
+  #itinerary.collapsed{padding-bottom:12px}
   #itin-title{font-family:'Fraunces';font-weight:900;font-size:.82rem;color:#f9d56e;letter-spacing:.04em}
   #itin-period{font-size:.58rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#bcd0dd}
   #itin-list{list-style:none;display:flex;flex-direction:column;gap:5px}
@@ -69,7 +72,7 @@
 <div id="prompt"></div>
 <div id="toasts"></div>
 <div id="itinerary">
-  <div id="itin-head"><span id="itin-title">📋 Today's plan</span><span id="itin-period"></span></div>
+  <div id="itin-head"><span id="itin-title">📋 Today's plan</span><span id="itin-period"></span><button id="itin-toggle">−</button></div>
   <ul id="itin-list"></ul>
 </div>
 
@@ -366,6 +369,8 @@ function buildVillaWorld(){
   world.userData.entrLights=entrLights;
   // glowing doorstep ring — daytime gold, always visible, pulses gently
   const dring=new T.Mesh(new T.RingGeometry(1.6,2.2,36),new T.MeshBasicMaterial({color:0xf5c842,transparent:true,opacity:0.55,side:T.DoubleSide,depthWrite:false,fog:false}));dring.rotation.x=-Math.PI/2;dring.position.set(vx+0.5,0.04,vz-5.5);world.add(dring);world.userData.dring=dring;
+  // floating door arrow — shown at bedtime and wakeup time
+  {const am=new T.MeshBasicMaterial({color:0xff6622,fog:false});const ag=new T.Group();const cone=new T.Mesh(new T.ConeGeometry(0.7,1.4,8),am);cone.rotation.x=Math.PI;cone.position.y=0;ag.add(cone);const shaft=new T.Mesh(new T.CylinderGeometry(0.18,0.18,1.1,8),am);shaft.position.y=1.25;ag.add(shaft);ag.position.set(vx+0.5,11,vz-5);ag.visible=false;world.add(ag);world.userData.doorArrow=ag;}
   // nap and bed spots right at the doorstep
   spots.push({x:vx-3.5,z:vz-5,r:2.4,id:'nap',label:'siesta inside 💤'});
   spots.push({x:vx+3.5,z:vz-5,r:2.4,id:'bed',label:'put the toddlers to bed 😴'});
@@ -700,6 +705,8 @@ function bindInput(){
   cvs.addEventListener('touchmove',e=>{if(e.touches[0])mvh(e.touches[0].clientX,e.touches[0].clientY);},{passive:true});
   cvs.addEventListener('touchend',up);
   $('startBtn').addEventListener('click',()=>{started=true;$('title').classList.add('hidden');});
+  $('itin-toggle').addEventListener('click',function(e){e.stopPropagation();const el=$('itinerary');const c=el.classList.toggle('collapsed');this.textContent=c?'+':'−';});
+  $('itin-head').addEventListener('click',function(){const el=$('itinerary');const c=el.classList.toggle('collapsed');$('itin-toggle').textContent=c?'+':'−';});
 }
 function onResize(){cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
 
@@ -1004,6 +1011,7 @@ function applyTime(){
     (world.userData.lampLights||[]).forEach(function(e){e.pl.intensity=nb*1.8;e.halo.material.opacity=nb*0.45;});
     (world.userData.entrLights||[]).forEach(function(e){e.pl.intensity=nb*1.4+(1-nb)*0.3;e.halo.material.opacity=nb*0.55+(1-nb)*0.18;});
     if(world.userData.dring){const pt=performance.now()*0.001;world.userData.dring.material.opacity=0.38+0.22*Math.sin(pt*1.6);}
+    if(world.userData.doorArrow){const da=world.userData.doorArrow;const showBed=!todsAsleep&&timeOfDay>=19;const showWake=todsAsleep&&timeOfDay>=6&&timeOfDay<13;da.visible=scn==='villa'&&(showBed||showWake);if(da.visible){const pt=performance.now()*0.001;da.position.y=11+Math.sin(pt*2.2)*0.6;const col=showBed?0xff5020:0x44dd44;da.children.forEach(function(c){c.material.color.setHex(col);});}}
     if(world.userData.poolPL)world.userData.poolPL.intensity=nb*1.2;
     if(world.userData.poolGlow)world.userData.poolGlow.material.opacity=nb*0.22;
     if(world.userData.water){world.userData.water.material.emissive.setHex(0x0077bb);world.userData.water.material.emissiveIntensity=nb*0.40;}
