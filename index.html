@@ -164,9 +164,9 @@ function init(){
   const moonMesh=new T.Mesh(new T.SphereGeometry(65,16,16),new T.MeshBasicMaterial({color:0xf0f0e8,fog:false}));
   const moonGlow=new T.Mesh(new T.SphereGeometry(115,12,12),new T.MeshBasicMaterial({color:0xb8c8e8,transparent:true,opacity:0.20,fog:false}));
   moonMesh.add(moonGlow);
-  // fixed crescent: slightly larger dark sphere offset to mask most of the moon face
-  const moonShadow=new T.Mesh(new T.SphereGeometry(68,16,16),new T.MeshBasicMaterial({color:0x04060f,fog:false,depthWrite:false}));
-  moonShadow.position.set(52,8,0);moonMesh.add(moonShadow);
+  // fixed crescent: dark sphere offset, rendered on top via depthTest:false + renderOrder
+  const moonShadow=new T.Mesh(new T.SphereGeometry(68,16,16),new T.MeshBasicMaterial({color:0x04060f,fog:false,depthTest:false,depthWrite:false}));
+  moonShadow.position.set(52,8,0);moonShadow.renderOrder=1;moonMesh.renderOrder=0;moonMesh.add(moonShadow);
   moonMesh.visible=false;scene.add(moonMesh);scene.userData.moonMesh=moonMesh;
   // star field
   {const n=2000,sp=new Float32Array(n*3);for(let i=0;i<n;i++){const th=Math.random()*Math.PI*2,v=Math.random(),ph=Math.acos(1-v),r=7600;sp[i*3]=r*Math.sin(ph)*Math.cos(th);sp[i*3+1]=r*Math.cos(ph);sp[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
