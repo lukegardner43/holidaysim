@@ -784,97 +784,136 @@ function buildPlaza(){
 
 function buildTerminal(){
   terminal=new T.Group();terminal.visible=false;scene.add(terminal);
-  const mFloor=mat(0xd8d2c8,{roughness:0.6});
-  const mWall=mat(0xe8e4dc,{roughness:0.75});
-  const mCeil=mat(0xf0ede8,{roughness:0.9});
-  const mGlass=new T.MeshStandardMaterial({color:0xa8d8f0,roughness:0.1,metalness:0.1,transparent:true,opacity:0.55});
-  const mBench=mat(0x8a6a44,{roughness:0.8});
-  const mCarousel=mat(0x5a5a5a,{roughness:0.7});
-  const mSign=mat(0x2a3a6a,{roughness:0.8});
+  const CEIL=14;                       // ceiling height — well above camera (y≈9) so the view never clips it
+  const mGlass=new T.MeshStandardMaterial({color:0xbfe4f5,roughness:0.08,metalness:0.15,transparent:true,opacity:0.32,side:T.DoubleSide});
+  const mMull=mat(0xb8bcc0,{roughness:0.5,metalness:0.4});   // mullion / frame metal
 
-  // floor
-  const fl=new T.Mesh(new T.PlaneGeometry(56,46),mFloor);fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;terminal.add(fl);
-  // ceiling
-  const ce=box(56,0.5,46,0xf0ede8,{roughness:0.9});ce.position.y=9.2;terminal.add(ce);
-  // back wall (behind arrivals)
-  const bw=box(56,9.5,0.8,0xe8e4dc,{roughness:0.75});bw.position.set(0,4.75,23);terminal.add(bw);
+  // ---- canvas-texture sign helpers ----
+  function mkTex(cw,ch,bg,lines){
+    const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+    const ctx=cv.getContext('2d');
+    if(bg){ctx.fillStyle=bg;ctx.fillRect(0,0,cw,ch);}
+    lines.forEach(l=>{ctx.fillStyle=l.c||'#fff';ctx.font=(l.b?'bold ':'')+l.s+'px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(l.t,cw/2,l.y);});
+    const tx=new T.CanvasTexture(cv);tx.generateMipmaps=false;tx.minFilter=T.LinearFilter;return tx;
+  }
+  function signMesh(w,h,tex){return new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({map:tex,transparent:true,fog:false,side:T.DoubleSide}));}
+
+  // ---- ground & floor ----
+  // big apron so views out through the glass show tarmac, not void
+  const apron=new T.Mesh(new T.PlaneGeometry(220,220),mat(0x9a9ea2,{roughness:0.95}));apron.rotation.x=-Math.PI/2;apron.position.y=-0.08;apron.receiveShadow=true;terminal.add(apron);
+  // polished terminal floor
+  const fl=new T.Mesh(new T.PlaneGeometry(56,46),mat(0xe4ded2,{roughness:0.4,metalness:0.05}));fl.rotation.x=-Math.PI/2;fl.position.y=0.01;fl.receiveShadow=true;terminal.add(fl);
+  // subtle floor banding for scale
+  for(let z=-20;z<=20;z+=8){const ln=box(56,0.02,0.25,0xcfc7b6);ln.position.set(0,0.03,z);terminal.add(ln);}
+
+  // ---- open roof: light slab + skylight strips ----
+  const ce=box(58,0.4,48,0xf2efe9,{roughness:0.9});ce.position.y=CEIL;terminal.add(ce);
+  for(let i=-2;i<=2;i++){const sky=new T.Mesh(new T.BoxGeometry(46,0.12,2.2),new T.MeshBasicMaterial({color:0xdff2ff,fog:false}));sky.position.set(0,CEIL-0.25,i*8);terminal.add(sky);}
+  // roof edge beams
+  [[0,23.6,58,1.2],[0,-23.6,58,1.2]].forEach(b=>{const be=box(b[2],1.0,b[3],0xd6d2c8);be.position.set(b[0],CEIL-0.5,b[1]);terminal.add(be);});
+  [[-28.6,0],[28.6,0]].forEach(b=>{const be=box(1.2,1.0,48,0xd6d2c8);be.position.set(b[0],CEIL-0.5,b[1]);terminal.add(be);});
+
+  // ---- glass curtain wall helper ----
+  // builds a transparent wall along a line with a solid base parapet, top header beam and vertical mullions
+  function curtainWall(cx,cz,len,horiz){
+    const half=len/2;
+    const baseH=1.3, glassTop=CEIL-1.2;
+    // parapet base
+    const base=horiz?box(len,baseH,0.4,0xe7e2d8):box(0.4,baseH,len,0xe7e2d8);
+    base.position.set(cx,baseH/2,cz);terminal.add(base);
+    // glass
+    const gh=glassTop-baseH;
+    const g=horiz?new T.Mesh(new T.BoxGeometry(len,gh,0.12),mGlass):new T.Mesh(new T.BoxGeometry(0.12,gh,len),mGlass);
+    g.position.set(cx,baseH+gh/2,cz);terminal.add(g);
+    // header beam
+    const head=horiz?box(len,1.0,0.5,0xd6d2c8):box(0.5,1.0,len,0xd6d2c8);
+    head.position.set(cx,glassTop+0.5,cz);terminal.add(head);
+    // vertical mullions every ~5 units
+    for(let d=-half;d<=half+0.01;d+=5){const m=new T.Mesh(new T.BoxGeometry(0.22,gh,0.22),mMull);if(horiz)m.position.set(cx+d,baseH+gh/2,cz);else m.position.set(cx,baseH+gh/2,cz+d);terminal.add(m);}
+  }
+
+  // back wall (solid-ish so we can mount the board), made of glass+parapet for the airy look
+  curtainWall(0,23,56,true);
   terminalSolids.push({x:0,z:23,rx:28,rz:2});
-  // side walls
-  const lw=box(0.8,9.5,46,0xe8e4dc,{roughness:0.75});lw.position.set(-28,4.75,0);terminal.add(lw);
-  const rw=box(0.8,9.5,46,0xe8e4dc,{roughness:0.75});rw.position.set(28,4.75,0);terminal.add(rw);
+  // side walls — glass
+  curtainWall(-28,0,46,false);
+  curtainWall(28,0,46,false);
   terminalSolids.push({x:-28,z:0,rx:2,rz:23},{x:28,z:0,rx:2,rz:23});
-  // front wall with glass doors (two halves with 7-unit gap)
-  const fw1=box(21,9.5,0.8,0xe8e4dc,{roughness:0.75});fw1.position.set(-17.5,4.75,-23);terminal.add(fw1);
-  const fw2=box(21,9.5,0.8,0xe8e4dc,{roughness:0.75});fw2.position.set(17.5,4.75,-23);terminal.add(fw2);
+  // front wall — two glass sections with the automatic-door gap in the middle
+  curtainWall(-17.5,-23,21,true);
+  curtainWall(17.5,-23,21,true);
   terminalSolids.push({x:-17.5,z:-23,rx:10.5,rz:2},{x:17.5,z:-23,rx:10.5,rz:2});
-  // glass door panels
-  const gd1=new T.Mesh(new T.BoxGeometry(3,3.5,0.15),mGlass);gd1.position.set(-2.5,2.0,-22.9);terminal.add(gd1);
-  const gd2=new T.Mesh(new T.BoxGeometry(3,3.5,0.15),mGlass);gd2.position.set(2.5,2.0,-22.9);terminal.add(gd2);
-  // glass wall panels flanking doors
-  const gw1=new T.Mesh(new T.BoxGeometry(7,5,0.15),mGlass);gw1.position.set(-10.5,2.5,-22.9);terminal.add(gw1);
-  const gw2=new T.Mesh(new T.BoxGeometry(7,5,0.15),mGlass);gw2.position.set(10.5,2.5,-22.9);terminal.add(gw2);
+  // sliding glass doors in the gap
+  const gd1=new T.Mesh(new T.BoxGeometry(3.2,3.6,0.16),mGlass);gd1.position.set(-2.6,1.8,-23);terminal.add(gd1);
+  const gd2=new T.Mesh(new T.BoxGeometry(3.2,3.6,0.16),mGlass);gd2.position.set(2.6,1.8,-23);terminal.add(gd2);
+  // door frame uprights
+  [-4.3,-0.9,0.9,4.3].forEach(x=>{const u=new T.Mesh(new T.BoxGeometry(0.3,3.9,0.3),mMull);u.position.set(x,1.95,-23);terminal.add(u);});
+  const lintel=box(9.2,0.6,0.4,0xd6d2c8);lintel.position.set(0,4.1,-23);terminal.add(lintel);
 
-  // arrivals sign on back wall
-  const sign=box(18,2.2,0.3,0x2a3a6a,{roughness:0.8});sign.position.set(0,7.2,22.5);terminal.add(sign);
-  const signTxt=box(16,1.4,0.1,0xfff5e0);signTxt.position.set(0,7.2,22.7);terminal.add(signTxt);
-
-  // baggage carousel — oval ring of dark boxes
+  // ---- baggage carousel ----
   for(let i=0;i<20;i++){const a=i/20*Math.PI*2;const rx2=9,rz2=5.5;const cx2=Math.cos(a)*rx2;const cz2=Math.sin(a)*rz2;const seg=box(2.8,0.5,1.4,0x555555,{roughness:0.7});seg.position.set(-6+cx2,0.35,9+cz2);seg.rotation.y=a+Math.PI/2;seg.castShadow=true;terminal.add(seg);}
-  // carousel collision — block the whole oval
+  // central hump
+  const hump=new T.Mesh(new T.CylinderGeometry(5.5,7,1.1,24),mat(0x6a6a6a,{roughness:0.6}));hump.position.set(-6,0.55,9);hump.castShadow=true;terminal.add(hump);
   terminalSolids.push({x:-6,z:9,rx:10,rz:6.5});
 
-  // benches along back and sides
+  // ---- benches ----
   const benchPositions=[[-14,19],[0,19],[14,19],[-22,8],[-22,-4],[-22,-14],[22,8],[22,-4],[22,-14]];
   benchPositions.forEach(p=>{
     const bn=box(3.2,0.5,0.9,0x8a6a44,{roughness:0.8});bn.position.set(p[0],0.55,p[1]);terminal.add(bn);
     const bk=box(3.2,0.8,0.18,0x7a5a38,{roughness:0.8});bk.position.set(p[0],1.15,p[1]+0.36);terminal.add(bk);
   });
-  // bench collision — all positions
   terminalSolids.push({x:-14,z:19,rx:2,rz:1.2},{x:0,z:19,rx:2,rz:1.2},{x:14,z:19,rx:2,rz:1.2});
   terminalSolids.push({x:-22,z:8,rx:1.2,rz:2},{x:-22,z:-4,rx:1.2,rz:2},{x:-22,z:-14,rx:1.2,rz:2});
   terminalSolids.push({x:22,z:8,rx:1.2,rz:2},{x:22,z:-4,rx:1.2,rz:2},{x:22,z:-14,rx:1.2,rz:2});
 
-  // pillars
-  [[-18,0],[18,0],[-18,-10],[18,-10]].forEach(p=>{const pl=cyl(0.6,0.6,9,0xd0ccc4,8);pl.position.set(p[0],4.5,p[1]);terminal.add(pl);terminalSolids.push({x:p[0],z:p[1],rx:1.2,rz:1.2});});
+  // ---- pillars to the ceiling ----
+  [[-18,0],[18,0],[-18,-10],[18,-10]].forEach(p=>{const pl=cyl(0.6,0.6,CEIL,0xd0ccc4,8);pl.position.set(p[0],CEIL/2,p[1]);terminal.add(pl);terminalSolids.push({x:p[0],z:p[1],rx:1.2,rz:1.2});});
 
-  // ---- canvas-texture signs ----
-  function mkTex(cw,ch,bg,lines){
-    const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
-    const ctx=cv.getContext('2d');
-    ctx.fillStyle=bg;ctx.fillRect(0,0,cw,ch);
-    lines.forEach(l=>{ctx.fillStyle=l.c||'#fff';ctx.font=(l.b?'bold ':'')+l.s+'px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(l.t,cw/2,l.y);});
-    const tx=new T.CanvasTexture(cv);tx.generateMipmaps=false;tx.minFilter=T.LinearFilter;return tx;
+  // ---- signs ----
+  // helper: hang a framed sign from the ceiling with two visible cables
+  function hangSign(w,h,tex,x,y,z,frameCol){
+    const grp=new T.Group();
+    const frame=box(w+0.4,h+0.4,0.2,frameCol);frame.position.set(0,0,-0.06);grp.add(frame);
+    const s=signMesh(w,h,tex);s.position.z=0.05;grp.add(s);
+    const back=signMesh(w,h,tex);back.position.z=-0.17;back.rotation.y=Math.PI;grp.add(back);
+    grp.position.set(x,y,z);terminal.add(grp);
+    // cables up to the ceiling
+    const top=y+h/2+0.2;const clen=CEIL-0.4-top;
+    [-w*0.32,w*0.32].forEach(dx=>{const c=cyl(0.04,0.04,clen,0x888c90,4);c.position.set(x+dx,top+clen/2,z);terminal.add(c);});
+    return grp;
   }
-  function signMesh(w,h,tex){return new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({map:tex,fog:false,side:T.DoubleSide}));}
 
-  // airport name — large banner hanging from ceiling, facing the player
-  const airTex=mkTex(512,80,'#003DA5',[{t:'   Aeropuerto de Jerez de la Frontera',s:34,y:40,b:true}]);
-  const airSign=signMesh(22,3.4,airTex);airSign.position.set(0,8.7,1);terminal.add(airSign);
-  // sign frame
-  const airFrame=box(22.6,3.8,0.15,0x001a5a);airFrame.position.set(0,8.7,0.9);terminal.add(airFrame);
-  // hanging rods
-  [-9,9].forEach(x=>{const r=cyl(0.06,0.06,0.6,0xa0a090,4);r.position.set(x,9.15,1);terminal.add(r);});
+  // airport name — big banner hung over the centre of the hall, double-sided
+  const airTex=mkTex(620,84,'#003DA5',[{t:'Aeropuerto de Jerez de la Frontera',s:36,y:42,b:true}]);
+  hangSign(22,3.0,airTex,0,9.6,-2,0x001a5a);
+  // ✈ glyph plates either side of the banner
+  const planeTex=mkTex(96,96,null,[{t:'✈',s:70,y:54,b:true,c:'#ffffff'}]);
+  [-12.6,12.6].forEach(x=>{const p=signMesh(2.4,2.4,planeTex);p.position.set(x,9.6,-1.9);terminal.add(p);});
 
-  // LLEGADAS / ARRIVALS — green sign above baggage carousel
-  const arrTex=mkTex(480,72,'#1d6b35',[
-    {t:'LLEGADAS   ARRIVALS',s:30,y:26,b:true},
-    {t:'Recogida de equipajes  ·  Baggage claim',s:18,y:54,b:false,c:'rgba(255,255,255,.8)'}
+  // LLEGADAS / ARRIVALS — green sign hung over the baggage carousel
+  const arrTex=mkTex(560,84,'#1d6b35',[
+    {t:'LLEGADAS · ARRIVALS',s:32,y:32,b:true},
+    {t:'Recogida de equipajes — Baggage claim',s:18,y:62,c:'rgba(255,255,255,.85)'}
   ]);
-  const arrSign=signMesh(13,2,arrTex);arrSign.position.set(-6,5.2,9);terminal.add(arrSign);
-  const arrFrame=box(13.4,2.2,0.12,0x144d26);arrFrame.position.set(-6,5.2,8.9);terminal.add(arrFrame);
+  hangSign(14,2.1,arrTex,-6,9.0,2.5,0x144d26);
 
-  // SALIDA / EXIT — green directional sign above glass doors
-  const exitTex=mkTex(360,72,'#1d6b35',[{t:'SALIDA    EXIT  >>',s:32,y:36,b:true}]);
-  const exitSign=signMesh(10,2,exitTex);exitSign.position.set(0,5.2,-18);terminal.add(exitSign);
-  const exitFrame=box(10.4,2.2,0.12,0x144d26);exitFrame.position.set(0,5.2,-18.1);terminal.add(exitFrame);
+  // SALIDA / EXIT — green sign mounted FLUSH on the lintel above the doors
+  const exitTex=mkTex(420,84,'#1d6b35',[{t:'SALIDA · EXIT  ➜',s:34,y:46,b:true}]);
+  const exitSign=signMesh(9,1.8,exitTex);exitSign.position.set(0,5.4,-22.7);terminal.add(exitSign);
+  const exitFrame=box(9.4,2.2,0.18,0x144d26);exitFrame.position.set(0,5.4,-22.85);terminal.add(exitFrame);
 
   // floor direction arrows pointing toward exit
-  const arrowTex=mkTex(64,128,'rgba(0,0,0,0)',[{t:'>>',s:72,y:64,b:true,c:'#e8d840'}]);
-  [-2,2].forEach(x=>{[-8,-14].forEach(z=>{const ar=signMesh(1.4,2.8,arrowTex);ar.rotation.x=-Math.PI/2;ar.rotation.z=-Math.PI/2;ar.position.set(x,0.01,z);terminal.add(ar);});});
+  const arrowTex=mkTex(64,128,null,[{t:'➜',s:64,y:64,b:true,c:'#e8c020'}]);
+  [-1.6,1.6].forEach(x=>{[-7,-13].forEach(z=>{const ar=signMesh(1.6,3.0,arrowTex);ar.rotation.x=-Math.PI/2;ar.rotation.z=Math.PI;ar.position.set(x,0.04,z);terminal.add(ar);});});
 
-  // departure board mounted on back wall
-  const brd=box(14,2.5,0.3,0x1a2040);brd.position.set(0,6.5,22.6);terminal.add(brd);
-  const brdTxt=box(12,1.8,0.1,0x223366);brdTxt.position.set(0,6.5,22.8);terminal.add(brdTxt);
+  // departure board mounted FLUSH on the back wall
+  const brd=box(14,2.6,0.25,0x12182e);brd.position.set(0,7.2,22.75);terminal.add(brd);
+  const brdTex=mkTex(560,108,'#12182e',[
+    {t:'DESTINO          PUERTA   ESTADO',s:20,y:24,b:true,c:'#ffd24a'},
+    {t:'Chiclana / Villa     —       LISTO',s:20,y:54,c:'#7CFC7C'},
+    {t:'La Barrosa           —     A TIEMPO',s:20,y:84,c:'#cfd6e6'}
+  ]);
+  const brdScr=signMesh(13,2.1,brdTex);brdScr.position.set(0,7.2,22.6);terminal.add(brdScr);
 
   // exit road — simple ground plane outside the doors
   const road=new T.Mesh(new T.PlaneGeometry(24,18),mat(0x4a4a4a,{roughness:0.9}));road.rotation.x=-Math.PI/2;road.position.set(0,-0.05,-32);road.receiveShadow=true;terminal.add(road);
