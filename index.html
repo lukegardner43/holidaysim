@@ -883,12 +883,37 @@ function buildTerminal(){
     return grp;
   }
 
-  // airport name — big banner hung over the centre of the hall, double-sided
-  const airTex=mkTex(620,84,'#003DA5',[{t:'Aeropuerto de Jerez de la Frontera',s:36,y:42,b:true}]);
-  hangSign(22,2.4,airTex,0,11.7,-2,0x001a5a);
-  // ✈ glyph plates either side of the banner
-  const planeTex=mkTex(96,96,null,[{t:'✈',s:70,y:54,b:true,c:'#ffffff'}]);
-  [-12.6,12.6].forEach(x=>{const p=signMesh(2.2,2.2,planeTex);p.position.set(x,11.7,-1.9);terminal.add(p);});
+  // airport name — mounted FLUSH on the LEFT glass wall, facing into the hall
+  const airTex=mkTex(680,96,'#003DA5',[{t:'✈  Aeropuerto de Jerez de la Frontera',s:34,y:52,b:true}]);
+  const airSign=signMesh(18,2.7,airTex);airSign.rotation.y=Math.PI/2;airSign.position.set(-27.6,6,0);terminal.add(airSign);
+  const airFrame=box(0.2,3.1,18.4,0x001a5a);airFrame.position.set(-27.78,6,0);terminal.add(airFrame);
+
+  // parked airliner visible beyond the glass on the RIGHT side
+  {
+    const plane=new T.Group();
+    const white=mat(0xf2f4f6,{roughness:0.5,metalness:0.1});
+    const accent=mat(0xc2562f,{roughness:0.6});
+    // fuselage (long axis along z so its side profile faces the terminal)
+    const fus=cyl(2.6,2.6,30,0xf2f4f6,20);fus.rotation.x=Math.PI/2;plane.add(fus);
+    const nose=new T.Mesh(new T.ConeGeometry(2.6,5,20),white.clone());nose.rotation.x=-Math.PI/2;nose.position.z=17.5;nose.castShadow=true;plane.add(nose);
+    const tail=new T.Mesh(new T.ConeGeometry(2.6,7,20),white.clone());tail.rotation.x=Math.PI/2;tail.position.z=-18.5;tail.castShadow=true;plane.add(tail);
+    // wings (span along x)
+    const wing=box(36,0.7,6,0xf2f4f6);wing.position.set(0,-0.8,1);plane.add(wing);
+    // tailplanes
+    const htail=box(14,0.5,3,0xf2f4f6);htail.position.set(0,1.4,-16);plane.add(htail);
+    // vertical stabiliser (accent colour)
+    const vfin=new T.Mesh(new T.BoxGeometry(0.5,6,5),accent);vfin.position.set(0,5.2,-15);plane.add(vfin);
+    // engines under the wings
+    [-8,8].forEach(x=>{const eng=cyl(1.1,1.1,5,0xdadce0,14);eng.rotation.x=Math.PI/2;eng.position.set(x,-2.2,2);plane.add(eng);
+      const intake=new T.Mesh(new T.CylinderGeometry(1.1,1.1,0.4,14),mat(0x2a2a2a));intake.rotation.x=Math.PI/2;intake.position.set(x,-2.2,4.6);plane.add(intake);});
+    // window strip + cockpit on the side facing the terminal (-x face)
+    const win=new T.Mesh(new T.BoxGeometry(0.12,0.85,24),new T.MeshBasicMaterial({color:0x1c2a3c,fog:false}));win.position.set(-2.55,0.5,-1);plane.add(win);
+    const cockpit=new T.Mesh(new T.BoxGeometry(0.12,1.0,2.2),new T.MeshBasicMaterial({color:0x101820,fog:false}));cockpit.position.set(-2.4,1.0,15);plane.add(cockpit);
+    // landing gear
+    [[0,15],[-3.5,-2],[3.5,-2]].forEach(g=>{const strut=cyl(0.2,0.2,3,0x999999,6);strut.position.set(g[0],-3.6,g[1]);plane.add(strut);
+      const wheel=new T.Mesh(new T.CylinderGeometry(0.6,0.6,0.5,12),mat(0x1a1a1a));wheel.rotation.z=Math.PI/2;wheel.position.set(g[0],-4.9,g[1]);plane.add(wheel);});
+    plane.position.set(52,5,0);plane.rotation.y=-0.18;terminal.add(plane);
+  }
 
   // LLEGADAS / ARRIVALS — green sign hung over the baggage carousel
   const arrTex=mkTex(560,84,'#1d6b35',[
