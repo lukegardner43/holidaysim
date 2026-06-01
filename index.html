@@ -164,9 +164,9 @@ function init(){
   const moonMesh=new T.Mesh(new T.SphereGeometry(65,16,16),new T.MeshBasicMaterial({color:0xf0f0e8,fog:false}));
   const moonGlow=new T.Mesh(new T.SphereGeometry(115,12,12),new T.MeshBasicMaterial({color:0xb8c8e8,transparent:true,opacity:0.20,fog:false}));
   moonMesh.add(moonGlow);
-  // dark shadow sphere offset to simulate lunar phase — positioned in update() based on day
-  const moonShadow=new T.Mesh(new T.SphereGeometry(68,16,16),new T.MeshBasicMaterial({color:0x04060f,fog:false}));
-  moonMesh.add(moonShadow);scene.userData.moonShadow=moonShadow;
+  // fixed crescent: slightly larger dark sphere offset to mask most of the moon face
+  const moonShadow=new T.Mesh(new T.SphereGeometry(68,16,16),new T.MeshBasicMaterial({color:0x04060f,fog:false,depthWrite:false}));
+  moonShadow.position.set(52,8,0);moonMesh.add(moonShadow);
   moonMesh.visible=false;scene.add(moonMesh);scene.userData.moonMesh=moonMesh;
   // star field
   {const n=2000,sp=new Float32Array(n*3);for(let i=0;i<n;i++){const th=Math.random()*Math.PI*2,v=Math.random(),ph=Math.acos(1-v),r=7600;sp[i*3]=r*Math.sin(ph)*Math.cos(th);sp[i*3+1]=r*Math.cos(ph);sp[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
@@ -914,8 +914,6 @@ function update(dt){
   if(scene.userData.stars)scene.userData.stars.position.copy(cam.position);
   if(scene.userData.sunMesh&&scene.userData.sunMesh.visible){const td=timeOfDay;if(td>=6&&td<20){const elev=Math.max(0,Math.sin((td-6)/12*Math.PI));const va=(18-td)/12*Math.PI/2;const hr=7400*Math.cos(elev*Math.PI/2);scene.userData.sunMesh.position.set(cam.position.x+Math.sin(va)*hr,cam.position.y+elev*7400,cam.position.z-Math.cos(va)*hr);}}
   if(scene.userData.moonMesh&&scene.userData.moonMesh.visible){const td=timeOfDay;const nt=td>=21?(td-21)/9:(td+3)/9;const melev=Math.sin(nt*Math.PI);const maz=(0.5-nt)*Math.PI;const mr=7200*Math.cos(melev*Math.PI/2);scene.userData.moonMesh.position.set(cam.position.x+Math.sin(maz)*mr,cam.position.y+melev*7200,cam.position.z-Math.cos(maz)*mr);}
-  // lunar phase: shadow sphere offset rotates over 30-day cycle; 0=new,0.5=full,1=new
-  if(scene.userData.moonShadow){const phase=(day%30)/30;const ang=phase*Math.PI*2;scene.userData.moonShadow.position.set(Math.cos(ang)*62,Math.sin(ang)*8,0);}
 
   // transition
   if(fadeDir===1){fade+=dt*2.2;if(fade>=1){fade=1;setScene(pending);fadeDir=-1;}}
