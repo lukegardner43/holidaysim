@@ -72,27 +72,13 @@
   .ipcloud{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.96),rgba(255,255,255,.5) 70%,rgba(255,255,255,0))}
   @keyframes ipfly{from{transform:translateX(64vw)}to{transform:translateX(-92vw)}}
   @keyframes wdrift{from{transform:translateX(64px)}to{transform:translateX(-92px)}}
-  /* Panel 1 — airplane cabin: curved fuselage tube with windows */
-  #ip1{background:#a9afb5}
-  .cab{position:absolute;inset:0;overflow:hidden;background:radial-gradient(125% 95% at 50% 45%,#f7f3eb 0%,#ece6da 44%,#cad0d6 72%,#9aa0a6 100%)}
-  .tring{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);border-radius:48% 48% 34% 34%/56% 56% 26% 26%}
-  .t1{width:152%;height:162%;background:#dad4c6}
-  .t2{width:122%;height:136%;background:#e6e0d3}
-  .t3{width:95%;height:113%;background:#f0ebe0}
-  .t4{width:71%;height:93%;background:#f7f3ea}
-  .t5{width:46%;height:72%;background:linear-gradient(180deg,#d3e9f7,#aacfe8);box-shadow:inset 0 6px 26px rgba(255,255,255,.7)}
-  .cab-trim{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:119%;height:133%;border-radius:48% 48% 34% 34%/56% 56% 26% 26%;border:5px solid #e8731f;opacity:.8;box-sizing:border-box}
-  .cwin{position:absolute;background:linear-gradient(180deg,#eaf7ff,#b8dcf2);border:4px solid #ded8c9;border-radius:46%;box-shadow:0 0 12px rgba(255,255,255,.55),inset 0 0 6px rgba(120,170,210,.4)}
-  .cab-floor{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:64%;height:36%;background:linear-gradient(180deg,#3a3e47,#24272f);clip-path:polygon(33% 0,67% 0,100% 100%,0 100%)}
-  .cab-aisle{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:24%;height:36%;background:#2b2e36;clip-path:polygon(40% 0,60% 0,84% 100%,16% 100%)}
-  .cab-aisle::before{content:'';position:absolute;inset:0;clip-path:polygon(40% 0,42% 0,18% 100%,16% 100%);background:#e8731f;opacity:.7}
-  .cab-aisle::after{content:'';position:absolute;inset:0;clip-path:polygon(58% 0,60% 0,84% 100%,82% 100%);background:#e8731f;opacity:.7}
-  .rowblk{position:absolute;display:flex;align-items:flex-end;justify-content:center}
-  .sb{position:relative;flex:1;height:100%;margin:0 2%;background:linear-gradient(180deg,#4a546e,#303c54);border-radius:30% 30% 10% 10%/38% 38% 8% 8%;box-shadow:inset 0 4px 0 rgba(255,255,255,.08),0 2px 6px rgba(0,0,0,.4)}
-  .sb::before{content:'';position:absolute;top:10%;left:20%;right:20%;height:22%;background:linear-gradient(180deg,rgba(120,130,155,.85),rgba(78,88,113,.85));border-radius:40%}
-  .sb::after{content:'';position:absolute;bottom:18%;left:18%;right:18%;height:14%;background:#e8731f;border-radius:3px;opacity:.9}
-  .cab-folk{position:absolute;left:50%;bottom:30%;transform:translateX(-50%);display:flex;align-items:flex-end;gap:1px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
-  .cab-folk span{line-height:.85}
+  /* Shot 1 is rendered in 3D (real cabin); these style its caption + chrome */
+  #cabvig{position:fixed;inset:0;z-index:29;pointer-events:none;box-shadow:inset 0 0 220px 60px rgba(0,0,0,.5)}
+  #cabcap{position:fixed;left:0;right:0;bottom:13.5%;z-index:31;text-align:center;pointer-events:none;opacity:0;transition:opacity .9s ease}
+  #cabcap.show{opacity:1}
+  #cabcap .c{font-family:'Fraunces';font-weight:900;font-size:clamp(1.3rem,4.6vw,2.1rem);color:#fff;text-shadow:0 3px 22px rgba(0,0,0,.85);padding:0 24px}
+  #cabcap .s{font-size:.72rem;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.82);margin-top:7px}
+  body.introplaying .hud,body.introplaying #pad,body.introplaying #act,body.introplaying #prompt,body.introplaying #toasts{display:none!important}
   /* Panel 2 — wing over the coast */
   #ip2{background:linear-gradient(180deg,#0f4ea0 0%,#2f86d8 46%,#86c6ee 72%,#cfeaf8 100%)}
   .p2sun{position:absolute;top:9%;right:17%;width:130px;height:130px;border-radius:50%;background:radial-gradient(closest-side,#fff,#ffe9a8 42%,rgba(255,220,150,0))}
@@ -136,42 +122,11 @@
 
 <!-- ===== airplane intro animation ===== -->
 <button id="skip-intro" class="hidden">skip ›</button>
+<!-- Shot 1 caption over the live 3D cabin -->
+<div id="cabvig" class="hidden"></div>
+<div id="cabcap"><div class="c">✈️ All aboard — Jerez in 2h 15m</div><div class="s">eight of us · four tiny passengers</div></div>
+
 <div id="intro" class="hidden">
-  <!-- Panel 1: airplane cabin — curved tube with windows -->
-  <div class="ip" id="ip1">
-    <div class="ip-scene">
-      <div class="cab">
-        <!-- concentric fuselage ribs form the curved tube receding to a bright far end -->
-        <div class="tring t1"></div>
-        <div class="tring t2"></div>
-        <div class="tring t3"></div>
-        <div class="tring t4"></div>
-        <div class="tring t5"></div>
-        <div class="cab-trim"></div>
-        <!-- oval windows along the curved walls -->
-        <div class="cwin" style="left:6%;top:40%;width:48px;height:36px"></div>
-        <div class="cwin" style="left:14%;top:36%;width:38px;height:28px"></div>
-        <div class="cwin" style="left:20.5%;top:33%;width:29px;height:21px"></div>
-        <div class="cwin" style="right:6%;top:40%;width:48px;height:36px"></div>
-        <div class="cwin" style="right:14%;top:36%;width:38px;height:28px"></div>
-        <div class="cwin" style="right:20.5%;top:33%;width:29px;height:21px"></div>
-        <!-- floor + aisle -->
-        <div class="cab-floor"></div>
-        <div class="cab-aisle"></div>
-        <!-- far seat row -->
-        <div class="rowblk" style="left:25%;bottom:21%;width:21%;height:13vh"><i class="sb"></i><i class="sb"></i></div>
-        <div class="rowblk" style="left:54%;bottom:21%;width:21%;height:13vh"><i class="sb"></i><i class="sb"></i></div>
-        <!-- the family in the aisle -->
-        <div class="cab-folk"><span style="font-size:24px">👶</span><span style="font-size:40px">👩</span><span style="font-size:30px">🧒</span></div>
-        <!-- near seat row (drawn last so it overlaps) -->
-        <div class="rowblk" style="left:12%;bottom:0;width:31%;height:23vh"><i class="sb"></i><i class="sb"></i></div>
-        <div class="rowblk" style="left:57%;bottom:0;width:31%;height:23vh"><i class="sb"></i><i class="sb"></i></div>
-      </div>
-    </div>
-    <div class="ip-vig"></div>
-    <div class="ip-cap">✈️ All aboard — Jerez in 2h 15m</div>
-    <div class="ip-sub">eight of us · four tiny passengers</div>
-  </div>
   <!-- Panel 2: wing over the coast -->
   <div class="ip" id="ip2">
     <div class="ip-scene">
@@ -252,7 +207,7 @@ const T = THREE;
 let scene, cam, renderer, sun, clockObj;
 let player, playerYaw=0;
 const tods=[];
-let world, plaza, kidsRoom, terminal;  // groups
+let world, plaza, kidsRoom, terminal, cabin;  // groups
 let tucked=false;
 let todsAsleep=false;
 let bedtimeWarned=false, wakeupWarned=false;
@@ -334,6 +289,7 @@ function init(){
   buildVillaWorld();
   buildPlaza();
   buildTerminal();
+  buildCabin();
   buildPlayer();
   buildTods();
   buildParentNPCs();
@@ -1043,6 +999,79 @@ function buildTerminal(){
   const dot=new T.Mesh(new T.CircleGeometry(0.5,16),new T.MeshBasicMaterial({color:0xe8a838}));dot.rotation.x=-Math.PI/2;dot.position.set(2,-0.01,-29.5);terminal.add(dot);
 }
 
+// ===================== AIRPLANE CABIN (3D intro scene) =====================
+function buildCabin(){
+  cabin=new T.Group();cabin.visible=false;scene.add(cabin);
+  const bas=c=>new T.MeshBasicMaterial({color:c,fog:false});
+  const Z0=2, ZN=30, CY=0.6; // first row z, last row z, tube centre height
+
+  // fuselage tube (interior, seen from inside)
+  const tube=new T.Mesh(new T.CylinderGeometry(4.5,4.5,46,30,1,true),new T.MeshBasicMaterial({color:0xf3f0e8,side:T.BackSide,fog:false}));
+  tube.rotation.x=Math.PI/2;tube.position.set(0,CY,15);cabin.add(tube);
+  // ceiling light cove + centre strip
+  const cove=new T.Mesh(new T.BoxGeometry(2.2,0.12,44),bas(0xfffdf6));cove.position.set(0,4.4,15);cabin.add(cove);
+  // front & rear bulkheads cap the tube so no void shows
+  const bhF=new T.Mesh(new T.CircleGeometry(4.5,30),bas(0xe9e3d6));bhF.position.set(0,CY,-9);cabin.add(bhF);
+  const bhR=new T.Mesh(new T.CircleGeometry(4.5,30),bas(0xdfd9cc));bhR.position.set(0,CY,39);bhR.rotation.y=Math.PI;cabin.add(bhR);
+  // floor + dark aisle runner with orange edge lines (easyJet)
+  const floor=new T.Mesh(new T.BoxGeometry(8.4,0.2,48),bas(0x4a4f59));floor.position.set(0,-2.3,15);cabin.add(floor);
+  const aisle=new T.Mesh(new T.BoxGeometry(1.7,0.22,48),bas(0x2b2e36));aisle.position.set(0,-2.24,15);cabin.add(aisle);
+  [-0.92,0.92].forEach(x=>{const l=new T.Mesh(new T.BoxGeometry(0.12,0.24,48),bas(0xe8731f));l.position.set(x,-2.22,15);cabin.add(l);});
+
+  // overhead bins + orange trim line down each side
+  [-1,1].forEach(s=>{
+    const bin=new T.Mesh(new T.BoxGeometry(1.5,1.05,44),bas(0xeae4d7));bin.position.set(s*2.75,2.45,15);cabin.add(bin);
+    const lip=new T.Mesh(new T.BoxGeometry(1.5,0.18,44),bas(0xd8d1c0));lip.position.set(s*2.75,1.9,15);cabin.add(lip);
+    const trim=new T.Mesh(new T.PlaneGeometry(44,0.18),bas(0xe8731f));trim.position.set(s*4.46,1.55,15);trim.rotation.y=s>0?-Math.PI/2:Math.PI/2;cabin.add(trim);
+  });
+
+  // windows down both curved walls (bright glowing panes in cream frames)
+  for(let z=Z0-1;z<=ZN+1;z+=3.1){[-1,1].forEach(s=>{
+    const fr=new T.Mesh(new T.PlaneGeometry(0.95,1.35),bas(0xe9e3d6));fr.position.set(s*4.46,0.75,z);fr.rotation.y=s>0?-Math.PI/2:Math.PI/2;cabin.add(fr);
+    const pane=new T.Mesh(new T.PlaneGeometry(0.62,1.0),bas(0xdff2ff));pane.position.set(s*4.43,0.75,z);pane.rotation.y=fr.rotation.y;cabin.add(pane);
+  });}
+
+  // ---- seats + seated people (reusing the game's character look) ----
+  const seatMat=bas(0x39455e), seatTop=bas(0x4a587a), pocket=bas(0xe8731f);
+  function makeSeat(x,z){
+    const g=new T.Group();
+    const cush=new T.Mesh(new T.BoxGeometry(0.82,0.22,0.8),bas(0xe8731f));cush.position.set(0,-1.55,0);g.add(cush);
+    const back=new T.Mesh(new T.BoxGeometry(0.82,1.5,0.2),seatMat);back.position.set(0,-0.75,0.4);g.add(back);
+    const hr=new T.Mesh(new T.BoxGeometry(0.62,0.34,0.22),seatTop);hr.position.set(0,0.05,0.4);g.add(hr);
+    const pk=new T.Mesh(new T.PlaneGeometry(0.5,0.34),pocket);pk.position.set(0,-0.55,0.31);g.add(pk);
+    g.position.set(x,0,z);return g;
+  }
+  // a passenger in the game's model style (cylinder body, skin head, sun hat)
+  function rider(bodyCol,child){
+    const g=new T.Group();
+    const r=child?0.3:0.42, bh=child?0.6:1.0, hr=child?0.3:0.42;
+    const body=new T.Mesh(new T.CylinderGeometry(r*0.9,r,bh,12),bas(bodyCol));body.position.y=bh/2;g.add(body);
+    const head=new T.Mesh(new T.SphereGeometry(hr,14,14),bas(0xf6d7b0));head.position.y=bh+hr*0.78;g.add(head);
+    const brim=new T.Mesh(new T.CylinderGeometry(hr*1.7,hr*1.7,0.07,14),bas(0xe8a838));brim.position.y=bh+hr*1.42;g.add(brim);
+    const top=new T.Mesh(new T.CylinderGeometry(hr*0.92,hr,0.26,14),bas(0xf9d56e));top.position.y=bh+hr*1.42+0.16;g.add(top);
+    return g;
+  }
+  const todCols=[0xe8a838,0xc2562f,0x6c7a4a,0x7a5bb0];
+  const adultCols=[0x554596,0xc2562f,0x2f6f9e,0xb0506f,0x3f7d6e,0x6c7a4a,0x8a5a30,0x554596];
+  const seatX=[1.05,1.97,2.9]; // distances from aisle for the 3 seats each side
+  let tIdx=0, aIdx=0;
+  for(let r=0;r<10;r++){
+    const z=Z0+r*3;
+    [-1,1].forEach(side=>{
+      for(let s=0;s<3;s++){
+        const x=side*seatX[s];
+        cabin.add(makeSeat(x,z));
+        let occ=null;
+        if(r===0&&s<2){ occ=rider(todCols[tIdx++%4],true); }            // front rows: the four toddlers
+        else if(r===0&&s===2){ occ=rider(adultCols[aIdx++%adultCols.length],false); } // parents on the aisle ends
+        else if(r===1){ occ=rider(adultCols[aIdx++%adultCols.length],false); }
+        else if(Math.random()<0.55){ occ=rider(adultCols[(r*3+s+aIdx++)%adultCols.length],false); }
+        if(occ){ occ.position.set(x,-1.25,z-0.05); cabin.add(occ); }     // seated, facing the camera (-z)
+      }
+    });
+  }
+}
+
 function buildPlayer(){
   player=new T.Group();
   const body=cyl(0.55,0.6,1.5,0x554596,14);body.position.y=0.9;player.add(body);
@@ -1065,24 +1094,28 @@ function buildTods(){const cs=[0xe8a838,0xc2562f,0x6c7a4a,0x7a5bb0];cs.forEach((
 function playIntro(){
   started=true;
   $('title').classList.add('hidden');
-  const intro=$('intro');
+  document.body.classList.add('introplaying');
+  const intro=$('intro'),cabcap=$('cabcap'),cabvig=$('cabvig');
   const skip=$('skip-intro');
-  intro.classList.remove('hidden');
   skip.classList.remove('hidden');
-  const p1=$('ip1'),p2=$('ip2'),p3=$('ip3');
+  const p2=$('ip2'),p3=$('ip3');
   const timers=[];
   function endIntro(){
     timers.forEach(clearTimeout);
-    intro.classList.add('hidden');
+    intro.classList.add('hidden');cabcap.classList.remove('show');cabvig.classList.add('hidden');
     skip.classList.add('hidden');
+    document.body.classList.remove('introplaying');
     setScene('terminal');
   }
   skip.onclick=endIntro;
-  // panel 1 fades in immediately
-  requestAnimationFrame(()=>p1.classList.add('show'));
-  timers.push(setTimeout(()=>{p1.classList.remove('show');p1.classList.add('gone');requestAnimationFrame(()=>p2.classList.add('show'));},4500));
-  timers.push(setTimeout(()=>{p2.classList.remove('show');p2.classList.add('gone');requestAnimationFrame(()=>p3.classList.add('show'));},9000));
-  timers.push(setTimeout(endIntro,13500));
+  // shot 1 — real 3D cabin with the game's people; caption overlaid
+  setScene('cabin');
+  cabvig.classList.remove('hidden');
+  requestAnimationFrame(()=>cabcap.classList.add('show'));
+  // shot 2 — wing (CSS), shot 3 — landing (CSS)
+  timers.push(setTimeout(()=>{cabcap.classList.remove('show');cabvig.classList.add('hidden');intro.classList.remove('hidden');requestAnimationFrame(()=>p2.classList.add('show'));},4800));
+  timers.push(setTimeout(()=>{p2.classList.remove('show');p2.classList.add('gone');requestAnimationFrame(()=>p3.classList.add('show'));},9300));
+  timers.push(setTimeout(endIntro,13800));
 }
 
 // ===================== INPUT =====================
@@ -1220,7 +1253,15 @@ function collide(){
     }
   }
 }
+function updateCabin(){
+  const t=(performance.now()-(cabin.userData.t0||performance.now()))/1000;
+  const p=Math.min(1,t/6.5), ease=p*p*(3-2*p);
+  // slow dolly down the aisle from a front 3/4 angle, gentle float
+  cam.position.set(1.0-1.3*ease, 0.62+0.12*Math.sin(t*0.6), -3.0+2.6*ease);
+  cam.lookAt(-0.25,-0.05,11);
+}
 function update(dt){
+  if(scn==='cabin'){updateCabin();return;}
   // input vector
   let ix=mv.x,iz=mv.z;
   if(keys['a']||keys['arrowleft'])ix=-1;if(keys['d']||keys['arrowright'])ix=1;
@@ -1389,7 +1430,10 @@ function updateItinerary(){
 function setScene(to){
   const from=scn;
   scn=to;
-  world.visible=(to==='villa');plaza.visible=(to==='plaza');terminal.visible=(to==='terminal');if(kidsRoom)kidsRoom.visible=false;
+  world.visible=(to==='villa');plaza.visible=(to==='plaza');terminal.visible=(to==='terminal');cabin.visible=(to==='cabin');if(kidsRoom)kidsRoom.visible=false;
+  player.visible=(to!=='cabin');
+  if(to==='cabin'){cabin.userData.t0=performance.now();cam.fov=62;cam.updateProjectionMatrix();tods.forEach(t=>t.grp.visible=false);return;}
+  else{cam.fov=55;cam.updateProjectionMatrix();}
   if(to==='terminal'){timeOfDay=10.5;setTimeout(()=>toast('🚗 Your rental car is waiting outside — head for the exit!'),600);}
   else if(to==='villa'&&from==='terminal'){timeOfDay=18.0;}
   if(to==='plaza'){player.position.set(0,0,24);camYaw=Math.PI;}
