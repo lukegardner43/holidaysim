@@ -993,54 +993,37 @@ function buildCabin(){
 
 function buildWingview(){
   wingview=new T.Group();wingview.visible=false;scene.add(wingview);
-  // Sky background — applied via scene.background each frame (most reliable method)
-  // Three.js flipY: canvas y=0 → screen bottom, canvas y=max → screen top
+  // Sky gradient background
   const skc=document.createElement('canvas');skc.width=2;skc.height=256;
   const sc=skc.getContext('2d');const sg=sc.createLinearGradient(0,0,0,256);
-  sg.addColorStop(0,'#a4dcf6');   // hazy horizon → screen bottom
-  sg.addColorStop(0.42,'#52aedc');
-  sg.addColorStop(1,'#0b3a8c');   // deep sky → screen top
+  sg.addColorStop(0,'#9cd8f5');sg.addColorStop(0.5,'#4aaad5');sg.addColorStop(1,'#0a3a8c');
   sc.fillStyle=sg;sc.fillRect(0,0,2,256);
   wingview.userData.skyBg=new T.CanvasTexture(skc);
-  const dbl=c=>new T.MeshBasicMaterial({color:c,fog:false,side:T.DoubleSide});
-  // Sun — far forward, upper right
-  const sC=new T.Mesh(new T.CircleGeometry(16,20),dbl(0xfffde0));sC.position.set(50,28,200);wingview.add(sC);
-  const sH=new T.Mesh(new T.CircleGeometry(32,20),new T.MeshBasicMaterial({color:0xfff9b0,fog:false,transparent:true,opacity:0.18,side:T.DoubleSide}));sH.position.set(50,28,198);wingview.add(sH);
-  // Flat cloud puffs — SphereGeometry scaled thin, at POSITIVE z (in front of camera)
-  [[18,14,72],[-5,17,105],[32,10,140]].forEach(([x,y,z])=>{
-    const c=new T.Mesh(new T.SphereGeometry(14,10,6),new T.MeshBasicMaterial({color:0xf6f8fb,fog:false,transparent:true,opacity:0.82,side:T.DoubleSide}));
-    c.scale.set(1,0.30,0.90);c.position.set(x,y,z);wingview.add(c);
+  const bas=c=>new T.MeshBasicMaterial({color:c,fog:false});
+  // Cloud puffs — flattened spheres at various depths for sky depth
+  const clM=new T.MeshBasicMaterial({color:0xf4f7fa,fog:false,transparent:true,opacity:0.88});
+  [[80,32,200,32],[-55,44,340,48],[22,52,420,55],[-28,18,100,18]].forEach(([x,y,z,r])=>{
+    const c=new T.Mesh(new T.SphereGeometry(r,10,6),clM.clone());
+    c.scale.set(1,0.28,0.9);c.position.set(x,y,z);wingview.add(c);
   });
-  // === Wing — single quad using BufferGeometry (proper tapered swept surface) ===
-  // Viewed from inside the cabin looking out: wing sweeps right and aft
-  const wv=new Float32Array([
-    0.5,-0.5, 3.5,  // root leading edge
-    0.5,-0.5, 6.5,  // root trailing edge
-    5.2,-1.5,10.5,  // tip leading edge (swept back)
-    5.2,-1.5,13.5,  // tip trailing edge
-  ]);
-  const wGeo=new T.BufferGeometry();
-  wGeo.setAttribute('position',new T.BufferAttribute(wv,3));
-  wGeo.setIndex([0,2,1, 1,2,3]);
-  wGeo.computeVertexNormals();
-  wingview.add(new T.Mesh(wGeo,dbl(0xe2e6eb)));
-  // Orange livery stripe — second quad overlaid on wing surface
-  const sv=new Float32Array([
-    0.5,-0.46,4.2,  0.5,-0.46,5.0,
-    4.4,-1.44,9.5,  4.4,-1.44,10.3,
-  ]);
-  const sGeo=new T.BufferGeometry();
-  sGeo.setAttribute('position',new T.BufferAttribute(sv,3));
-  sGeo.setIndex([0,2,1, 1,2,3]);
-  wingview.add(new T.Mesh(sGeo,dbl(0xd45820)));
-  // Engine nacelle below mid-span
-  const nac=new T.Mesh(new T.CylinderGeometry(0.58,0.62,2.8,12),new T.MeshBasicMaterial({color:0xb0b8c0,fog:false}));
-  nac.rotation.z=Math.PI/2;nac.position.set(2.4,-2.1,6.8);wingview.add(nac);
-  const fanF=new T.Mesh(new T.CircleGeometry(0.54,12),new T.MeshBasicMaterial({color:0x1c2028,fog:false}));
-  fanF.rotation.y=Math.PI/2;fanF.position.set(1.1,-2.1,6.8);wingview.add(fanF);
-  // Winglet
-  const wlt=new T.Mesh(new T.BoxGeometry(0.22,1.1,1.4),dbl(0xd8dde5));
-  wlt.position.set(5.2,-0.95,11.8);wlt.rotation.z=0.12;wingview.add(wlt);
+  // Full aircraft in cruise (no landing gear) — starts far upper-right, flies past
+  const ac=new T.Group();
+  const acM=bas(0xe8ecf1),acA=bas(0xc2562f),nacM=bas(0xa8b0b8);
+  const fus=new T.Mesh(new T.CylinderGeometry(1.9,1.9,24,14),acM);fus.rotation.x=Math.PI/2;ac.add(fus);
+  const nose=new T.Mesh(new T.SphereGeometry(1.9,14,8),acM);nose.scale.z=1.6;nose.position.z=-13;ac.add(nose);
+  const tailc=new T.Mesh(new T.ConeGeometry(1.9,6,14),acM);tailc.rotation.x=Math.PI/2;tailc.position.z=14;ac.add(tailc);
+  const wng=new T.Mesh(new T.BoxGeometry(34,0.45,5.5),acM);wng.position.set(0,-0.3,1);ac.add(wng);
+  [-1,1].forEach(s=>{const sw=new T.Mesh(new T.BoxGeometry(14,0.42,1.4),acM);sw.rotation.y=s*0.3;sw.position.set(s*9.5,-0.28,-0.2);ac.add(sw);});
+  const fin=new T.Mesh(new T.BoxGeometry(0.45,5.5,4.2),acA);fin.position.set(0,3.8,12);ac.add(fin);
+  const stab=new T.Mesh(new T.BoxGeometry(14,0.38,3.2),acM);stab.position.set(0,0.8,11.5);ac.add(stab);
+  [-8,8].forEach(ex=>{const eng=new T.Mesh(new T.CylinderGeometry(1.15,1.25,5,14),nacM);eng.rotation.z=Math.PI/2;eng.position.set(ex,-1.6,2);ac.add(eng);const fanF=new T.Mesh(new T.CircleGeometry(1.1,14),bas(0x1a1e24));fanF.rotation.y=ex>0?-Math.PI/2:Math.PI/2;fanF.position.set(ex>0?ex-3.2:ex+3.2,-1.6,2);ac.add(fanF);});
+  const winS=new T.Mesh(new T.BoxGeometry(18,0.55,0.12),bas(0x88c8e8));winS.position.set(0,0.6,-0.2);ac.add(winS);
+  const lstr=new T.Mesh(new T.BoxGeometry(22,0.7,0.12),acA);lstr.position.set(0,-0.5,-0.16);ac.add(lstr);
+  // Oriented to face its direction of travel (~14° left yaw, ~4° nose-down)
+  ac.rotation.set(0.07,0.22,0);
+  ac.position.set(50,25,300);
+  wingview.add(ac);
+  wingview.userData.aircraft=ac;
   wingview.userData.t0=null;
 }
 
@@ -1294,10 +1277,11 @@ function updateCabin(){
 function updateWingview(){
   const t=(performance.now()-(wingview.userData.t0||performance.now()))/1000;
   scene.background=wingview.userData.skyBg;
-  // Camera: gentle float, looking slightly right and slightly down
-  // lookAt(2,-1.5,20): ~4° down, ~6° right — sky fills top 60%, wing root at (0.5,-0.5,3.5) in lower half
-  cam.position.set(0.03*Math.sin(t*0.4), 0.02*Math.sin(t*0.55), 0);
-  cam.lookAt(2+0.03*Math.sin(t*0.3), -1.5+0.02*Math.sin(t*0.4), 20);
+  const p=Math.min(1,t/4.5),ease=p*p*(3-2*p);
+  const ac=wingview.userData.aircraft;
+  if(ac){ac.position.set(50-55*ease,25-18*ease,300-240*ease);}
+  cam.position.set(0,0,0);
+  cam.lookAt(0,3,80);
 }
 function updateLanding(){
   const t=(performance.now()-(landing.userData.t0||performance.now()))/1000;
