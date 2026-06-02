@@ -72,25 +72,26 @@
   .ipcloud{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.96),rgba(255,255,255,.5) 70%,rgba(255,255,255,0))}
   @keyframes ipfly{from{transform:translateX(64vw)}to{transform:translateX(-92vw)}}
   @keyframes wdrift{from{transform:translateX(64px)}to{transform:translateX(-92px)}}
-  /* Panel 1 — cabin interior, one-point perspective down the aisle */
-  #ip1{background:#0e1117}
-  .cab{position:absolute;inset:0;overflow:hidden;background:linear-gradient(180deg,#efe8db 0%,#e2dacb 26%,#cdd0d5 46%,#3a3d45 70%,#22242b 100%)}
-  .cab-ceil{position:absolute;left:0;top:0;width:100%;height:48%;background:linear-gradient(180deg,#f4efe4,#e6dfd0);clip-path:polygon(0 0,100% 0,63% 100%,37% 100%)}
-  .cab-ceil2{position:absolute;left:50%;top:0;transform:translateX(-50%);width:78%;height:42%;background:linear-gradient(180deg,#f9f5ec,#eee7d8);clip-path:polygon(0 0,100% 0,60% 100%,40% 100%)}
-  .cab-light{position:absolute;left:50%;top:0;transform:translateX(-50%);width:32%;height:40%;background:linear-gradient(180deg,rgba(255,250,235,.9),rgba(255,250,235,0));clip-path:polygon(46% 0,54% 0,58% 100%,42% 100%)}
-  .cab-trim{position:absolute;top:0;height:42%;width:52%}
-  .cab-trim.l{left:0;clip-path:polygon(0 0,5% 0,100% 100%,95% 100%);background:linear-gradient(135deg,#f0613a,#e8731f)}
-  .cab-trim.r{right:0;clip-path:polygon(95% 0,100% 0,5% 100%,0 100%);background:linear-gradient(225deg,#f0613a,#e8731f)}
-  .cab-floor{position:absolute;left:0;bottom:0;width:100%;height:60%;background:linear-gradient(180deg,#3c4049,#22242b);clip-path:polygon(37% 0,63% 0,100% 100%,0 100%)}
-  .cab-aisle{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:34%;height:60%;background:linear-gradient(180deg,#34373f,#191b21);clip-path:polygon(44% 0,56% 0,88% 100%,12% 100%)}
-  .cab-aisle::before{content:'';position:absolute;inset:0;clip-path:polygon(44% 0,46% 0,16% 100%,12% 100%);background:#e8731f;opacity:.7}
-  .cab-aisle::after{content:'';position:absolute;inset:0;clip-path:polygon(54% 0,56% 0,88% 100%,84% 100%);background:#e8731f;opacity:.7}
-  .cwin{position:absolute;background:linear-gradient(180deg,#eaf6ff,#bfe0f5);border-radius:42%;box-shadow:0 0 0 3px rgba(120,112,92,.55),0 0 16px rgba(255,255,255,.6)}
+  /* Panel 1 — airplane cabin: curved fuselage tube with windows */
+  #ip1{background:#a9afb5}
+  .cab{position:absolute;inset:0;overflow:hidden;background:radial-gradient(125% 95% at 50% 45%,#f7f3eb 0%,#ece6da 44%,#cad0d6 72%,#9aa0a6 100%)}
+  .tring{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);border-radius:48% 48% 34% 34%/56% 56% 26% 26%}
+  .t1{width:152%;height:162%;background:#dad4c6}
+  .t2{width:122%;height:136%;background:#e6e0d3}
+  .t3{width:95%;height:113%;background:#f0ebe0}
+  .t4{width:71%;height:93%;background:#f7f3ea}
+  .t5{width:46%;height:72%;background:linear-gradient(180deg,#d3e9f7,#aacfe8);box-shadow:inset 0 6px 26px rgba(255,255,255,.7)}
+  .cab-trim{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:119%;height:133%;border-radius:48% 48% 34% 34%/56% 56% 26% 26%;border:5px solid #e8731f;opacity:.8;box-sizing:border-box}
+  .cwin{position:absolute;background:linear-gradient(180deg,#eaf7ff,#b8dcf2);border:4px solid #ded8c9;border-radius:46%;box-shadow:0 0 12px rgba(255,255,255,.55),inset 0 0 6px rgba(120,170,210,.4)}
+  .cab-floor{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:64%;height:36%;background:linear-gradient(180deg,#3a3e47,#24272f);clip-path:polygon(33% 0,67% 0,100% 100%,0 100%)}
+  .cab-aisle{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:24%;height:36%;background:#2b2e36;clip-path:polygon(40% 0,60% 0,84% 100%,16% 100%)}
+  .cab-aisle::before{content:'';position:absolute;inset:0;clip-path:polygon(40% 0,42% 0,18% 100%,16% 100%);background:#e8731f;opacity:.7}
+  .cab-aisle::after{content:'';position:absolute;inset:0;clip-path:polygon(58% 0,60% 0,84% 100%,82% 100%);background:#e8731f;opacity:.7}
   .rowblk{position:absolute;display:flex;align-items:flex-end;justify-content:center}
-  .sb{flex:1;height:100%;margin:0 1.5%;position:relative;background:linear-gradient(180deg,#3a4050 0%,#2a2f3b 52%,#1f232d 100%);border-radius:26% 26% 8% 8%/34% 34% 6% 6%;box-shadow:inset 0 4px 0 rgba(255,255,255,.07),0 2px 7px rgba(0,0,0,.45)}
-  .sb::before{content:'';position:absolute;top:9%;left:19%;right:19%;height:20%;background:linear-gradient(180deg,rgba(74,80,97,.75),rgba(51,57,70,.75));border-radius:40%}
-  .sb::after{content:'';position:absolute;bottom:16%;left:16%;right:16%;height:13%;background:#e8731f;border-radius:3px;opacity:.9}
-  .cab-folk{position:absolute;left:50%;bottom:20.5%;transform:translateX(-50%);display:flex;align-items:flex-end;gap:1px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.45))}
+  .sb{position:relative;flex:1;height:100%;margin:0 2%;background:linear-gradient(180deg,#4a546e,#303c54);border-radius:30% 30% 10% 10%/38% 38% 8% 8%;box-shadow:inset 0 4px 0 rgba(255,255,255,.08),0 2px 6px rgba(0,0,0,.4)}
+  .sb::before{content:'';position:absolute;top:10%;left:20%;right:20%;height:22%;background:linear-gradient(180deg,rgba(120,130,155,.85),rgba(78,88,113,.85));border-radius:40%}
+  .sb::after{content:'';position:absolute;bottom:18%;left:18%;right:18%;height:14%;background:#e8731f;border-radius:3px;opacity:.9}
+  .cab-folk{position:absolute;left:50%;bottom:30%;transform:translateX(-50%);display:flex;align-items:flex-end;gap:1px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
   .cab-folk span{line-height:.85}
   /* Panel 2 — wing over the coast */
   #ip2{background:linear-gradient(180deg,#0f4ea0 0%,#2f86d8 46%,#86c6ee 72%,#cfeaf8 100%)}
@@ -104,18 +105,28 @@
   .p2wing .eng{position:absolute;right:16%;bottom:-24%;width:20%;height:52%;background:linear-gradient(180deg,#d6dae0,#969ca4);border-radius:46% 46% 40% 40%}
   .p2wing .eng::after{content:'';position:absolute;right:8%;top:18%;width:24%;height:64%;background:#20242a;border-radius:50%}
   /* Panel 3 — landing approach */
-  #ip3{background:linear-gradient(180deg,#5fb0e6 0%,#a3d4ef 38%,#dfeccb 56%,#bfae82 100%)}
-  .p3field{position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(180deg,#aebd72,#94a35a)}
-  .p3town{position:absolute;left:0;right:0;bottom:44%;height:8%;display:flex;align-items:flex-end;justify-content:center;gap:9px;opacity:.5}
-  .p3town i{display:block;width:4.5%;height:55%;background:#8b97a0;border-radius:1px}
+  #ip3{background:linear-gradient(180deg,#5fb0e6 0%,#a3d4ef 38%,#cfe6ef 49%,#b3c483 51%,#94a35a 100%)}
+  /* horizon sits at 52% from the top; the runway converges exactly to it */
+  .p3field{position:absolute;left:0;right:0;bottom:0;height:48%;background:linear-gradient(180deg,#aec072 0%,#9aa85f 60%,#8a9852 100%)}
+  .p3town{position:absolute;left:0;right:0;bottom:48%;height:7%;display:flex;align-items:flex-end;justify-content:center;gap:9px;opacity:.45}
+  .p3town i{display:block;width:4%;height:55%;background:#8b97a0;border-radius:1px}
   .p3town i:nth-child(2){height:100%}.p3town i:nth-child(3){height:42%}.p3town i:nth-child(4){height:88%}.p3town i:nth-child(5){height:64%}
-  .p3rwy{position:absolute;left:50%;bottom:0;width:66%;height:60%;transform:translateX(-50%);background:linear-gradient(180deg,#6c7079,#3a3d44);clip-path:polygon(43% 0,57% 0,100% 100%,0 100%);overflow:hidden}
-  .p3thr{position:absolute;left:50%;top:3%;transform:translateX(-50%);width:30%;height:3%;background:repeating-linear-gradient(90deg,#eee 0 5px,transparent 5px 10px)}
+  .p3rwy{position:absolute;left:50%;bottom:0;width:64%;height:48%;transform:translateX(-50%);background:linear-gradient(180deg,#787c84,#3a3d44);clip-path:polygon(49% 0,51% 0,100% 100%,0 100%);overflow:hidden}
+  .p3thr{position:absolute;left:50%;top:7%;transform:translateX(-50%);width:60%;height:2.5%;background:repeating-linear-gradient(90deg,#eee 0 5px,transparent 5px 10px)}
   .p3dash{position:absolute;left:50%;width:3%;background:#f3f1e6;border-radius:2px;transform:translateX(-50%)}
-  @keyframes rldash{0%{top:3%;height:3%;opacity:.2}70%{opacity:1}100%{top:104%;height:13%;opacity:0}}
+  @keyframes rldash{0%{top:2%;height:2%;opacity:.15}70%{opacity:1}100%{top:104%;height:14%;opacity:0}}
   .p3rabbit{position:absolute;left:50%;bottom:1.5%;transform:translateX(-50%);display:flex;gap:11px;z-index:3}
   .p3rabbit i{width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 10px #fff,0 0 20px #cfe8ff;opacity:.2;animation:p3seq 1.1s linear infinite}
   @keyframes p3seq{0%,70%,100%{opacity:.2}35%{opacity:1}}
+  /* landing aircraft (rear view) descending in and rolling toward us */
+  .p3plane{position:absolute;left:50%;top:49%;width:88px;height:60px;transform:translateX(-50%) scale(.26);opacity:0;z-index:4;filter:drop-shadow(0 7px 7px rgba(0,0,0,.35))}
+  .ip.show .p3plane{animation:p3land 3.6s cubic-bezier(.3,.55,.5,1) .35s forwards}
+  .p3plane i{position:absolute;left:50%;transform:translateX(-50%)}
+  .p3plane .pw{top:52%;width:88px;height:17px;background:linear-gradient(180deg,#f1f4f7,#ccd2d9);clip-path:polygon(0 100%,50% 0,100% 100%)}
+  .p3plane .ph{top:12%;width:42px;height:10px;background:#e7ebef;clip-path:polygon(0 100%,50% 0,100% 100%)}
+  .p3plane .pf{top:16%;width:14px;height:64%;background:linear-gradient(90deg,#c9ced5,#f3f5f8 50%,#c9ced5);border-radius:8px 8px 5px 5px}
+  .p3plane .pt{top:4%;width:6px;height:26%;background:#c2562f;border-radius:3px}
+  @keyframes p3land{0%{top:49%;transform:translateX(-50%) scale(.26);opacity:0}14%{opacity:1}60%{top:63%;transform:translateX(-50%) scale(.56)}100%{top:80%;transform:translateX(-50%) scale(1)}}
   #skip-intro{position:fixed;bottom:28px;right:24px;z-index:35;background:rgba(0,0,0,.45);border:1.5px solid rgba(255,255,255,.4);color:rgba(255,255,255,.85);font-family:'Karla';font-weight:800;font-size:.82rem;letter-spacing:.08em;padding:9px 18px;border-radius:30px;cursor:pointer;backdrop-filter:blur(6px);transition:background .15s}
   #skip-intro:active{background:rgba(255,255,255,.2)}
 </style>
@@ -126,40 +137,35 @@
 <!-- ===== airplane intro animation ===== -->
 <button id="skip-intro" class="hidden">skip ›</button>
 <div id="intro" class="hidden">
-  <!-- Panel 1: cabin interior (perspective down the aisle) -->
+  <!-- Panel 1: airplane cabin — curved tube with windows -->
   <div class="ip" id="ip1">
     <div class="ip-scene">
       <div class="cab">
-        <div class="cab-ceil"></div>
-        <div class="cab-ceil2"></div>
-        <div class="cab-light"></div>
-        <div class="cab-trim l"></div>
-        <div class="cab-trim r"></div>
+        <!-- concentric fuselage ribs form the curved tube receding to a bright far end -->
+        <div class="tring t1"></div>
+        <div class="tring t2"></div>
+        <div class="tring t3"></div>
+        <div class="tring t4"></div>
+        <div class="tring t5"></div>
+        <div class="cab-trim"></div>
+        <!-- oval windows along the curved walls -->
+        <div class="cwin" style="left:6%;top:40%;width:48px;height:36px"></div>
+        <div class="cwin" style="left:14%;top:36%;width:38px;height:28px"></div>
+        <div class="cwin" style="left:20.5%;top:33%;width:29px;height:21px"></div>
+        <div class="cwin" style="right:6%;top:40%;width:48px;height:36px"></div>
+        <div class="cwin" style="right:14%;top:36%;width:38px;height:28px"></div>
+        <div class="cwin" style="right:20.5%;top:33%;width:29px;height:21px"></div>
+        <!-- floor + aisle -->
         <div class="cab-floor"></div>
         <div class="cab-aisle"></div>
-        <!-- windows on the side walls (behind the seats) -->
-        <div class="cwin" style="left:2%;top:33%;width:42px;height:30px"></div>
-        <div class="cwin" style="left:7%;top:34.5%;width:32px;height:24px"></div>
-        <div class="cwin" style="left:11.5%;top:36%;width:24px;height:18px"></div>
-        <div class="cwin" style="right:2%;top:33%;width:42px;height:30px"></div>
-        <div class="cwin" style="right:7%;top:34.5%;width:32px;height:24px"></div>
-        <div class="cwin" style="right:11.5%;top:36%;width:24px;height:18px"></div>
-        <!-- seat rows, far -> mid (converging to the vanishing point) -->
-        <div class="rowblk" style="left:36.2%;bottom:43%;width:13.2%;height:10.2vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
-        <div class="rowblk" style="left:50.6%;bottom:43%;width:13.2%;height:10.2vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
-        <div class="rowblk" style="left:31.6%;bottom:37%;width:17.6%;height:13.6vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
-        <div class="rowblk" style="left:50.8%;bottom:37%;width:17.6%;height:13.6vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
-        <div class="rowblk" style="left:26%;bottom:30%;width:23%;height:17.7vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
-        <div class="rowblk" style="left:51%;bottom:30%;width:23%;height:17.7vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
-        <div class="rowblk" style="left:19.7%;bottom:21%;width:29%;height:22.4vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
-        <div class="rowblk" style="left:51.3%;bottom:21%;width:29%;height:22.4vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
-        <!-- the family boarding in the aisle -->
-        <div class="cab-folk"><span style="font-size:26px">👶</span><span style="font-size:44px">👩</span><span style="font-size:32px">🧒</span></div>
-        <!-- near rows (drawn last so they overlap) -->
-        <div class="rowblk" style="left:12.3%;bottom:11%;width:36%;height:27.9vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
-        <div class="rowblk" style="left:51.7%;bottom:11%;width:36%;height:27.9vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
-        <div class="rowblk" style="left:4%;bottom:-2%;width:44%;height:34vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
-        <div class="rowblk" style="left:52%;bottom:-2%;width:44%;height:34vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
+        <!-- far seat row -->
+        <div class="rowblk" style="left:25%;bottom:21%;width:21%;height:13vh"><i class="sb"></i><i class="sb"></i></div>
+        <div class="rowblk" style="left:54%;bottom:21%;width:21%;height:13vh"><i class="sb"></i><i class="sb"></i></div>
+        <!-- the family in the aisle -->
+        <div class="cab-folk"><span style="font-size:24px">👶</span><span style="font-size:40px">👩</span><span style="font-size:30px">🧒</span></div>
+        <!-- near seat row (drawn last so it overlaps) -->
+        <div class="rowblk" style="left:12%;bottom:0;width:31%;height:23vh"><i class="sb"></i><i class="sb"></i></div>
+        <div class="rowblk" style="left:57%;bottom:0;width:31%;height:23vh"><i class="sb"></i><i class="sb"></i></div>
       </div>
     </div>
     <div class="ip-vig"></div>
@@ -193,6 +199,7 @@
         <div class="p3dash" style="animation:rldash 1.4s linear infinite .94s"></div>
       </div>
       <div class="p3rabbit"><i style="animation-delay:0s"></i><i style="animation-delay:.18s"></i><i style="animation-delay:.36s"></i><i style="animation-delay:.54s"></i><i style="animation-delay:.72s"></i><i style="animation-delay:.9s"></i></div>
+      <div class="p3plane"><i class="pw"></i><i class="ph"></i><i class="pf"></i><i class="pt"></i></div>
     </div>
     <div class="ip-vig"></div>
     <div class="ip-cap">🛬 Touchdown at Jerez de la Frontera</div>
