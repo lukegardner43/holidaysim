@@ -136,6 +136,7 @@ let started=false;
 let vibes=0, timeOfDay=18.0, day=1, won=false, drunk=0;
 let shellsTotal=0, orangesTotal=0;
 let sunscreenApplied=false, sunburnWarned=false;
+let playerAnim=null;
 let donePool=false,doneLounge=false,donePaella=false,doneSangria=false;
 let doneSauna=false,doneSea=false,doneIce=false,doneBBQ=false;
 let doneJacuzzi=false,doneStargaze=false,doneNap=false;
@@ -1236,8 +1237,8 @@ function doAction(s){
   }
   switch(s.id){
     case'sangria':{doneSangria=true;drunk+=1;if(drunk<=1){addV(5);toast('🍷 One sangria in the sun. Lovely.');}else if(drunk<3){vibes=Math.max(0,vibes-6);toast('🍷🍷 Steady on… the garden is tilting.');}else{vibes=Math.max(0,vibes-12);toast('🍷🍷🍷 Whoa — everything is wonky now! 🤣');}cheer(2);break;}
-    case'pool':donePool=true;addV(7);cheer(16);toast('💦 Cannonbaaall into the warm water!');break;
-    case'jacuzzi':{doneJacuzzi=true;const tod=timeOfDay;addV(6);cheer(10);timeOfDay+=0.2;toast(tod>=20||tod<7?'🛁 Bubbles under the stars.':'🛁 Hot water, blazing sun — absolute bliss.');break;}
+    case'pool':donePool=true;addV(7);cheer(16);toast('💦 Cannonbaaall into the warm water!');playerAnim={type:'swim',t:0,sx:player.position.x,sz:player.position.z};break;
+    case'jacuzzi':{doneJacuzzi=true;const tod=timeOfDay;addV(6);cheer(10);timeOfDay+=0.2;toast(tod>=20||tod<7?'🛁 Bubbles under the stars.':'🛁 Hot water, blazing sun — absolute bliss.');playerAnim={type:'jacuzzi',t:0,sx:player.position.x,sz:player.position.z};break;}
     case'sauna':doneSauna=true;addV(6);cheer(6);timeOfDay+=0.2;toast('🧖 Sauna steam — toasty.');break;
     case'paella':donePaella=true;addV(9);cheer(14);timeOfDay+=0.5;toast('🥘 Giant paella on the fire — saffron everywhere!');break;
     case'bbq':doneBBQ=true;addV(9);cheer(8);timeOfDay+=0.4;toast('🍤 BBQ on — prawns & sardines.');break;
@@ -1309,6 +1310,22 @@ function update(dt){
   if(scn==='cabin'){updateCabin();return;}
   if(scn==='wingview'){updateWingview();return;}
   if(scn==='landing'){updateLanding();return;}
+  // ---- activity animations ----
+  if(playerAnim){
+    playerAnim.t+=dt;
+    const a=playerAnim,t=a.t;
+    if(a.type==='swim'){
+      if(t<0.5){const p=t/0.5,e=p*p*(3-2*p);player.position.set(a.sx+(-7-a.sx)*e,-0.8*e,a.sz+(5-a.sz)*e);player.rotation.y=-Math.PI/2;}
+      else if(t<4.0){const p=(t-0.5)/3.5,e=p*p*(3-2*p);player.position.set(-7+e*14,-0.8,5);player.rotation.y=-Math.PI/2;player.children[0].position.y=0.9+Math.sin(t*9)*0.14;player.rotation.z=Math.sin(t*9)*0.09;}
+      else if(t<4.6){const p=(t-4.0)/0.6;player.position.set(7,-0.8+p*0.8,5+p*1.5);player.rotation.z=0;player.children[0].position.y=0.9;}
+      else{player.position.set(7,0,6.5);player.rotation.set(0,Math.PI,0);player.children[0].position.y=0.9;player.children[0].position.x=0;playerAnim=null;}
+    } else if(a.type==='jacuzzi'){
+      if(t<0.5){const p=t/0.5,e=p*p*(3-2*p);player.position.set(a.sx+(10.5-a.sx)*e,-0.2*e,a.sz+(5-a.sz)*e);}
+      else if(t<4.0){player.position.set(10.5,-0.2,5);const bt=t-0.5;player.children[0].position.y=0.9+Math.sin(bt*5.5)*0.1+Math.sin(bt*8.2)*0.05;player.children[0].position.x=Math.sin(bt*4.3)*0.07;player.position.x=10.5+Math.sin(bt*3.7)*0.04;player.position.z=5+Math.sin(bt*4.9)*0.03;}
+      else if(t<4.7){const p=(t-4.0)/0.7;player.position.set(10.5,-0.2+p*0.2,5+p*2.5);player.children[0].position.set(0,0.9,0);}
+      else{player.position.set(10.5,0,7.5);player.children[0].position.set(0,0.9,0);playerAnim=null;}
+    }
+  } else {
   // input vector
   let ix=mv.x,iz=mv.z;
   if(keys['a']||keys['arrowleft'])ix=-1;if(keys['d']||keys['arrowright'])ix=1;
@@ -1334,6 +1351,7 @@ function update(dt){
   if(scn==='villa'||scn==='plaza'||scn==='terminal')collide();
   // walk bob
   player.children[0].position.y=0.9+Math.abs(Math.sin(performance.now()*0.01))*(len>0?0.08:0);
+  } // end !playerAnim
 
   // collectibles
   if(scn==='villa'){
@@ -1346,9 +1364,8 @@ function update(dt){
   }
 
   // action / prompt
-  const s=nearest();const pr=$('prompt');
-  if(s){pr.style.opacity=1;pr.innerHTML='<b>[DO IT]</b> '+s.label;}else pr.style.opacity=0;
-  if(actEdge){doAction(s);actEdge=false;}
+  if(playerAnim){$('prompt').style.opacity=0;actEdge=false;}
+  else{const s=nearest();const pr=$('prompt');if(s){pr.style.opacity=1;pr.innerHTML='<b>[DO IT]</b> '+s.label;}else pr.style.opacity=0;if(actEdge){doAction(s);actEdge=false;}}
 
   // bedtime/wakeup penalties
   if(!todsAsleep&&timeOfDay>=19){
