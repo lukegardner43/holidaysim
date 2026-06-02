@@ -349,7 +349,7 @@ function buildVillaWorld(){
   const bx=22,bz=11;const bbq=box(2.2,1.2,1.4,0x3a3a3a);bbq.position.set(bx,0.9,bz);world.add(bbq);
   const grill=box(1.8,0.2,1.1,0x111111);grill.position.set(bx,1.55,bz);world.add(grill);
   solids.push({x:bx,z:bz,rx:1.4,rz:1.0});
-  spots.push({x:bx,z:bz+2,r:3,id:'bbq',label:'fire up the BBQ'});
+  spots.push({x:bx,z:bz+3,r:5,id:'bbq',label:'fire up the BBQ'});
   // paella station beside the BBQ
   const qx=17.5,qz=11;
   const wtop=box(3.2,0.2,1.8,0xd9cdb0);wtop.position.set(qx,1.0,qz);world.add(wtop);
@@ -359,7 +359,7 @@ function buildVillaWorld(){
   const rice=cyl(1.35,1.35,0.12,0xe9b94a,24);rice.position.set(qx,1.5,qz);world.add(rice);
   [[0.5,0.3,0xe0552f],[-0.4,0.5,0xe0552f],[0.2,-0.5,0xc23b2a],[-0.6,-0.2,0xd84f2a],[0.7,-0.3,0xf2a93a]].forEach(p=>{const b=new T.Mesh(new T.SphereGeometry(0.16,8,8),mat(p[2]));b.position.set(qx+p[0],1.62,qz+p[1]);world.add(b);});
   solids.push({x:qx,z:qz,rx:2.0,rz:1.2});
-  spots.push({x:qx,z:qz+2,r:3,id:'paella',label:'cook a giant paella 🥘'});
+  spots.push({x:qx,z:qz+3,r:5,id:'paella',label:'cook a giant paella 🥘'});
 
   // ===== beach ice cream shop (chiringuito) =====
   const ix=30,iz=-13;
