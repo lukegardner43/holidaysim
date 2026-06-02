@@ -318,7 +318,7 @@ function buildVillaWorld(){
   const jwat=new T.Mesh(new T.BoxGeometry(3.2,0.4,3.2),new T.MeshStandardMaterial({color:0x39b6cf,roughness:0.1,metalness:0.3,transparent:true,opacity:0.92}));jwat.position.set(jx,0.92,jz);world.add(jwat);
   solids.push({x:jx,z:jz,rx:2.2,rz:2.2});
   spots.push({x:jx,z:jz-3,r:3.5,id:'jacuzzi',label:'sink into the jacuzzi'});
-  spots.push({x:px,z:pz-pd/2-5,r:4,id:'stargaze',label:'stargaze from the terrace ⭐'});
+  spots.push({x:-5,z:14,r:4.5,id:'stargaze',label:'stargaze from the terrace ⭐'});
   // temporary toddler pool barrier (per the plan)
   const fmat=new T.MeshStandardMaterial({color:0xffffff,roughness:0.4,metalness:0.1,transparent:true,opacity:0.5});
   for(let i=-1;i<=1;i++){const fp=box(0.1,1.1,0.1,0xdddddd);fp.position.set(px+i*5,0.7,pz-pd/2-1.2);world.add(fp);}
@@ -1244,7 +1244,7 @@ function doAction(s){
     case'lounge':doneLounge=true;addV(5);timeOfDay+=0.3;toast('😎 Pure horizontal excellence.');break;
     case'sea':doneSea=true;addV(6);cheer(14);toast('🌊 Warm Atlantic shallows.');break;
     case'ice':doneIce=true;addV(4);cheer(26);drunk=Math.max(0,drunk-0.5);toast('🍦 Four ice creams, four happy faces.');break;
-    case'nap':{const wasNight=timeOfDay>=21||timeOfDay<5;doneNap=true;timeOfDay+=4;drunk=0;if(timeOfDay>=24){timeOfDay-=24;day++;}toast(wasNight?'🛏️ Out cold. Well earned.':'😴 Siesta… time drifts on.');break;}
+    case'nap':{const wasNight=timeOfDay>=21||timeOfDay<5;doneNap=true;drunk=0;if(wasNight){day++;timeOfDay=7;}else{timeOfDay+=4;if(timeOfDay>=24){timeOfDay-=24;day++;}}toast(wasNight?'🛏️ Out cold until morning. Well earned.':'😴 Siesta… time drifts on.');break;}
     case'stargaze':doneStargaze=true;addV(5);timeOfDay+=0.1;toast('⭐ Milky Way wall-to-wall. No light pollution out here.');break;
     case'bed':enterBedroom();return;
     case'car':if(drunk>=1){vibes=Math.max(0,vibes-10);toast('🚗🍷 No driving after sangria — sober up first!');}else transition('plaza');break;
