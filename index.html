@@ -993,42 +993,54 @@ function buildCabin(){
 
 function buildWingview(){
   wingview=new T.Group();wingview.visible=false;scene.add(wingview);
-  const bas=c=>new T.MeshBasicMaterial({color:c,fog:false,side:T.DoubleSide});
-  // Background canvas — applied to scene.background each frame (reliable on all devices)
-  // Three.js CanvasTexture has flipY=true: canvas y=0→screen bottom, canvas y=height→screen top
+  // Sky background — applied via scene.background each frame (most reliable method)
+  // Three.js flipY: canvas y=0 → screen bottom, canvas y=max → screen top
   const skc=document.createElement('canvas');skc.width=2;skc.height=256;
-  const skx=skc.getContext('2d');const skgr=skx.createLinearGradient(0,0,0,256);
-  skgr.addColorStop(0,'#8ed4f0');  // horizon haze → screen bottom
-  skgr.addColorStop(0.35,'#4dacd8');
-  skgr.addColorStop(1,'#0b3a8e');  // deep sky → screen top
-  skx.fillStyle=skgr;skx.fillRect(0,0,2,256);
+  const sc=skc.getContext('2d');const sg=sc.createLinearGradient(0,0,0,256);
+  sg.addColorStop(0,'#a4dcf6');   // hazy horizon → screen bottom
+  sg.addColorStop(0.42,'#52aedc');
+  sg.addColorStop(1,'#0b3a8c');   // deep sky → screen top
+  sc.fillStyle=sg;sc.fillRect(0,0,2,256);
   wingview.userData.skyBg=new T.CanvasTexture(skc);
-  // Sun — forward and above (positive z, positive y), DoubleSide so it's always visible
-  const sunC=new T.Mesh(new T.CircleGeometry(14,20),bas(0xfffde0));sunC.position.set(50,28,220);wingview.add(sunC);
-  const sunH=new T.Mesh(new T.CircleGeometry(28,20),new T.MeshBasicMaterial({color:0xfff8a0,fog:false,transparent:true,opacity:0.22,side:T.DoubleSide}));sunH.position.set(50,28,219);wingview.add(sunH);
-  // Clouds — POSITIVE z so they're in front of camera; y above the wing
-  const clMat=new T.MeshBasicMaterial({color:0xffffff,fog:false,transparent:true,opacity:0.88});
-  [[18,14,80,42,12],[46,10,130,58,14],[-8,18,100,36,10]].forEach(([x,y,z,w,h])=>{
-    const c=new T.Mesh(new T.BoxGeometry(w,h,4),clMat.clone());c.position.set(x,y,z);wingview.add(c);
+  const dbl=c=>new T.MeshBasicMaterial({color:c,fog:false,side:T.DoubleSide});
+  // Sun — far forward, upper right
+  const sC=new T.Mesh(new T.CircleGeometry(16,20),dbl(0xfffde0));sC.position.set(50,28,200);wingview.add(sC);
+  const sH=new T.Mesh(new T.CircleGeometry(32,20),new T.MeshBasicMaterial({color:0xfff9b0,fog:false,transparent:true,opacity:0.18,side:T.DoubleSide}));sH.position.set(50,28,198);wingview.add(sH);
+  // Flat cloud puffs — SphereGeometry scaled thin, at POSITIVE z (in front of camera)
+  [[18,14,72],[-5,17,105],[32,10,140]].forEach(([x,y,z])=>{
+    const c=new T.Mesh(new T.SphereGeometry(14,10,6),new T.MeshBasicMaterial({color:0xf6f8fb,fog:false,transparent:true,opacity:0.82,side:T.DoubleSide}));
+    c.scale.set(1,0.30,0.90);c.position.set(x,y,z);wingview.add(c);
   });
-  // === Wing — sized for portrait (9:16) where horizontal FOV is only ~37° ===
-  // Camera will lookAt(1.5,-4,25), so visible x range at z=3 is roughly -0.9 to +1.3
-  const wm=bas(0xe2e6eb),wm2=bas(0xcfd4db);
-  const wGrp=new T.Group();
-  const wR=new T.Mesh(new T.BoxGeometry(2.4,0.26,2.2),wm);wR.position.set(0.8,-1.2,3.4);wR.rotation.y=0.14;wGrp.add(wR);
-  const wM=new T.Mesh(new T.BoxGeometry(2.6,0.22,2.0),wm);wM.position.set(2.0,-1.6,6.4);wM.rotation.y=0.20;wGrp.add(wM);
-  const wO=new T.Mesh(new T.BoxGeometry(2.2,0.18,1.7),wm2);wO.position.set(3.1,-1.95,9.5);wO.rotation.y=0.26;wGrp.add(wO);
+  // === Wing — single quad using BufferGeometry (proper tapered swept surface) ===
+  // Viewed from inside the cabin looking out: wing sweeps right and aft
+  const wv=new Float32Array([
+    0.5,-0.5, 3.5,  // root leading edge
+    0.5,-0.5, 6.5,  // root trailing edge
+    5.2,-1.5,10.5,  // tip leading edge (swept back)
+    5.2,-1.5,13.5,  // tip trailing edge
+  ]);
+  const wGeo=new T.BufferGeometry();
+  wGeo.setAttribute('position',new T.BufferAttribute(wv,3));
+  wGeo.setIndex([0,2,1, 1,2,3]);
+  wGeo.computeVertexNormals();
+  wingview.add(new T.Mesh(wGeo,dbl(0xe2e6eb)));
+  // Orange livery stripe — second quad overlaid on wing surface
+  const sv=new Float32Array([
+    0.5,-0.46,4.2,  0.5,-0.46,5.0,
+    4.4,-1.44,9.5,  4.4,-1.44,10.3,
+  ]);
+  const sGeo=new T.BufferGeometry();
+  sGeo.setAttribute('position',new T.BufferAttribute(sv,3));
+  sGeo.setIndex([0,2,1, 1,2,3]);
+  wingview.add(new T.Mesh(sGeo,dbl(0xd45820)));
+  // Engine nacelle below mid-span
+  const nac=new T.Mesh(new T.CylinderGeometry(0.58,0.62,2.8,12),new T.MeshBasicMaterial({color:0xb0b8c0,fog:false}));
+  nac.rotation.z=Math.PI/2;nac.position.set(2.4,-2.1,6.8);wingview.add(nac);
+  const fanF=new T.Mesh(new T.CircleGeometry(0.54,12),new T.MeshBasicMaterial({color:0x1c2028,fog:false}));
+  fanF.rotation.y=Math.PI/2;fanF.position.set(1.1,-2.1,6.8);wingview.add(fanF);
   // Winglet
-  const wT=new T.Mesh(new T.BoxGeometry(0.28,1.2,1.5),bas(0xd2d7de));wT.position.set(3.85,-1.45,10.8);wT.rotation.z=0.14;wGrp.add(wT);
-  // Orange livery stripe
-  const stripe=new T.Mesh(new T.BoxGeometry(5.8,0.27,0.30),bas(0xd45820));stripe.position.set(1.8,-1.18,4.8);stripe.rotation.y=0.18;wGrp.add(stripe);
-  // Pylon
-  const pylon=new T.Mesh(new T.BoxGeometry(0.34,0.9,1.4),bas(0xc2c8ce));pylon.position.set(1.55,-1.85,4.4);wGrp.add(pylon);
-  // Nacelle
-  const nac=new T.Mesh(new T.CylinderGeometry(0.60,0.65,3.0,12),bas(0xb0b8c0));nac.rotation.z=Math.PI/2;nac.position.set(1.55,-2.52,4.5);wGrp.add(nac);
-  const fan=new T.Mesh(new T.CircleGeometry(0.56,12),bas(0x1c2028));fan.rotation.y=Math.PI/2;fan.position.set(0.08,-2.52,4.5);wGrp.add(fan);
-  const nacHi=new T.Mesh(new T.CylinderGeometry(0.62,0.62,0.35,12),bas(0xd4d9df));nacHi.rotation.z=Math.PI/2;nacHi.position.set(0.22,-2.52,4.5);wGrp.add(nacHi);
-  wingview.add(wGrp);
+  const wlt=new T.Mesh(new T.BoxGeometry(0.22,1.1,1.4),dbl(0xd8dde5));
+  wlt.position.set(5.2,-0.95,11.8);wlt.rotation.z=0.12;wingview.add(wlt);
   wingview.userData.t0=null;
 }
 
@@ -1281,12 +1293,11 @@ function updateCabin(){
 }
 function updateWingview(){
   const t=(performance.now()-(wingview.userData.t0||performance.now()))/1000;
-  // Apply sky gradient directly as scene background (works reliably on all devices)
   scene.background=wingview.userData.skyBg;
-  // Camera: looking right and notably downward so sky fills top, wing appears below
-  // lookAt(1.5, -4, 25): ~9° down, ~3° right — wing root at (0.8,-1.2,3.4) is in lower-center
-  cam.position.set(0.04*Math.sin(t*0.4), 0.03*Math.sin(t*0.55), 0);
-  cam.lookAt(1.5+0.04*Math.sin(t*0.3), -4+0.03*Math.sin(t*0.4), 25);
+  // Camera: gentle float, looking slightly right and slightly down
+  // lookAt(2,-1.5,20): ~4° down, ~6° right — sky fills top 60%, wing root at (0.5,-0.5,3.5) in lower half
+  cam.position.set(0.03*Math.sin(t*0.4), 0.02*Math.sin(t*0.55), 0);
+  cam.lookAt(2+0.03*Math.sin(t*0.3), -1.5+0.02*Math.sin(t*0.4), 20);
 }
 function updateLanding(){
   const t=(performance.now()-(landing.userData.t0||performance.now()))/1000;
