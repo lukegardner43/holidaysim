@@ -136,6 +136,9 @@ let started=false;
 let vibes=0, timeOfDay=18.0, day=1, won=false, drunk=0;
 let shellsTotal=0, orangesTotal=0;
 let sunscreenApplied=false, sunburnWarned=false;
+let donePool=false,doneLounge=false,donePaella=false,doneSangria=false;
+let doneSauna=false,doneSea=false,doneIce=false,doneBBQ=false;
+let doneJacuzzi=false,doneStargaze=false,doneNap=false;
 const solids=[];             // {x,z,rx,rz} keep-out boxes (villa world)
 const plazaSolids=[];        // keep-out boxes (plaza world)
 const terminalSolids=[];     // keep-out boxes (airport terminal)
@@ -315,6 +318,7 @@ function buildVillaWorld(){
   const jwat=new T.Mesh(new T.BoxGeometry(3.2,0.4,3.2),new T.MeshStandardMaterial({color:0x39b6cf,roughness:0.1,metalness:0.3,transparent:true,opacity:0.92}));jwat.position.set(jx,0.92,jz);world.add(jwat);
   solids.push({x:jx,z:jz,rx:2.2,rz:2.2});
   spots.push({x:jx,z:jz-3,r:3.5,id:'jacuzzi',label:'sink into the jacuzzi'});
+  spots.push({x:px,z:pz-pd/2-5,r:4,id:'stargaze',label:'stargaze from the terrace ⭐'});
   // temporary toddler pool barrier (per the plan)
   const fmat=new T.MeshStandardMaterial({color:0xffffff,roughness:0.4,metalness:0.1,transparent:true,opacity:0.5});
   for(let i=-1;i<=1;i++){const fp=box(0.1,1.1,0.1,0xdddddd);fp.position.set(px+i*5,0.7,pz-pd/2-1.2);world.add(fp);}
@@ -1195,6 +1199,10 @@ function nearest(){
     if(todsAsleep&&timeOfDay>=6&&timeOfDay<21) return {id:'bed',label:'go wake the toddlers ☀️'};
     if(todsAsleep) return null;  // deep night: spot inactive
   }
+  // nap becomes "go to bed" at night
+  if(best&&best.id==='nap'&&timeOfDay>=21) return {id:'nap',label:'go to bed 🛏️'};
+  // stargaze only available at night
+  if(best&&best.id==='stargaze'&&(timeOfDay<20||timeOfDay>=6)) return null;
   // sandcastle only available daytime with awake toddlers
   if(best&&best.id==='sandcastle'&&(todsAsleep||timeOfDay<8||timeOfDay>=20)) return null;
   // sunscreen only needed during daytime
@@ -1227,16 +1235,17 @@ function doAction(s){
     return;
   }
   switch(s.id){
-    case'sangria':{drunk+=1;if(drunk<=1){addV(5);toast('🍷 One sangria in the sun. Lovely.');}else if(drunk<3){vibes=Math.max(0,vibes-6);toast('🍷🍷 Steady on… the garden is tilting.');}else{vibes=Math.max(0,vibes-12);toast('🍷🍷🍷 Whoa — everything is wonky now! 🤣');}cheer(2);break;}
-    case'pool':addV(7);cheer(16);toast('💦 Cannonbaaall into the warm water!');break;
-    case'jacuzzi':{const tod=timeOfDay;addV(6);cheer(10);timeOfDay+=0.2;toast(tod>=20||tod<7?'🛁 Bubbles under the stars.':'🛁 Hot water, blazing sun — absolute bliss.');break;}
-    case'sauna':addV(6);cheer(6);timeOfDay+=0.2;toast('🧖 Sauna steam — toasty.');break;
-    case'paella':addV(9);cheer(14);timeOfDay+=0.5;toast('🥘 Giant paella on the fire — saffron everywhere!');break;
-    case'bbq':addV(9);cheer(8);timeOfDay+=0.4;toast('🍤 BBQ on — prawns & sardines.');break;
-    case'lounge':addV(5);timeOfDay+=0.3;toast('😎 Pure horizontal excellence.');break;
-    case'sea':addV(6);cheer(14);toast('🌊 Warm Atlantic shallows.');break;
-    case'ice':addV(4);cheer(26);drunk=Math.max(0,drunk-0.5);toast('🍦 Four ice creams, four happy faces.');break;
-    case'nap':timeOfDay+=4;drunk=0;if(timeOfDay>=24){timeOfDay-=24;day++;}toast('😴 Siesta… time drifts on.');break;
+    case'sangria':{doneSangria=true;drunk+=1;if(drunk<=1){addV(5);toast('🍷 One sangria in the sun. Lovely.');}else if(drunk<3){vibes=Math.max(0,vibes-6);toast('🍷🍷 Steady on… the garden is tilting.');}else{vibes=Math.max(0,vibes-12);toast('🍷🍷🍷 Whoa — everything is wonky now! 🤣');}cheer(2);break;}
+    case'pool':donePool=true;addV(7);cheer(16);toast('💦 Cannonbaaall into the warm water!');break;
+    case'jacuzzi':{doneJacuzzi=true;const tod=timeOfDay;addV(6);cheer(10);timeOfDay+=0.2;toast(tod>=20||tod<7?'🛁 Bubbles under the stars.':'🛁 Hot water, blazing sun — absolute bliss.');break;}
+    case'sauna':doneSauna=true;addV(6);cheer(6);timeOfDay+=0.2;toast('🧖 Sauna steam — toasty.');break;
+    case'paella':donePaella=true;addV(9);cheer(14);timeOfDay+=0.5;toast('🥘 Giant paella on the fire — saffron everywhere!');break;
+    case'bbq':doneBBQ=true;addV(9);cheer(8);timeOfDay+=0.4;toast('🍤 BBQ on — prawns & sardines.');break;
+    case'lounge':doneLounge=true;addV(5);timeOfDay+=0.3;toast('😎 Pure horizontal excellence.');break;
+    case'sea':doneSea=true;addV(6);cheer(14);toast('🌊 Warm Atlantic shallows.');break;
+    case'ice':doneIce=true;addV(4);cheer(26);drunk=Math.max(0,drunk-0.5);toast('🍦 Four ice creams, four happy faces.');break;
+    case'nap':{const wasNight=timeOfDay>=21||timeOfDay<5;doneNap=true;timeOfDay+=4;drunk=0;if(timeOfDay>=24){timeOfDay-=24;day++;}toast(wasNight?'🛏️ Out cold. Well earned.':'😴 Siesta… time drifts on.');break;}
+    case'stargaze':doneStargaze=true;addV(5);timeOfDay+=0.1;toast('⭐ Milky Way wall-to-wall. No light pollution out here.');break;
     case'bed':enterBedroom();return;
     case'car':if(drunk>=1){vibes=Math.max(0,vibes-10);toast('🚗🍷 No driving after sangria — sober up first!');}else transition('plaza');break;
     case'sandcastle':addV(10);cheer(22);timeOfDay+=0.4;toast('🏖️ Epic four-towered sandcastle — the toddlers are DELIGHTED.');break;
@@ -1449,20 +1458,45 @@ let _lastItinPeriod='';
 function updateItinerary(){
   const tod=timeOfDay;
   let period,items;
-  if(tod>=5&&tod<9){period='dawn / morning';items=['☀️ '+(todsAsleep?'Go collect the toddlers from bed':'Morning swim — pool is warm'),'🏖️ Walk on La Barrosa beach','🍦 Grab ice creams from the chiringuito','🐚 Collect shells along the shore'];}
-  else if(tod>=9&&tod<13){period='mid-morning';items=['💦 Dive into the heated pool','😎 Sun loungers are free','🥘 Fire up the paella station','🍷 First sangria of the day?'];}
-  else if(tod>=13&&tod<17){period='afternoon';items=['🧖 Sauna session — then cold pool','🏖️ Beach time with the toddlers','🍦 Second ice cream run (why not)','😎 Horizontal excellence on the lounger'];}
-  else if(tod>=17&&tod<19){period='golden hour';items=['🌅 Watch the sunset from the terrace','🍤 BBQ on the east terrace','🛁 Jacuzzi while the kids play','🍷 Sangria + sunset — essential'];}
-  else if(tod>=19&&tod<21){period='evening';items=[todsAsleep?'✅ Toddlers tucked in — nice work':'😬 Toddler bedtime is now — get them to bed!','🍷 Nightcap on the terrace','🛁 Jacuzzi under the stars','⭐ Stars are out — look up'];}
-  else{period='night';items=[todsAsleep?'✅ Toddlers sleeping soundly':'🛏️ Toddlers still need to go to bed!','⭐ Star-gazing from the pool terrace','🛁 Jacuzzi to wind down','😴 Siesta when ready — inside the villa'];}
+  const t_=(s,d)=>d?'✅ '+s:s;
+  if(tod>=5&&tod<9){period='dawn / morning';items=[
+    todsAsleep?'🌅 Go collect the toddlers from bed':t_('☀️ Morning swim — pool is warm',donePool),
+    t_('🏖️ Walk on La Barrosa beach',doneSea),
+    t_('🍦 Grab ice creams from the chiringuito',doneIce),
+    t_('🐚 Collect shells along the shore',doneSea)];}
+  else if(tod>=9&&tod<13){period='mid-morning';items=[
+    t_('💦 Dive into the heated pool',donePool),
+    t_('😎 Sun loungers are free',doneLounge),
+    t_('🥘 Fire up the paella station',donePaella),
+    t_('🍷 First sangria of the day?',doneSangria)];}
+  else if(tod>=13&&tod<17){period='afternoon';items=[
+    t_('🧖 Sauna session — then cold pool',doneSauna),
+    t_('🏖️ Beach time with the toddlers',doneSea),
+    t_('🍦 Second ice cream run (why not)',doneIce),
+    t_('😎 Horizontal excellence on the lounger',doneLounge)];}
+  else if(tod>=17&&tod<19){period='golden hour';items=[
+    '🌅 Watch the sunset from the terrace',
+    t_('🍤 BBQ on the east terrace',doneBBQ),
+    t_('🛁 Jacuzzi while the kids play',doneJacuzzi),
+    t_('🍷 Sangria + sunset — essential',doneSangria)];}
+  else if(tod>=19&&tod<21){period='evening';items=[
+    todsAsleep?'✅ Toddlers tucked in — nice work':'😬 Toddler bedtime is now — get them to bed!',
+    t_('🍷 Nightcap on the terrace',doneSangria),
+    t_('🛁 Jacuzzi under the stars',doneJacuzzi),
+    t_('⭐ Stars are out — look up',doneStargaze)];}
+  else{period='night';items=[
+    todsAsleep?'✅ Toddlers sleeping soundly':'🛏️ Toddlers still need to go to bed!',
+    t_('⭐ Star-gazing from the pool terrace',doneStargaze),
+    t_('🛁 Jacuzzi to wind down',doneJacuzzi),
+    t_('🛏️ Go to bed when ready',doneNap)];}
   if(period!==_lastItinPeriod){
     _lastItinPeriod=period;
     $('itin-period').textContent=period;
     const ul=$('itin-list');ul.innerHTML='';
     items.forEach(function(t){const li=document.createElement('li');li.textContent=t;ul.appendChild(li);});
   } else {
-    // refresh first item if toddler state changed (bedtime warning)
-    const first=$('itin-list').children[0];if(first&&items[0])first.textContent=items[0];
+    const ul=$('itin-list');
+    items.forEach(function(t,i){if(ul.children[i]&&ul.children[i].textContent!==t)ul.children[i].textContent=t;});
   }
 }
 function setScene(to){
