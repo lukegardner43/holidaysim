@@ -72,24 +72,26 @@
   .ipcloud{position:absolute;border-radius:50%;background:radial-gradient(closest-side,rgba(255,255,255,.96),rgba(255,255,255,.5) 70%,rgba(255,255,255,0))}
   @keyframes ipfly{from{transform:translateX(64vw)}to{transform:translateX(-92vw)}}
   @keyframes wdrift{from{transform:translateX(64px)}to{transform:translateX(-92px)}}
-  /* Panel 1 — cabin interior */
-  #ip1{background:#11151d}
-  .cab-wall{position:absolute;inset:0;background:linear-gradient(180deg,#e1d5bd 0%,#cdc0a0 44%,#b2a483 64%,#8d8065 100%)}
-  .cab-ceil{position:absolute;top:0;left:-6%;right:-6%;height:23%;background:linear-gradient(180deg,#efe5d0,#d4c7a9);border-radius:0 0 50% 50%/0 0 100% 100%;box-shadow:inset 0 -12px 28px rgba(0,0,0,.12)}
-  .cab-strip{position:absolute;top:4%;left:15%;right:15%;height:5px;border-radius:5px;background:linear-gradient(90deg,transparent,rgba(255,252,240,.95),transparent)}
-  .cab-bins{position:absolute;top:7.5%;left:3%;right:3%;display:flex;gap:7px}
-  .cab-bin{flex:1;height:7.5vh;background:linear-gradient(180deg,#d4c7a8,#b7a987);border-radius:7px 7px 16px 16px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.1),0 2px 7px rgba(0,0,0,.16);position:relative}
-  .cab-bin::after{content:'';position:absolute;left:50%;bottom:7px;transform:translateX(-50%);width:38%;height:4px;border-radius:3px;background:rgba(255,250,232,.85);box-shadow:0 0 9px rgba(255,238,196,.9)}
-  .cab-win{position:absolute;top:25%;width:9vw;max-width:60px;height:13vh;max-height:116px;background:linear-gradient(180deg,#d3eeff,#83c6f3 52%,#4a9ad8);border:6px solid #cbbe9e;border-radius:30px;overflow:hidden;box-shadow:0 3px 10px rgba(0,0,0,.22)}
-  .cab-win s{position:absolute;top:12%;left:16%;width:22px;height:22px;border-radius:50%;background:radial-gradient(closest-side,#fff,#ffe9a8 65%,rgba(255,233,168,0))}
-  .cab-win .ipcloud{height:13px;opacity:.92}
-  #cw1{left:5%}#cw2{left:25%}#cw3{right:25%}#cw4{right:5%}
-  .cab-seats{position:absolute;bottom:0;left:0;right:0;height:50%;display:flex;justify-content:center;align-items:flex-end;gap:2vw}
-  .seat{position:relative;width:15vw;max-width:140px;height:38vh;background:linear-gradient(180deg,#44546f,#2b3851);border-radius:26px 26px 6px 6px;box-shadow:inset 0 7px 0 rgba(255,255,255,.07),0 -3px 14px rgba(0,0,0,.35)}
-  .seat::before{content:'';position:absolute;top:7%;left:15%;right:15%;height:19%;background:linear-gradient(180deg,#eef2f8,#d1d9e6);border-radius:14px;box-shadow:0 2px 5px rgba(0,0,0,.18)}
-  .seat b{position:absolute;top:-9%;left:50%;transform:translateX(-50%);font-size:6vw;line-height:1;filter:drop-shadow(0 4px 5px rgba(0,0,0,.3))}
-  .seat.kid{height:30vh}.seat.kid b{font-size:4.6vw}
-  @media(max-width:700px){.seat b{font-size:8.5vw}.seat.kid b{font-size:6.6vw}}
+  /* Panel 1 — cabin interior, one-point perspective down the aisle */
+  #ip1{background:#0e1117}
+  .cab{position:absolute;inset:0;overflow:hidden;background:linear-gradient(180deg,#efe8db 0%,#e2dacb 26%,#cdd0d5 46%,#3a3d45 70%,#22242b 100%)}
+  .cab-ceil{position:absolute;left:0;top:0;width:100%;height:48%;background:linear-gradient(180deg,#f4efe4,#e6dfd0);clip-path:polygon(0 0,100% 0,63% 100%,37% 100%)}
+  .cab-ceil2{position:absolute;left:50%;top:0;transform:translateX(-50%);width:78%;height:42%;background:linear-gradient(180deg,#f9f5ec,#eee7d8);clip-path:polygon(0 0,100% 0,60% 100%,40% 100%)}
+  .cab-light{position:absolute;left:50%;top:0;transform:translateX(-50%);width:32%;height:40%;background:linear-gradient(180deg,rgba(255,250,235,.9),rgba(255,250,235,0));clip-path:polygon(46% 0,54% 0,58% 100%,42% 100%)}
+  .cab-trim{position:absolute;top:0;height:42%;width:52%}
+  .cab-trim.l{left:0;clip-path:polygon(0 0,5% 0,100% 100%,95% 100%);background:linear-gradient(135deg,#f0613a,#e8731f)}
+  .cab-trim.r{right:0;clip-path:polygon(95% 0,100% 0,5% 100%,0 100%);background:linear-gradient(225deg,#f0613a,#e8731f)}
+  .cab-floor{position:absolute;left:0;bottom:0;width:100%;height:60%;background:linear-gradient(180deg,#3c4049,#22242b);clip-path:polygon(37% 0,63% 0,100% 100%,0 100%)}
+  .cab-aisle{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:34%;height:60%;background:linear-gradient(180deg,#34373f,#191b21);clip-path:polygon(44% 0,56% 0,88% 100%,12% 100%)}
+  .cab-aisle::before{content:'';position:absolute;inset:0;clip-path:polygon(44% 0,46% 0,16% 100%,12% 100%);background:#e8731f;opacity:.7}
+  .cab-aisle::after{content:'';position:absolute;inset:0;clip-path:polygon(54% 0,56% 0,88% 100%,84% 100%);background:#e8731f;opacity:.7}
+  .cwin{position:absolute;background:linear-gradient(180deg,#eaf6ff,#bfe0f5);border-radius:42%;box-shadow:0 0 0 3px rgba(120,112,92,.55),0 0 16px rgba(255,255,255,.6)}
+  .rowblk{position:absolute;display:flex;align-items:flex-end;justify-content:center}
+  .sb{flex:1;height:100%;margin:0 1.5%;position:relative;background:linear-gradient(180deg,#3a4050 0%,#2a2f3b 52%,#1f232d 100%);border-radius:26% 26% 8% 8%/34% 34% 6% 6%;box-shadow:inset 0 4px 0 rgba(255,255,255,.07),0 2px 7px rgba(0,0,0,.45)}
+  .sb::before{content:'';position:absolute;top:9%;left:19%;right:19%;height:20%;background:linear-gradient(180deg,rgba(74,80,97,.75),rgba(51,57,70,.75));border-radius:40%}
+  .sb::after{content:'';position:absolute;bottom:16%;left:16%;right:16%;height:13%;background:#e8731f;border-radius:3px;opacity:.9}
+  .cab-folk{position:absolute;left:50%;bottom:20.5%;transform:translateX(-50%);display:flex;align-items:flex-end;gap:1px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.45))}
+  .cab-folk span{line-height:.85}
   /* Panel 2 — wing over the coast */
   #ip2{background:linear-gradient(180deg,#0f4ea0 0%,#2f86d8 46%,#86c6ee 72%,#cfeaf8 100%)}
   .p2sun{position:absolute;top:9%;right:17%;width:130px;height:130px;border-radius:50%;background:radial-gradient(closest-side,#fff,#ffe9a8 42%,rgba(255,220,150,0))}
@@ -124,22 +126,40 @@
 <!-- ===== airplane intro animation ===== -->
 <button id="skip-intro" class="hidden">skip ›</button>
 <div id="intro" class="hidden">
-  <!-- Panel 1: cabin interior -->
+  <!-- Panel 1: cabin interior (perspective down the aisle) -->
   <div class="ip" id="ip1">
     <div class="ip-scene">
-      <div class="cab-wall"></div>
-      <div class="cab-ceil"></div>
-      <div class="cab-strip"></div>
-      <div class="cab-bins"><i class="cab-bin"></i><i class="cab-bin"></i><i class="cab-bin"></i><i class="cab-bin"></i><i class="cab-bin"></i><i class="cab-bin"></i></div>
-      <div class="cab-win" id="cw1"><s></s><div class="ipcloud" style="width:52px;top:36%;left:0;animation:wdrift 4.6s linear infinite"></div></div>
-      <div class="cab-win" id="cw2"><div class="ipcloud" style="width:40px;top:52%;left:10px;animation:wdrift 6s linear infinite 1s"></div></div>
-      <div class="cab-win" id="cw3"><div class="ipcloud" style="width:46px;top:42%;left:6px;animation:wdrift 5s linear infinite .6s"></div></div>
-      <div class="cab-win" id="cw4"><s></s><div class="ipcloud" style="width:34px;top:58%;left:14px;animation:wdrift 5.4s linear infinite 2s"></div></div>
-      <div class="cab-seats">
-        <div class="seat"><b>👩</b></div>
-        <div class="seat kid"><b>👶</b></div>
-        <div class="seat kid"><b>👶</b></div>
-        <div class="seat"><b>👨</b></div>
+      <div class="cab">
+        <div class="cab-ceil"></div>
+        <div class="cab-ceil2"></div>
+        <div class="cab-light"></div>
+        <div class="cab-trim l"></div>
+        <div class="cab-trim r"></div>
+        <div class="cab-floor"></div>
+        <div class="cab-aisle"></div>
+        <!-- windows on the side walls (behind the seats) -->
+        <div class="cwin" style="left:2%;top:33%;width:42px;height:30px"></div>
+        <div class="cwin" style="left:7%;top:34.5%;width:32px;height:24px"></div>
+        <div class="cwin" style="left:11.5%;top:36%;width:24px;height:18px"></div>
+        <div class="cwin" style="right:2%;top:33%;width:42px;height:30px"></div>
+        <div class="cwin" style="right:7%;top:34.5%;width:32px;height:24px"></div>
+        <div class="cwin" style="right:11.5%;top:36%;width:24px;height:18px"></div>
+        <!-- seat rows, far -> mid (converging to the vanishing point) -->
+        <div class="rowblk" style="left:36.2%;bottom:43%;width:13.2%;height:10.2vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
+        <div class="rowblk" style="left:50.6%;bottom:43%;width:13.2%;height:10.2vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
+        <div class="rowblk" style="left:31.6%;bottom:37%;width:17.6%;height:13.6vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
+        <div class="rowblk" style="left:50.8%;bottom:37%;width:17.6%;height:13.6vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
+        <div class="rowblk" style="left:26%;bottom:30%;width:23%;height:17.7vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
+        <div class="rowblk" style="left:51%;bottom:30%;width:23%;height:17.7vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
+        <div class="rowblk" style="left:19.7%;bottom:21%;width:29%;height:22.4vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
+        <div class="rowblk" style="left:51.3%;bottom:21%;width:29%;height:22.4vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
+        <!-- the family boarding in the aisle -->
+        <div class="cab-folk"><span style="font-size:26px">👶</span><span style="font-size:44px">👩</span><span style="font-size:32px">🧒</span></div>
+        <!-- near rows (drawn last so they overlap) -->
+        <div class="rowblk" style="left:12.3%;bottom:11%;width:36%;height:27.9vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
+        <div class="rowblk" style="left:51.7%;bottom:11%;width:36%;height:27.9vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
+        <div class="rowblk" style="left:4%;bottom:-2%;width:44%;height:34vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
+        <div class="rowblk" style="left:52%;bottom:-2%;width:44%;height:34vh"><i class="sb"></i><i class="sb"></i><i class="sb"></i></div>
       </div>
     </div>
     <div class="ip-vig"></div>
