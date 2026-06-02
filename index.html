@@ -137,7 +137,7 @@ let vibes=0, timeOfDay=18.0, day=1, won=false, drunk=0;
 let shellsTotal=0, orangesTotal=0;
 let sunscreenApplied=false, sunburnWarned=false;
 let playerAnim=null;
-let donePool=false,doneLounge=false,donePaella=false,doneSangria=false;
+let donePool=false,doneLounge=false,donePaella=false,doneSangria=false,doneSunset=false;
 let doneSauna=false,doneSea=false,doneIce=false,doneBBQ=false;
 let doneJacuzzi=false,doneStargaze=false,doneNap=false;
 const solids=[];             // {x,z,rx,rz} keep-out boxes (villa world)
@@ -320,6 +320,9 @@ function buildVillaWorld(){
   solids.push({x:jx,z:jz,rx:2.2,rz:2.2});
   spots.push({x:jx,z:jz-3,r:3.5,id:'jacuzzi',label:'sink into the jacuzzi'});
   spots.push({x:-5,z:14,r:4.5,id:'stargaze',label:'stargaze from the terrace ⭐'});
+  spots.push({x:-10,z:2,r:3.5,id:'sunset',label:'watch the sunset 🌅'});
+  // activity beacons — glow-pillars that pulse to guide the player
+  (function(){function mkB(x,z,col){const g=new T.Group();const ring=new T.Mesh(new T.CircleGeometry(3,24),new T.MeshBasicMaterial({color:col,transparent:true,opacity:0.3,depthWrite:false,side:T.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=0.05;g.add(ring);const beam=new T.Mesh(new T.CylinderGeometry(0.1,0.55,8,8,1,true),new T.MeshBasicMaterial({color:col,transparent:true,opacity:0.22,depthWrite:false,side:T.BackSide}));beam.position.y=4;g.add(beam);g.position.set(x,0,z);g.visible=false;world.add(g);return g;}world.userData.stargazeBeacon=mkB(-5,14,0xaaddff);world.userData.sunsetBeacon=mkB(-10,2,0xffaa33);})();
   // temporary toddler pool barrier (per the plan)
   const fmat=new T.MeshStandardMaterial({color:0xffffff,roughness:0.4,metalness:0.1,transparent:true,opacity:0.5});
   for(let i=-1;i<=1;i++){const fp=box(0.1,1.1,0.1,0xdddddd);fp.position.set(px+i*5,0.7,pz-pd/2-1.2);world.add(fp);}
@@ -1202,8 +1205,10 @@ function nearest(){
   }
   // nap becomes "go to bed" at night
   if(best&&best.id==='nap'&&timeOfDay>=21) return {id:'nap',label:'go to bed 🛏️'};
-  // stargaze only available at night
-  if(best&&best.id==='stargaze'&&(timeOfDay<20||timeOfDay>=6)) return null;
+  // stargaze only when stars are actually out (matches star renderer)
+  if(best&&best.id==='stargaze'&&timeOfDay>=6&&timeOfDay<21) return null;
+  // sunset only during golden hour
+  if(best&&best.id==='sunset'&&(timeOfDay<17||timeOfDay>=19)) return null;
   // sandcastle only available daytime with awake toddlers
   if(best&&best.id==='sandcastle'&&(todsAsleep||timeOfDay<8||timeOfDay>=20)) return null;
   // sunscreen only needed during daytime
@@ -1247,6 +1252,7 @@ function doAction(s){
     case'ice':doneIce=true;addV(4);cheer(26);drunk=Math.max(0,drunk-0.5);toast('🍦 Four ice creams, four happy faces.');break;
     case'nap':{const wasNight=timeOfDay>=21||timeOfDay<5;doneNap=true;drunk=0;if(wasNight){day++;timeOfDay=7;}else{timeOfDay+=4;if(timeOfDay>=24){timeOfDay-=24;day++;}}toast(wasNight?'🛏️ Out cold until morning. Well earned.':'😴 Siesta… time drifts on.');break;}
     case'stargaze':doneStargaze=true;addV(5);timeOfDay+=0.1;toast('⭐ Milky Way wall-to-wall. No light pollution out here.');break;
+    case'sunset':doneSunset=true;addV(6);toast('🌅 Sky on fire. Every shade of orange and pink across the Atlantic.');break;
     case'bed':enterBedroom();return;
     case'car':if(drunk>=1){vibes=Math.max(0,vibes-10);toast('🚗🍷 No driving after sangria — sober up first!');}else transition('plaza');break;
     case'sandcastle':addV(10);cheer(22);timeOfDay+=0.4;toast('🏖️ Epic four-towered sandcastle — the toddlers are DELIGHTED.');break;
@@ -1362,6 +1368,9 @@ function update(dt){
         else{orangesTotal++;$('orangeCount').textContent=orangesTotal;toast('🍊 Fresh Seville orange.');}
       }}
   }
+
+  // pulse activity beacons
+  if(scn==='villa'&&world){const bp=0.5+Math.sin(performance.now()*0.0025)*0.5;if(world.userData.stargazeBeacon){const b=world.userData.stargazeBeacon;const on=!doneStargaze&&(timeOfDay>=21||timeOfDay<6);b.visible=on;if(on){b.children[0].material.opacity=0.08+bp*0.22;b.children[1].material.opacity=0.06+bp*0.16;}}if(world.userData.sunsetBeacon){const b=world.userData.sunsetBeacon;const on=!doneSunset&&timeOfDay>=17&&timeOfDay<19;b.visible=on;if(on){b.children[0].material.opacity=0.08+bp*0.22;b.children[1].material.opacity=0.06+bp*0.16;}}}
 
   // action / prompt
   if(playerAnim){$('prompt').style.opacity=0;actEdge=false;}
@@ -1492,7 +1501,7 @@ function updateItinerary(){
     t_('🍦 Second ice cream run (why not)',doneIce),
     t_('😎 Horizontal excellence on the lounger',doneLounge)];}
   else if(tod>=17&&tod<19){period='golden hour';items=[
-    '🌅 Watch the sunset from the terrace',
+    t_('🌅 Watch the sunset — follow the orange glow',doneSunset),
     t_('🍤 BBQ on the east terrace',doneBBQ),
     t_('🛁 Jacuzzi while the kids play',doneJacuzzi),
     t_('🍷 Sangria + sunset — essential',doneSangria)];}
@@ -1500,10 +1509,10 @@ function updateItinerary(){
     todsAsleep?'✅ Toddlers tucked in — nice work':'😬 Toddler bedtime is now — get them to bed!',
     t_('🍷 Nightcap on the terrace',doneSangria),
     t_('🛁 Jacuzzi under the stars',doneJacuzzi),
-    t_('⭐ Stars are out — look up',doneStargaze)];}
+    t_('⭐ Stars are out — follow the blue glow',doneStargaze)];}
   else{period='night';items=[
     todsAsleep?'✅ Toddlers sleeping soundly':'🛏️ Toddlers still need to go to bed!',
-    t_('⭐ Star-gazing from the pool terrace',doneStargaze),
+    t_('⭐ Star-gazing — follow the blue glow',doneStargaze),
     t_('🛁 Jacuzzi to wind down',doneJacuzzi),
     t_('🛏️ Go to bed when ready',doneNap)];}
   if(period!==_lastItinPeriod){
