@@ -1355,7 +1355,7 @@ function update(dt){
   // sunburn: drain vibes if no sunscreen during peak sun hours
   if(!sunscreenApplied&&scn==='villa'&&timeOfDay>=9&&timeOfDay<18){vibes=Math.max(0,vibes-dt*0.12);if(!sunburnWarned){sunburnWarned=true;toast('🔴 You\'re getting burnt! Find the sunscreen 🧴');}}
   // reset sunscreen each morning
-  if(timeOfDay>=6&&timeOfDay<6.06){sunscreenApplied=false;sunburnWarned=false;}
+  if(timeOfDay>=6&&timeOfDay<6.06){sunscreenApplied=false;sunburnWarned=false;wakeupWarned=false;}
 
   // toddlers follow (only when awake and in villa)
   if(scn!=='bed') tods.forEach((t,i)=>{
@@ -1594,7 +1594,7 @@ function enterBedroom(){
   player.position.set(0,0,4);camYaw=Math.PI;camPitch=8;
   tods.forEach(t=>t.grp.visible=true);
   kidsRoom.userData.beds.forEach((b,i)=>{tods[i].grp.position.set(b.x+0.4,1.4,b.z);tods[i].grp.rotation.set(0,0,Math.PI/2);tods[i].mood=100;});
-  if(!todsAsleep){todsAsleep=true;wakeupWarned=false;tucked=true;addV(6);toast('😴 Four down, lights low. Bliss.');}
+  if(!todsAsleep){todsAsleep=true;wakeupWarned=true;tucked=true;addV(6);toast('😴 Four down, lights low. Bliss.');}
 }
 function exitBedroom(){
   scn='villa';kidsRoom.visible=false;world.visible=true;
