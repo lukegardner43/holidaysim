@@ -230,6 +230,16 @@ const mat=(c,opts={})=>new T.MeshStandardMaterial(Object.assign({color:c,roughne
 function box(w,h,d,c,opts){const m=new T.Mesh(new T.BoxGeometry(w,h,d),mat(c,opts));m.castShadow=true;m.receiveShadow=true;return m;}
 function cyl(rt,rb,h,c,seg=16){const m=new T.Mesh(new T.CylinderGeometry(rt,rb,h,seg),mat(c));m.castShadow=true;m.receiveShadow=true;return m;}
 
+// ---- procedural textures (realism pass) ----
+function _speck(c,s,n,amp,dot){for(let i=0;i<n;i++){const a=(Math.random()*amp)/255;c.fillStyle=Math.random()>0.5?'rgba(255,255,255,'+a+')':'rgba(0,0,0,'+a+')';c.fillRect(Math.random()*s,Math.random()*s,dot,dot);}}
+function mkTex(draw,rx,ry){const s=256,cv=document.createElement('canvas');cv.width=cv.height=s;const c=cv.getContext('2d');draw(c,s);const t=new T.CanvasTexture(cv);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rx,ry);t.encoding=T.sRGBEncoding;t.anisotropy=4;return t;}
+function rep(t,x,y){const c=t.clone();c.needsUpdate=true;c.repeat.set(x,y);return c;}
+const sandT=mkTex((c,s)=>{c.fillStyle='#e7d2a0';c.fillRect(0,0,s,s);_speck(c,s,4200,55,2);_speck(c,s,600,85,3);},1,1);
+const grassT=mkTex((c,s)=>{c.fillStyle='#8fae58';c.fillRect(0,0,s,s);const gs=['#7c9c49','#9dbb66','#86a850','#a8c470','#6e8f40'];for(let i=0;i<5200;i++){c.strokeStyle=gs[i%5];c.globalAlpha=0.4+Math.random()*0.6;c.lineWidth=1;const x=Math.random()*s,y=Math.random()*s,l=2+Math.random()*4;c.beginPath();c.moveTo(x,y);c.lineTo(x+(Math.random()-0.5)*2,y-l);c.stroke();}c.globalAlpha=1;},1,1);
+const tileT=mkTex((c,s)=>{c.fillStyle='#ddceb2';c.fillRect(0,0,s,s);_speck(c,s,2400,24,2);c.strokeStyle='rgba(96,80,58,0.5)';c.lineWidth=2;const st=s/4;for(let i=0;i<=4;i++){c.beginPath();c.moveTo(i*st,0);c.lineTo(i*st,s);c.stroke();c.beginPath();c.moveTo(0,i*st);c.lineTo(s,i*st);c.stroke();}},1,1);
+const stucT=mkTex((c,s)=>{c.fillStyle='#808080';c.fillRect(0,0,s,s);_speck(c,s,7500,28,1);},4,2);
+const waterT=mkTex((c,s)=>{c.fillStyle='#1a7fa6';c.fillRect(0,0,s,s);for(let i=0;i<40;i++){c.strokeStyle='rgba(255,255,255,'+(0.05+Math.random()*0.12)+')';c.lineWidth=1+Math.random()*2;c.beginPath();const y=Math.random()*s;c.moveTo(0,y);for(let x=0;x<=s;x+=16)c.lineTo(x,y+Math.sin(x*0.12+i*1.7)*5);c.stroke();}},1,1);
+
 function tree(x,z){const g=new T.Group();const tr=cyl(0.28,0.42,5.5,0x8a5a30,8);tr.position.y=2.75;g.add(tr);
   const cl=mat(0x5f7a45);for(let i=0;i<6;i++){const f=new T.Mesh(new T.ConeGeometry(0.5,3.2,5),cl);const a=i/6*Math.PI*2;f.position.set(Math.cos(a)*1.1,5.4,Math.sin(a)*1.1);f.rotation.z=Math.cos(a)*0.9;f.rotation.x=Math.sin(a)*0.9;f.castShadow=true;g.add(f);} 
   g.position.set(x,0,z);return g;}
@@ -248,10 +258,13 @@ function carMesh(col){const g=new T.Group();const b=box(2.2,0.9,4.4,col);b.posit
 
 function buildVillaWorld(){
   world=new T.Group();scene.add(world);
-  const ground=new T.Mesh(new T.PlaneGeometry(2000,200),mat(0xe7d2a0));ground.rotation.x=-Math.PI/2;ground.position.set(0,0,53);ground.receiveShadow=true;world.add(ground);
-  const lawn=new T.Mesh(new T.PlaneGeometry(120,64),mat(0x9fbc63));lawn.rotation.x=-Math.PI/2;lawn.position.set(0,0.02,20);lawn.receiveShadow=true;world.add(lawn);
+  const gt=rep(sandT,300,30);
+  const ground=new T.Mesh(new T.PlaneGeometry(2000,200),new T.MeshStandardMaterial({map:gt,bumpMap:gt,bumpScale:0.05,roughness:0.95}));ground.rotation.x=-Math.PI/2;ground.position.set(0,0,53);ground.receiveShadow=true;world.add(ground);
+  const lt=rep(grassT,26,14);
+  const lawn=new T.Mesh(new T.PlaneGeometry(120,64),new T.MeshStandardMaterial({map:lt,bumpMap:lt,bumpScale:0.04,roughness:0.9}));lawn.rotation.x=-Math.PI/2;lawn.position.set(0,0.02,20);lawn.receiveShadow=true;world.add(lawn);
   // ---- promenade (tiled) + low wall + La Barrosa-style navy lamps ----
-  const prom=new T.Mesh(new T.PlaneGeometry(220,8),mat(0xdccdb2));prom.rotation.x=-Math.PI/2;prom.position.set(0,0.03,-15);prom.receiveShadow=true;world.add(prom);
+  const pt=rep(tileT,27,1);
+  const prom=new T.Mesh(new T.PlaneGeometry(220,8),new T.MeshStandardMaterial({map:pt,bumpMap:pt,bumpScale:0.03,roughness:0.85}));prom.rotation.x=-Math.PI/2;prom.position.set(0,0.03,-15);prom.receiveShadow=true;world.add(prom);
   const pwall=box(190,0.9,0.6,0xeae0c8);pwall.position.set(0,0.45,-18.7);world.add(pwall);
   const lampLights=[];
   for(let lx=-72;lx<=72;lx+=24){const lg=new T.Group();const blade=box(0.35,6,0.5,0x223a5e);blade.rotation.x=0.18;blade.position.set(0,3,0);blade.castShadow=true;lg.add(blade);const arm=box(2.0,0.25,0.25,0x223a5e);arm.position.set(0.85,5.6,-0.3);lg.add(arm);const head=box(0.9,0.4,0.7,0xf2efe0);head.position.set(1.7,5.4,-0.3);lg.add(head);lg.position.set(lx,0,-17.6);world.add(lg);
@@ -261,8 +274,10 @@ function buildVillaWorld(){
     lampLights.push({pl:pl,halo:halo});}
   world.userData.lampLights=lampLights;
   // ---- golden beach + wet sand + foam ----
-  const beach=new T.Mesh(new T.PlaneGeometry(2000,30),mat(0xe9d6a3));beach.rotation.x=-Math.PI/2;beach.position.set(0,0.025,-32);beach.receiveShadow=true;world.add(beach);
-  const wet=new T.Mesh(new T.PlaneGeometry(2000,8),mat(0xcdb277));wet.rotation.x=-Math.PI/2;wet.position.set(0,0.035,-43);wet.receiveShadow=true;world.add(wet);
+  const bt=rep(sandT,300,4.5);
+  const beach=new T.Mesh(new T.PlaneGeometry(2000,30),new T.MeshStandardMaterial({map:bt,bumpMap:bt,bumpScale:0.06,roughness:0.95}));beach.rotation.x=-Math.PI/2;beach.position.set(0,0.025,-32);beach.receiveShadow=true;world.add(beach);
+  const wt=rep(sandT,300,1.2);
+  const wet=new T.Mesh(new T.PlaneGeometry(2000,8),new T.MeshStandardMaterial({map:wt,color:0xb59d72,bumpMap:wt,bumpScale:0.02,roughness:0.55,metalness:0.08}));wet.rotation.x=-Math.PI/2;wet.position.set(0,0.035,-43);wet.receiveShadow=true;world.add(wet);
   const foam=new T.Mesh(new T.PlaneGeometry(2000,2.6),new T.MeshStandardMaterial({color:0xffffff,roughness:0.6,transparent:true,opacity:0.85}));foam.rotation.x=-Math.PI/2;foam.position.set(0,0.05,-45.6);world.add(foam);
   // shore breaking wave crests (animated in update loop)
   const waveCrests=[];
@@ -291,6 +306,7 @@ function buildVillaWorld(){
   const lower=box(20,4.6,10,whiteA);lower.position.set(vx,2.3,vz);world.add(lower);
   const upper=box(20,3.8,8,whiteB);upper.position.set(vx,6.5,vz-2);world.add(upper);            // cantilever over terrace
   const roof=box(20.6,0.5,8.6,0xeae3d6);roof.position.set(vx,8.6,vz-2);world.add(roof);
+  [lower,upper,roof,terr].forEach(m=>{m.material.bumpMap=stucT;m.material.bumpScale=0.025;});
   // dark-stone feature column (full height, beside the entrance)
   const feat=new T.Mesh(new T.BoxGeometry(2.8,8.8,0.6),mat(stone,{roughness:0.95}));feat.position.set(vx-5.5,4.3,vz-5.25);feat.castShadow=true;feat.receiveShadow=true;world.add(feat);
   // glazing
@@ -307,7 +323,8 @@ function buildVillaWorld(){
   const px=0,pz=5,pw=16,pd=6.5;
   const deck=box(pw+4,0.3,pd+5,0xe6dabb);deck.position.set(px,0.14,pz+0.5);world.add(deck);
   const coping=box(pw+1,0.34,pd+1,0xdccba6);coping.position.set(px,0.18,pz);world.add(coping);
-  const water=new T.Mesh(new T.BoxGeometry(pw,0.5,pd),new T.MeshStandardMaterial({color:0x1a7fa6,roughness:0.12,metalness:0.35,transparent:true,opacity:0.92}));water.position.set(px,0.34,pz);world.add(water);world.userData.water=water;
+  const pwt=rep(waterT,2.5,1);
+  const water=new T.Mesh(new T.BoxGeometry(pw,0.5,pd),new T.MeshStandardMaterial({map:pwt,color:0xcfe8f2,roughness:0.12,metalness:0.35,transparent:true,opacity:0.92,bumpMap:pwt,bumpScale:0.03}));water.position.set(px,0.34,pz);world.add(water);world.userData.water=water;world.userData.poolTex=pwt;
   // underwater pool light
   const poolPL=new T.PointLight(0x20aaee,0,14,1.8);poolPL.position.set(px,0.5,pz);world.add(poolPL);world.userData.poolPL=poolPL;
   // soft glow plane at water surface
@@ -316,7 +333,8 @@ function buildVillaWorld(){
   spots.push({x:px,z:pz-pd/2-2,r:5,id:'pool',label:'dive into the heated pool'});
   // jacuzzi at the far end
   const jx=10.5,jz=5;const jbase=box(4,0.9,4,0xdfd2b4);jbase.position.set(jx,0.45,jz);world.add(jbase);
-  const jwat=new T.Mesh(new T.BoxGeometry(3.2,0.4,3.2),new T.MeshStandardMaterial({color:0x39b6cf,roughness:0.1,metalness:0.3,transparent:true,opacity:0.92}));jwat.position.set(jx,0.92,jz);world.add(jwat);
+  const jwt=rep(waterT,1,1);
+  const jwat=new T.Mesh(new T.BoxGeometry(3.2,0.4,3.2),new T.MeshStandardMaterial({map:jwt,color:0xd8f0f6,roughness:0.1,metalness:0.3,transparent:true,opacity:0.92,bumpMap:jwt,bumpScale:0.04}));jwat.position.set(jx,0.92,jz);world.add(jwat);world.userData.jacTex=jwt;
   solids.push({x:jx,z:jz,rx:2.2,rz:2.2});
   spots.push({x:jx,z:jz-3,r:3.5,id:'jacuzzi',label:'sink into the jacuzzi'});
   spots.push({x:-5,z:14,r:4.5,id:'stargaze',label:'stargaze from the terrace ⭐'});
@@ -1444,6 +1462,10 @@ function update(dt){
   }
   // rolling shore waves
   if(world.userData.waveCrests){const tm3=performance.now()*0.001;world.userData.waveCrests.forEach(function(wc,wi){const phase=((tm3*0.55+wi*0.25)%1);wc.position.z=-54+phase*9;wc.material.opacity=Math.sin(phase*Math.PI)*0.68;});}
+  // drifting ripples on pool + jacuzzi water
+  {const wt2=performance.now()*0.001;
+  if(world.userData.poolTex){world.userData.poolTex.offset.set(wt2*0.018,Math.sin(wt2*0.5)*0.02);}
+  if(world.userData.jacTex){world.userData.jacTex.offset.set(wt2*0.05,wt2*0.035);}}
 
   // clock
   if(scn!=='terminal'){timeOfDay+=dt*0.025;if(timeOfDay>=24){timeOfDay-=24;day++;}}
