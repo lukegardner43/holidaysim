@@ -240,9 +240,33 @@ const tileT=mkTex((c,s)=>{c.fillStyle='#ddceb2';c.fillRect(0,0,s,s);_speck(c,s,2
 const stucT=mkTex((c,s)=>{c.fillStyle='#808080';c.fillRect(0,0,s,s);_speck(c,s,7500,28,1);},4,2);
 const waterT=mkTex((c,s)=>{c.fillStyle='#1a7fa6';c.fillRect(0,0,s,s);for(let i=0;i<40;i++){c.strokeStyle='rgba(255,255,255,'+(0.05+Math.random()*0.12)+')';c.lineWidth=1+Math.random()*2;c.beginPath();const y=Math.random()*s;c.moveTo(0,y);for(let x=0;x<=s;x+=16)c.lineTo(x,y+Math.sin(x*0.12+i*1.7)*5);c.stroke();}},1,1);
 
-function tree(x,z){const g=new T.Group();const tr=cyl(0.28,0.42,5.5,0x8a5a30,8);tr.position.y=2.75;g.add(tr);
-  const cl=mat(0x5f7a45);for(let i=0;i<6;i++){const f=new T.Mesh(new T.ConeGeometry(0.5,3.2,5),cl);const a=i/6*Math.PI*2;f.position.set(Math.cos(a)*1.1,5.4,Math.sin(a)*1.1);f.rotation.z=Math.cos(a)*0.9;f.rotation.x=Math.sin(a)*0.9;f.castShadow=true;g.add(f);} 
-  g.position.set(x,0,z);return g;}
+// ---- realistic palm: curved segmented trunk + alpha-tested drooping fronds ----
+const frondT=(()=>{const cv=document.createElement('canvas');cv.width=128;cv.height=256;const c=cv.getContext('2d');
+  c.strokeStyle='#4f7a3a';c.lineWidth=5;c.beginPath();c.moveTo(64,4);c.lineTo(64,252);c.stroke();
+  const gs=['#57853f','#4b7636','#63924a','#5d8a44'];
+  for(let i=0;i<22;i++){const y=10+i*11;const len=54*(1-Math.abs(i/22-0.4)*0.75);
+    c.strokeStyle=gs[i%4];c.lineWidth=5.5;
+    c.beginPath();c.moveTo(64,y);c.lineTo(64-len,y+15);c.stroke();
+    c.beginPath();c.moveTo(64,y);c.lineTo(64+len,y+15);c.stroke();}
+  const t=new T.CanvasTexture(cv);t.encoding=T.sRGBEncoding;return t;})();
+const frondGeo=(()=>{const g=new T.PlaneGeometry(1.5,4.4,1,8);g.translate(0,2.2,0);g.rotateX(Math.PI/2);
+  const p=g.attributes.position;for(let i=0;i<p.count;i++){const d=p.getZ(i);p.setY(i,p.getY(i)-d*d*0.075);}
+  g.computeVertexNormals();return g;})();
+const frondMat=new T.MeshStandardMaterial({map:frondT,transparent:true,alphaTest:0.35,side:T.DoubleSide,roughness:0.9});
+function tree(x,z){const g=new T.Group();
+  const tm=mat(0x9a7048,{roughness:1});
+  let lean=0.5+Math.random()*0.6, crx=0, cry=0;
+  for(let i=0;i<6;i++){const r0=0.34-i*0.022;
+    const seg=new T.Mesh(new T.CylinderGeometry(r0-0.02,r0,1.05,8),tm);
+    crx=lean*0.028*i*i;cry=0.55+i*0.96;
+    seg.position.set(crx,cry,0);seg.rotation.z=-lean*0.055*i;seg.castShadow=true;seg.receiveShadow=true;g.add(seg);}
+  const crown=new T.Group();crown.position.set(crx,cry+0.55,0);g.add(crown);
+  for(let i=0;i<8;i++){const f=new T.Mesh(frondGeo,frondMat);
+    f.rotation.y=i*(Math.PI/4)+Math.random()*0.4;
+    f.rotation.x=-0.5+(i%3)*0.28+Math.random()*0.15;
+    crown.add(f);}
+  for(let i=0;i<3;i++){const co=new T.Mesh(new T.SphereGeometry(0.17,8,8),mat(0x5a3d22));const a=i*2.1;co.position.set(Math.cos(a)*0.3,-0.15,Math.sin(a)*0.3);co.castShadow=true;crown.add(co);}
+  g.position.set(x,0,z);g.rotation.y=Math.random()*Math.PI*2;return g;}
 
 function lounger(x,z,rot){const g=new T.Group();const base=box(1.0,0.25,2.2,0xffffff);base.position.y=0.45;g.add(base);
   const back=box(1.0,0.18,1.2,0xc2562f);back.position.set(0,0.95,-0.7);back.rotation.x=-0.6;g.add(back);
@@ -467,7 +491,7 @@ function buildVillaWorld(){
   // headland: a low flat-topped landmass across the bay, with a white town sitting flat on top
   const HLx=-70,HLz=-150,HLtop=7;
   const headBase=new T.Mesh(new T.CylinderGeometry(40,52,HLtop,7),mat(0x86975a,{flatShading:true}));headBase.position.set(HLx,HLtop/2-1,HLz);headBase.receiveShadow=true;world.add(headBase);
-  const headHill=new T.Mesh(new T.ConeGeometry(26,18,6,1),mat(0x7d9657,{flatShading:true}));headHill.position.set(HLx-10,HLtop+8,HLz-6);world.add(headHill);
+  const headHill=new T.Mesh(new T.SphereGeometry(26,14,9),mat(0x7d9657,{flatShading:true}));headHill.scale.set(1,0.55,1);headHill.position.set(HLx-10,HLtop,HLz-6);world.add(headHill);
   // white town: houses flat on the plateau top (y=HLtop)
   for(let i=0;i<24;i++){const ang=Math.random()*Math.PI*2, rad=Math.random()*28;const hx=HLx+Math.cos(ang)*rad, hz=HLz+Math.sin(ang)*rad;const hh=2.4+Math.random()*2.2;
     const hs=box(2.4,hh,2.4,Math.random()>0.5?0xf6f1e8:0xece4d6);hs.position.set(hx,HLtop+hh/2,hz);hs.castShadow=true;world.add(hs);
@@ -484,10 +508,25 @@ function buildVillaWorld(){
   world.userData.sailboats.forEach(function(b){world.add(b.mesh);});
   // a couple of pier posts
   for(let i=0;i<6;i++){const pp=cyl(0.2,0.24,2,0x6e4a2c,6);pp.position.set(-50+i*4,0.6,-46);world.add(pp);}
-  // distant hills behind the villa (inland)
-  function mountain(x,z,h,w,col){const m=new T.Mesh(new T.ConeGeometry(w,h,5,1),mat(col,{flatShading:true,roughness:1}));m.rotation.y=Math.random()*6;m.position.set(x,h/2-1,z);m.castShadow=true;m.receiveShadow=true;world.add(m);}
-  for(let i=0;i<7;i++){const x=-150+i*48+(Math.random()*20-10);mountain(x,150+Math.random()*30,34+Math.random()*22,30+Math.random()*14,i%2?0x6f8a4e:0x7d9657);}
-  for(let i=0;i<6;i++){const x=-160+i*58;mountain(x,200+Math.random()*40,50+Math.random()*30,40+Math.random()*18,0x8a9a86);} // hazier back range
+  // rolling inland terrain behind the villa (heightfield, vertex-colored for haze)
+  {const tw2=900,td2=300;
+  const tg=new T.PlaneGeometry(tw2,td2,72,30);tg.rotateX(-Math.PI/2);
+  const pos=tg.attributes.position;const cols=[];
+  const cNear=new T.Color(0x7d9657),cVar=new T.Color(0x6f8a4e),cHaze=new T.Color(0x9aa892);
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),z=pos.getZ(i);
+    const depth=(z+td2/2)/td2;                       // 0 = front edge, 1 = far back
+    let h=Math.sin(x*0.012+1.6)*10+Math.sin(x*0.031+0.5)*6+Math.sin(x*0.007-0.8)*14+Math.sin((x+z)*0.02)*5+Math.sin(z*0.018)*6;
+    h=(h+22)*Math.max(0,depth-0.04)+depth*depth*26;  // flat at front, tall ridge at back
+    pos.setY(i,h);
+    const t2=Math.min(1,Math.max(0,h/55));
+    const cc=cNear.clone().lerp(cVar,Math.abs(Math.sin(x*0.02+z*0.013))*0.7).lerp(cHaze,depth*0.55+t2*0.2);
+    cols.push(cc.r,cc.g,cc.b);
+  }
+  tg.setAttribute('color',new T.Float32BufferAttribute(cols,3));
+  tg.computeVertexNormals();
+  const terrain=new T.Mesh(tg,new T.MeshStandardMaterial({vertexColors:true,flatShading:true,roughness:1}));
+  terrain.position.set(0,-0.15,270);world.add(terrain);}
 
   // ===== side scenery: Andalusian coastal landscape =====
 
