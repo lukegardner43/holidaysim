@@ -10,8 +10,8 @@ Six of you on this holiday. You play one of the five adults, and everyone else l
 | --- | --- |
 | 👩 Mum | loungers, sangria, sunsets, the jacuzzi |
 | 👨 Dad | the BBQ, cannonballs, paddling, paella |
-| 👵 Grandma | paella, sunsets, the sauna, ice cream (reads on a lounger) |
-| 👴 Grandad | the BBQ, paella, stargazing (reads the paper, wears socks with sandals) |
+| 👵 Nana | paella, sunsets, the sauna, ice cream (reads on a lounger) |
+| 👴 Papa | the BBQ, paella, stargazing (reads the paper, wears socks with sandals) |
 | 💃 Auntie | sangria, the jacuzzi, the pool; dances on the terrace late at night |
 | 👶 The little one | follows whoever is minding them |
 
@@ -22,6 +22,27 @@ Six of you on this holiday. You play one of the five adults, and everyone else l
 - Keep the whole family happy (the faces in the top-left HUD) for a bonus.
 
 To rename anyone or change how they look, edit the `FAMILY` table near the top of the characters section in `index.html`. You can change names, heights, skin, hair, outfits, hats, glasses and favourite activities.
+
+## Real places
+
+The areas around the villa, the Seville day trip, the flyover and the Jerez landing are built from OpenStreetMap data:
+
+- **La Barrosa, Chiclana:**
+  - the real coastline
+  - pine forests, golf courses and marshes
+  - hotel footprints and streets (the villas that line those streets are generated)
+  - the Sancti Petri islet with its castle, lighthouse and pier
+  - the Torre del Puerco watchtower
+  - Medina Sidonia, Vejer, Conil, Chiclana, San Fernando and Cádiz, on their true compass bearings
+- **Seville:**
+  - about 2,700 building footprints around Plaza de España
+  - María Luisa park and the Guadalquivir
+  - the Giralda, the cathedral, Torre del Oro, Torre Sevilla, Las Setas and the Alcázar
+- **Jerez airport:** runway 02/20 and the terminal, aprons and taxiways.
+
+Distances are compressed so far-off landmarks stay visible, but every direction is geographically true.
+
+Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, available under the Open Database License.
 
 ## Controls
 
