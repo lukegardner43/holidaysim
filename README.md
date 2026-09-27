@@ -39,8 +39,11 @@ The areas around the villa, the Seville day trip, the flyover and the Jerez land
   - María Luisa park and the Guadalquivir
   - the Giralda, the cathedral, Torre del Oro, Torre Sevilla, Las Setas and the Alcázar
 - **Jerez airport:** runway 02/20 and the terminal, aprons and taxiways.
+- **Mountains:** Medina Sidonia's hill, the Retín and Plata sierras, Los Alcornocales and the Sierra de Grazalema, on their true bearings with exaggerated height so they read on the horizon.
 
-Distances are compressed so far-off landmarks stay visible, but every direction is geographically true.
+People, buildings and the plane share one scale (1.31 game units per metre): Plaza de España is built at its real size, and the plane is an easyJet Airbus A320neo modelled on a Wikimedia Commons photo of G-UZLB using the published A320neo dimensions.
+
+Close to the villa and the plaza, distances are true to scale. Further out they are compressed so far-off landmarks stay visible, but every direction is geographically true.
 
 Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, available under the Open Database License.
 
