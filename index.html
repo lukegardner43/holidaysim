@@ -954,11 +954,22 @@ function buildVillaWorld(){
   const pt=rep(tileT,27,1);
   const prom=new T.Mesh(new T.PlaneGeometry(220,8),new T.MeshStandardMaterial({map:pt,bumpMap:pt,bumpScale:0.03,roughness:0.85}));prom.rotation.x=-Math.PI/2;prom.position.set(0,0.03,-15);prom.receiveShadow=true;world.add(prom);
   const pwall=box(190,0.9,0.6,0xeae0c8);pwall.position.set(0,0.45,-18.7);world.add(pwall);
+  // swan-neck promenade lamps: cast base, tapered navy post, arm reaching over the walk, lantern head with a lens that lights at night
   const lampLights=[],lampPosts=[];world.userData.lampPosts=lampPosts;
-  for(let lx=-72;lx<=72;lx+=24){const lg=new T.Group();lampPosts.push(lg);const blade=box(0.35,6,0.5,0x223a5e);blade.rotation.x=0.18;blade.position.set(0,3,0);blade.castShadow=true;lg.add(blade);const arm=box(2.0,0.25,0.25,0x223a5e);arm.position.set(0.85,5.6,-0.3);lg.add(arm);const head=box(0.9,0.4,0.7,0xf2efe0);head.position.set(1.7,5.4,-0.3);lg.add(head);lg.position.set(lx,0,-17.6);world.add(lg);
-    // point light + halo glow sphere at each lamp head
-    const pl=new T.PointLight(0xffdd88,0,20,2);pl.position.set(lx+1.7,5.1,-17.9);world.add(pl);
-    const halo=new T.Mesh(new T.SphereGeometry(0.55,8,8),new T.MeshBasicMaterial({color:0xffee99,transparent:true,opacity:0,fog:false}));halo.position.set(lx+1.7,5.4,-17.9);world.add(halo);
+  const navy=mat(0x1f3552,{roughness:0.45,metalness:0.55}),lens=new T.MeshBasicMaterial({color:0xd8d4c8});world.userData.lampLens=lens;
+  const glowT=radialTex(64,64,[[32,32,0,32,[[0,0.9],[0.25,0.4],[1,0]]]],[255,226,160]);
+  const armG=new T.TubeGeometry(new T.QuadraticBezierCurve3(new T.Vector3(0,5.65,0),new T.Vector3(0,6.6,0.05),new T.Vector3(0,6.3,1.35)),20,0.07,8,false);
+  for(let lx=-72;lx<=72;lx+=24){const lg=new T.Group();lampPosts.push(lg);lg.position.set(lx,0,-17.9);world.add(lg);
+    const P=(geo,m,x,y,z)=>{const o=new T.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=true;lg.add(o);return o;};
+    P(new T.CylinderGeometry(0.3,0.42,0.7,14),navy,0,0.35,0);P(new T.CylinderGeometry(0.19,0.26,0.28,14),navy,0,0.84,0);
+    P(new T.CylinderGeometry(0.085,0.14,4.8,12),navy,0,3.28,0);
+    [2.4,4.9].forEach(y=>{const r=P(new T.TorusGeometry(0.13,0.035,6,14),navy,0,y,0);r.rotation.x=Math.PI/2;});
+    P(new T.SphereGeometry(0.11,10,8),navy,0,5.72,0);P(armG,navy,0,0,0);
+    P(new T.CylinderGeometry(0.1,0.42,0.3,16),navy,0,6.22,1.36);P(new T.SphereGeometry(0.1,8,6),navy,0,6.42,1.36);
+    const ln=P(new T.CircleGeometry(0.37,16),lens,0,6.065,1.36);ln.rotation.x=Math.PI/2;ln.castShadow=false;
+    mergeStatic(lg);
+    const pl=new T.PointLight(0xffdd88,0,20,2);pl.position.set(lx,5.9,-16.54);world.add(pl);
+    const halo=new T.Sprite(new T.SpriteMaterial({map:glowT,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:0,fog:false}));halo.scale.set(2.2,2.2,1);halo.position.set(lx,6.0,-16.54);world.add(halo);
     lampLights.push({pl:pl,halo:halo});}
   world.userData.lampLights=lampLights;
   // ---- golden beach + wet sand + foam ----
@@ -2919,7 +2930,8 @@ function applyTime(){
   // night lights: smooth fade in after 20:00, fade out after 07:00
   const nb=td<6?1:td<7?7-td:td<20?0:td<21?td-20:1;
   if(world){
-    (world.userData.lampLights||[]).forEach(function(e){e.pl.intensity=nb*1.8;e.halo.material.opacity=nb*0.45;});
+    (world.userData.lampLights||[]).forEach(function(e){e.pl.intensity=nb*1.8;e.halo.material.opacity=nb*0.75;});
+    if(world.userData.lampLens)world.userData.lampLens.color.setRGB(0.66+nb*1.3,0.64+nb*1.1,0.58+nb*0.62);
     (world.userData.entrLights||[]).forEach(function(e){e.pl.intensity=nb*1.4+(1-nb)*0.3;e.halo.material.opacity=nb*0.55+(1-nb)*0.18;});
     if(world.userData.dring){const pt=performance.now()*0.001;world.userData.dring.material.opacity=0.38+0.22*Math.sin(pt*1.6);}
     if(world.userData.doorArrow){const da=world.userData.doorArrow;const showBed=!todsAsleep&&td>=19;const showWake=todsAsleep&&td>=6&&td<21;da.visible=scn==='villa'&&started&&(showBed||showWake);if(da.visible){const pt=performance.now()*0.001;da.position.y=11+Math.sin(pt*2.2)*0.6;const col=showBed?0xff5020:0x44dd44;da.children.forEach(function(c){c.material.color.setHex(col).convertSRGBToLinear();});}}
