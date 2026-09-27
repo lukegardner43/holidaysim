@@ -77,7 +77,7 @@ Move with WASD, the arrow keys or the on-screen pad. Drag to look around. Intera
 
 ## Sound
 
-All music and sound is generated in the browser (Web Audio), with no audio files. By day there's a sunny Spanish-guitar rumba, and at night a gentle fingerpicked guitar. The ambience follows the scene: waves and gulls at the villa, crickets at night, the fountain and crowd in Seville, and engines on the plane. The activities have their own sounds: splashes, the BBQ sizzle, the sangria pour and clink, the sauna door and steam, the ice-cream bell, sandcastle digging, the car engine, the camera shutter and chatty family voices. Sound starts on your first tap, and it still plays with an iPhone's silent switch on.
+All music and sound is generated in the browser (Web Audio), with no audio files. By day there's a laid-back acoustic tune (soft guitar, a warm pad, marimba and whistle), and at night a gentle fingerpicked guitar. The ambience follows the scene: waves and gulls at the villa, crickets at night, the fountain and crowd in Seville, and engines on the plane. The activities have their own sounds: splashes, the BBQ sizzle, the sangria pour and clink, the sauna door and steam, the ice-cream bell, sandcastle digging, the car engine, the camera shutter and chatty family voices. Sound starts on your first tap, and it still plays with an iPhone's silent switch on.
 
 ## Tech notes
 

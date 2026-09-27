@@ -3379,7 +3379,7 @@ function animate(now){
 
 // boot
 // ===================== SOUND: procedural music, ambience and effects (Web Audio, no audio files) =====================
-// Day: a sunny rumba (plucked nylon guitar, bass, cajón, shaker, claps, whistle melody). Night: slow fingerpicked guitar.
+// Day: a laid-back acoustic tune (soft nylon-guitar offbeats, warm pad, marimba and whistle melody, shaker). Night: slow fingerpicked guitar.
 // Ambience follows the scene (waves + gulls + cicadas / crickets at the villa, fountain + crowd in Seville, engines in the air).
 const SND=(()=>{
   let ctx=null,master,musicG,sfxG,ambG,noiseBuf,brownBuf,muted=false,running=false,iosAudio=null;
@@ -3431,45 +3431,41 @@ const SND=(()=>{
   function whistle(t,m,dur,vel){const f=mtof(m),o=ctx.createOscillator();o.type='sine';o.frequency.value=f;const v=ctx.createOscillator();v.frequency.value=5.3;const vg=ctx.createGain();vg.gain.setValueAtTime(0,t);vg.gain.linearRampToValueAtTime(f*0.011,t+0.18);v.connect(vg);vg.connect(o.frequency);
     const g=ctx.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(vel,t+0.035);g.gain.setValueAtTime(vel,t+Math.max(0.05,dur-0.07));g.gain.linearRampToValueAtTime(0.0001,t+dur);
     o.connect(g);g.connect(musicG);o.start(t);v.start(t);o.stop(t+dur+0.03);v.stop(t+dur+0.03);}
-  const DR={kick:(t,v)=>{tone(t,{f:115,f2:52,glide:0.12,dur:0.26,vel:0.75*v,dest:musicG});noise(t,{type:'lowpass',f:700,dur:0.03,vel:0.22*v,dest:musicG});},
-    slap:(t,v)=>{noise(t,{f:1900,q:1.1,dur:0.12,vel:0.42*v,dest:musicG,pan:0.15});tone(t,{f:230,f2:170,dur:0.06,vel:0.18*v,dest:musicG});},
-    shaker:(t,v)=>noise(t,{type:'highpass',f:6500,q:0.7,attack:0.012,dur:0.05,vel:0.09*v,dest:musicG,pan:-0.3}),
-    clap:(t,v)=>[0,0.011,0.022].forEach((d,i)=>noise(t+d,{f:1250,q:0.9,dur:i===2?0.15:0.025,vel:0.3*v,dest:musicG,pan:0.25})),
-    cast:(t,v)=>{noise(t,{f:3600,q:5,dur:0.03,vel:0.35*v,dest:musicG,pan:-0.4});noise(t+0.055,{f:3900,q:5,dur:0.03,vel:0.26*v,dest:musicG,pan:-0.4});}};
+  const DR={shaker:(t,v)=>noise(t,{type:'highpass',f:6500,q:0.7,attack:0.012,dur:0.05,vel:0.09*v,dest:musicG,pan:-0.3})};
 
   // ---------- the songs ----------
   const CH={D:[50,57,62,66,69],G:[43,50,55,59,62,67],A:[45,52,57,61,64],Bm:[47,54,59,62,66],Fsm:[42,49,54,57,61],
     Dmaj7:[50,57,61,66,69],Bm7:[47,54,57,62,66],Em7:[40,47,50,55,59],A7:[45,52,55,61,64],Gmaj7:[43,50,54,59,62],Fsm7:[42,49,52,57,61]};
   const ROOT={D:38,G:43,A:45,Bm:47,Fsm:42,Dmaj7:38,Bm7:47,Em7:40,A7:45,Gmaj7:43,Fsm7:42};
-  const SEC_A=['D','G','A','D','Bm','G','A','A'],SEC_B=['G','A','Fsm','Bm','G','A','D','D'];
+  const SEC_A=['Dmaj7','Gmaj7','A7','Dmaj7','Bm7','Gmaj7','A7','A7'],SEC_B=['Gmaj7','A7','Fsm7','Bm7','Gmaj7','A7','Dmaj7','Dmaj7'];
   const MEL_A=[[[0,69,1],[1,66,.5],[1.5,69,.5],[2,74,2]],[[0,74,.5],[.5,73,.5],[1,71,1],[2,67,1.5],[3.5,69,.5]],[[0,71,1],[1,69,.5],[1.5,67,.5],[2,64,1],[3,69,1]],[[0,66,1.5],[1.5,64,.5],[2,62,2]],
     [[0,71,1],[1,74,.5],[1.5,71,.5],[2,78,1.5],[3.5,76,.5]],[[0,74,1],[1,71,1],[2,67,1],[3,71,1]],[[0,69,.5],[.5,71,.5],[1,73,1],[2,76,1],[3,73,1]],[[0,69,3]]];
   const MEL_B=[[[0,71,.5],[.5,74,.5],[1,79,1],[2,78,1],[3,76,1]],[[0,76,.5],[.5,78,.5],[1,76,1],[2,73,1.5],[3.5,69,.5]],[[0,73,1],[1,78,1],[2,76,.5],[2.5,73,.5],[3,69,1]],[[0,74,1.5],[1.5,73,.5],[2,71,2]],
     [[0,71,.5],[.5,74,.5],[1,79,1],[2,81,1],[3,79,1]],[[0,78,1],[1,76,1],[2,73,1],[3,76,1]],[[0,78,1],[1,76,.5],[1.5,74,.5],[2,73,1],[3,69,1]],[[0,74,2],[2,62,.5],[2.5,66,.5],[3,69,1]]];
-  // 32-bar day form: A (guitar tune) · B (guitar + whistle) · A (whistle an octave up) · B (guitar + whistle + claps)
-  const DAY=[];[0,1,2,3].forEach(s=>{const A=s%2===0;for(let b=0;b<8;b++)DAY.push({ch:(A?SEC_A:SEC_B)[b],mel:(A?MEL_A:MEL_B)[b],gtr:s!==2,wh:s!==0,up:s===2?12:0,clap:s===3,fill:!A&&b===7});});
+  // 32-bar day form: A (marimba tune) · B (soft whistle) · A (just the groove, room to breathe) · B (marimba)
+  const DAY=[];[0,1,2,3].forEach(s=>{const A=s%2===0;for(let b=0;b<8;b++)DAY.push({ch:(A?SEC_A:SEC_B)[b],mel:(A?MEL_A:MEL_B)[b],lead:s===1?'wh':s===2?null:'mar'});});
   const NIGHT=['Dmaj7','Bm7','Em7','A7','Dmaj7','Bm7','Em7','A7','Gmaj7','A7','Fsm7','Bm7','Em7','A7','Dmaj7','Dmaj7'];
-  const STRUM=[['D',1],null,['X',.7],['U',.45],['D',.6],['U',.38],['X',.7],['U',.45]];
   let mood='day',want='day',bar=0,step=0,nextT=0,timer=null,strings=[],musicVol=0.3;
-  function prewarm(){const set=new Set();Object.values(CH).forEach(c=>c.forEach(m=>set.add(m)));set.forEach(m=>{ks(m,1.8,0.996,0.5);ks(m,1.6,0.996,0.38);});
+  function prewarm(){const set=new Set();Object.values(CH).forEach(c=>c.forEach(m=>set.add(m)));set.forEach(m=>{ks(m,1.6,0.996,0.36);ks(m,1.6,0.996,0.4);});
     Object.values(ROOT).forEach(m=>{ks(m,1.2,0.993,0.3);ks(m+7,1.2,0.993,0.3);ks(m+12,1.2,0.993,0.3);});[...MEL_A,...MEL_B].forEach(b=>b.forEach(n=>ks(n[1],2.2,0.998,0.7)));}
-  function strum(t,chord,kind,vel){const c=CH[chord];
-    if(kind==='X'){noise(t,{f:2600,q:1.2,dur:0.05,vel:0.2*vel,dest:musicG});c.slice(1).forEach((m,i)=>{mute(strings[i+1],t);pluck(t+i*0.004,m,0.12*vel,{dur:0.2,damp:0.9,bright:0.4});});return;}
-    const idx=kind==='D'?c.map((m,i)=>i):c.map((m,i)=>i).slice(1).reverse();
-    idx.forEach((i,k)=>{const tt=t+k*(kind==='D'?0.011:0.008);mute(strings[i],tt);strings[i]=pluck(tt,c[i],(kind==='D'?0.2:0.14)*vel*(1-k*0.04),{dur:1.8,damp:0.996,bright:0.5,pan:(i-2.5)*0.08});});}
-  function dayStep(t,spb){const B=DAY[bar%DAY.length],s=step,beat=spb*2;
-    const st=STRUM[s];if(st)strum(t,B.ch,st[0],st[1]);
-    const r=ROOT[B.ch];if(s===0)pluck(t,r,0.5,{dur:1.2,damp:0.993,bright:0.3});if(s===3)pluck(t,r,0.28,{dur:1.2,damp:0.993,bright:0.3});if(s===4)pluck(t,r+7,0.42,{dur:1.2,damp:0.993,bright:0.3});if(s===7)pluck(t,r+12,0.26,{dur:1.2,damp:0.993,bright:0.3});
-    if(s===0)DR.kick(t,1);if(s===4)DR.kick(t,0.55);if(s===2||s===6)DR.slap(t,1);if(s===7)DR.slap(t,0.3);DR.shaker(t,s%2?1:0.55);
-    if(B.clap&&(s===2||s===6))DR.clap(t,1);if(B.fill&&s>=4)DR.cast(t,0.9);
-    if(s===0)B.mel.forEach(([o,m,d])=>{const tt=t+o*beat;if(B.gtr)pluck(tt,m+B.up,0.34,{dur:2.2,damp:0.998,bright:0.7,pan:0.1});if(B.wh)whistle(tt,m+12,d*beat*0.95,B.gtr?0.05:0.075);});}
+  function strum(t,chord,kind,vel){const c=CH[chord],idx=kind==='D'?[1,2,3,4]:[4,3,2];
+    idx.forEach((i,k)=>{const tt=t+k*(kind==='D'?0.016:0.012);mute(strings[i],tt);strings[i]=pluck(tt,c[i],0.13*vel*(1-k*0.05),{dur:1.6,damp:0.996,bright:0.36,pan:(i-2.5)*0.1});});}
+  function pad(t,chord,len){const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=850;const g=ctx.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(0.016,t+0.9);g.gain.setValueAtTime(0.016,t+len-0.2);g.gain.linearRampToValueAtTime(0.0001,t+len+1.0);
+    f.connect(g);g.connect(musicG);CH[chord].slice(1,5).forEach(m=>[-4,4].forEach(dc=>{const o=ctx.createOscillator();o.type='triangle';o.frequency.value=mtof(m);o.detune.value=dc;o.connect(f);o.start(t);o.stop(t+len+1.1);}));}
+  function marimba(t,m,vel){const f=mtof(m);tone(t,{f,dur:0.7,vel,dest:musicG,pan:0.15});tone(t,{f:f*4,dur:0.12,vel:vel*0.22,dest:musicG,pan:0.15});tone(t,{f:f*2,dur:0.25,vel:vel*0.12,dest:musicG,pan:0.15});}
+  function dayStep(t,spb){const B=DAY[bar%DAY.length],s=step,beat=spb*2,r=ROOT[B.ch];
+    if(s===0){pad(t,B.ch,beat*4);pluck(t,r,0.34,{dur:1.2,damp:0.993,bright:0.28});strum(t,B.ch,'D',0.5);}
+    if(s===3)strum(t,B.ch,'U',0.36);if(s===4)pluck(t,r+7,0.26,{dur:1.2,damp:0.993,bright:0.28});if(s===6)strum(t,B.ch,'D',0.38);
+    if(s===2||s===6)noise(t,{type:'lowpass',f:1400,q:0.5,dur:0.07,vel:0.05,dest:musicG,pan:0.2});
+    DR.shaker(t,s%2?0.45:0.22);
+    if(s===0&&B.lead)B.mel.forEach(([o,m,d])=>{const tt=t+o*beat;if(B.lead==='mar')marimba(tt,m,0.06);else whistle(tt,m,d*beat*0.95,0.04);});}
   function nightStep(t,spb){const ch=NIGHT[bar%NIGHT.length],c=CH[ch],s=step,pat=[0,2,3,4,1,3,4,2];
     const i=pat[s];mute(strings[i],t);strings[i]=pluck(t,c[i],s===0?0.36:0.23,{dur:1.6,damp:0.996,bright:0.4,pan:(i-2)*0.1});
     if(s===0)pluck(t,ROOT[ch],0.4,{dur:1.2,damp:0.993,bright:0.3});
     if(s%2===1&&bar%2===0)DR.shaker(t,0.35);
     if((s===2||s===6)&&Math.random()<0.25)bell(t,mtof(c[2+Math.floor(Math.random()*3)]+24),0.022,1.4,musicG);}
   function sched(){if(!ok())return;const T0=ctx.currentTime;if(nextT<T0-0.05)nextT=T0+0.05;
-    while(nextT<T0+0.3){const spb=60/(mood==='day'?104:74)/2;if(musicVol>0.001){if(mood==='day')dayStep(nextT,spb);else nightStep(nextT,spb);}
+    while(nextT<T0+0.3){const spb=60/(mood==='day'?88:72)/2;if(musicVol>0.001){if(mood==='day')dayStep(nextT,spb);else nightStep(nextT,spb);}
       nextT+=spb;step++;if(step===8){step=0;bar++;if(want!==mood){mood=want;bar=0;}}}}
 
   // ---------- ambience ----------
@@ -3485,7 +3481,7 @@ const SND=(()=>{
     A.hum=ctx.createGain();A.hum.gain.value=0;const ho=ctx.createOscillator();ho.type='sawtooth';ho.frequency.value=116;const hf=ctx.createBiquadFilter();hf.type='lowpass';hf.frequency.value=300;ho.connect(hf);hf.connect(A.hum);A.hum.connect(ambG);ho.start();}
   const setA=(k,v,tc)=>{if(A[k])A[k].gain.setTargetAtTime(v,ctx.currentTime,tc||0.4);};
   const dbg={music:1,amb:1};
-  const SCN_MUSIC={villa:0.42,bed:0.22,plaza:0.4,terminal:0.28,cabin:0.22,wingview:0.28,landing:0.28,title:0.42};
+  const SCN_MUSIC={villa:0.36,bed:0.2,plaza:0.36,terminal:0.24,cabin:0.2,wingview:0.24,landing:0.24,title:0.36};
 
   // ---------- effects ----------
   const last={};const thr=(k,s)=>{const t=performance.now()/1000;if(last[k]&&t-last[k]<s)return false;last[k]=t;return true;};
