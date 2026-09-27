@@ -231,9 +231,8 @@ function init(){
   envScene=new T.Scene();envScene.add(new T.Mesh(new T.SphereGeometry(50,32,16),skyMat));
   pmrem=new T.PMREMGenerator(renderer);
   // soft drifting clouds (canvas sprites)
-  {const cv=document.createElement('canvas');cv.width=256;cv.height=128;const c=cv.getContext('2d');
-   for(let i=0;i<26;i++){const x=40+Math.random()*176,y=58+Math.random()*34-Math.abs(x-128)*0.12,rr=18+Math.random()*26;const g=c.createRadialGradient(x,y,0,x,y,rr);g.addColorStop(0,'rgba(255,255,255,0.55)');g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.fillRect(x-rr,y-rr,rr*2,rr*2);}
-   const ct=new T.CanvasTexture(cv);
+  {const bl=[];for(let i=0;i<26;i++){const x=40+Math.random()*176,y=58+Math.random()*34-Math.abs(x-128)*0.12,rr=18+Math.random()*26;bl.push([x,y,0,rr,[[0,0.55],[1,0]]]);}
+   const ct=radialTex(256,128,bl,[255,255,255]);
    for(let i=0;i<16;i++){const m=new T.SpriteMaterial({map:ct,transparent:true,depthWrite:false,fog:false,opacity:0.9});const s=new T.Sprite(m);
      const a=Math.random()<0.65?(Math.random()-0.5)*Math.PI:(Math.random()*2-1)*Math.PI,d=2600+Math.random()*3200;s.position.set(Math.sin(a)*d,380+Math.random()*700,-Math.cos(a)*d);
      const sc=900+Math.random()*1300;s.scale.set(sc,sc*0.45,1);s.renderOrder=-5;skyGroup.add(s);clouds.push(s);}}
@@ -310,6 +309,16 @@ function box(w,h,d,c,opts){const m=new T.Mesh(new T.BoxGeometry(w,h,d),mat(c,opt
 function cyl(rt,rb,h,c,seg=16){const m=new T.Mesh(new T.CylinderGeometry(rt,rb,h,seg),mat(c));m.castShadow=true;m.receiveShadow=true;return m;}
 
 // ---- procedural textures (realism pass) ----
+// Soft see-through textures are computed in JS rather than drawn on a canvas: iPhone Safari's
+// anti-fingerprinting adds noise to canvas pixels, which speckles faint gradients (clouds, shadows, steam).
+// blobs: [cx, cy, r0, r1, [[t, alpha], ...]] in canvas coordinates (y down), composited source-over.
+function radialTex(w,h,blobs,rgb){const A=new Float32Array(w*h);
+  blobs.forEach(([bx,by,r0,r1,st])=>{const x0=Math.max(0,Math.floor(bx-r1)),x1=Math.min(w-1,Math.ceil(bx+r1)),y0=Math.max(0,Math.floor(by-r1)),y1=Math.min(h-1,Math.ceil(by+r1));
+    for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){let t=(Math.hypot(x+0.5-bx,y+0.5-by)-r0)/(r1-r0);t=t<0?0:t>1?1:t;let a=st[st.length-1][1];
+      for(let k=1;k<st.length;k++)if(t<=st[k][0]){const u=(t-st[k-1][0])/((st[k][0]-st[k-1][0])||1);a=st[k-1][1]+(st[k][1]-st[k-1][1])*u;break;}
+      const i=(h-1-y)*w+x;A[i]=a+A[i]*(1-a);}});
+  const d=new Uint8Array(w*h*4);for(let i=0;i<w*h;i++){d[i*4]=rgb[0];d[i*4+1]=rgb[1];d[i*4+2]=rgb[2];d[i*4+3]=Math.round(A[i]*255);}
+  const t=new T.DataTexture(d,w,h,T.RGBAFormat);t.magFilter=T.LinearFilter;t.minFilter=T.LinearMipmapLinearFilter;t.generateMipmaps=true;t.needsUpdate=true;return t;}
 function _speck(c,s,n,amp,dot){for(let i=0;i<n;i++){const a=(Math.random()*amp)/255;c.fillStyle=Math.random()>0.5?'rgba(255,255,255,'+a+')':'rgba(0,0,0,'+a+')';c.fillRect(Math.random()*s,Math.random()*s,dot,dot);}}
 function mkTex(draw,rx,ry){const s=256,cv=document.createElement('canvas');cv.width=cv.height=s;const c=cv.getContext('2d');draw(c,s);const t=new T.CanvasTexture(cv);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rx,ry);t.encoding=T.sRGBEncoding;t.anisotropy=4;return t;}
 // merge static opaque meshes that share a material into one draw call each (keeps world transforms, geometry groups, mirrored parts)
@@ -517,7 +526,7 @@ function buildGeoVilla(){
   // ---- villas along the real streets: varied storeys, L-wings, roofs, colours, façades, walls, pools and trees ----
   const vb=b64u8(G.villas),dv=new DataView(vb.buffer),NV=vb.length/9;
   const V=[];for(let i=0;i<NV;i++){const o=i*9;V.push({x:dv.getInt16(o,true)/10,z:dv.getInt16(o+2,true)/10,w:dv.getUint8(o+4)/10,d:dv.getUint8(o+5)/10,h:dv.getUint8(o+6)/10,rot:dv.getUint8(o+7)/255*Math.PI*2,st:dv.getUint8(o+8)});}
-  const mk=(geo,m,n,shadow)=>{const im=new T.InstancedMesh(geo,m,Math.max(1,n));im.count=0;im.castShadow=!!shadow;im.receiveShadow=true;im.frustumCulled=false;world.add(im);return im;};
+  const mk=(geo,m,n,shadow)=>{const cap=Math.max(1,n),im=new T.InstancedMesh(geo,m,cap);im.instanceColor=new T.InstancedBufferAttribute(new Float32Array(cap*3).fill(1),3);im.count=0;im.castShadow=!!shadow;im.receiveShadow=true;im.frustumCulled=false;world.add(im);return im;};
   const winTex=(modern)=>{const cv=document.createElement('canvas');cv.width=cv.height=64;const c=cv.getContext('2d');c.fillStyle='#ffffff';c.fillRect(0,0,64,64);_speck(c,64,160,12,1);
     if(modern){c.fillStyle='#2a3440';c.fillRect(6,14,52,34);c.fillStyle='#8a929a';c.fillRect(6,46,52,3);c.fillRect(31,14,2,34);}
     else{c.fillStyle='#34404a';c.fillRect(22,14,20,28);c.fillStyle=['#2f5a3a','#2f5f8a','#6b4a2e'][Math.floor(geoRng()*3)];c.fillRect(13,14,8,28);c.fillRect(43,14,8,28);c.fillStyle='#d9cfbe';c.fillRect(19,42,26,3);}
@@ -572,7 +581,7 @@ function buildGeoVilla(){
   const pos2=crownGeo.attributes.position;for(let k=0;k<pos2.count;k++){const y=pos2.getY(k);pos2.setY(k,y>0?y*0.42:y*0.18);}crownGeo.computeVertexNormals();
   const trunkM=new T.MeshStandardMaterial({color:0x6e5238,roughness:1}),crownM=new T.MeshStandardMaterial({color:0xffffff,roughness:0.95});
   [0,1].forEach(pass=>{const list=pines.filter(p=>(Math.hypot(p.x,p.z-VZ)<240)===(pass===0));
-    const tr=mk(trunkGeo,trunkM,list,pass===0),cr=mk(crownGeo,crownM,list,pass===0);
+    const tr=mk(trunkGeo,trunkM,list.length,pass===0),cr=mk(crownGeo,crownM,list.length,pass===0);tr.count=cr.count=list.length;
     list.forEach((p,i)=>{const y=terrainY(p.x,p.z),h=13*p.s,w=5*p.s;dm.rotation.set(0,geoRng()*6,0);
       dm.position.set(p.x,y,p.z);dm.scale.set(w*0.9,h*0.82,w*0.9);dm.updateMatrix();tr.setMatrixAt(i,dm.matrix);
       dm.position.set(p.x+(geoRng()-0.5)*w*0.3,y+h*0.84,p.z+(geoRng()-0.5)*w*0.3);dm.scale.set(w,w*1.1,w*(0.85+geoRng()*0.3));dm.updateMatrix();cr.setMatrixAt(i,dm.matrix);
@@ -1776,7 +1785,7 @@ function clothM(spec){if(!spec)return null;
   return mc('clothc'+spec.col,()=>new T.MeshStandardMaterial({color:lin(spec.col),roughness:0.85,side:T.DoubleSide}));}
 
 // soft round contact shadow under each character
-const blobTex=(()=>{const cv=document.createElement('canvas');cv.width=cv.height=64;const c=cv.getContext('2d');const g=c.createRadialGradient(32,32,2,32,32,31);g.addColorStop(0,'rgba(0,0,0,0.85)');g.addColorStop(0.55,'rgba(0,0,0,0.35)');g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,64,64);return new T.CanvasTexture(cv);})();
+const blobTex=radialTex(64,64,[[32,32,2,31,[[0,0.85],[0.55,0.35],[1,0]]]],[0,0,0]);
 const blobMat=new T.MeshBasicMaterial({map:blobTex,transparent:true,depthWrite:false,opacity:0.5,polygonOffset:true,polygonOffsetFactor:-2,color:0x000000});
 const blobGeo=(()=>{const g=new T.PlaneGeometry(1,1);g.rotateX(-Math.PI/2);return g;})();
 
@@ -2834,7 +2843,7 @@ function setProp(p,name,left){p.propObjs=p.propObjs||{};for(const k in p.propObj
   p.propObjs[key].visible=true;p.curProp=key;}
 
 // ---- little particle effects: steam, smoke, sand, splashes ----
-const puffTex=(()=>{const cv=document.createElement('canvas');cv.width=cv.height=64;const c=cv.getContext('2d');const g=c.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(0.5,'rgba(255,255,255,0.45)');g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.fillRect(0,0,64,64);return new T.CanvasTexture(cv);})();
+const puffTex=radialTex(64,64,[[32,32,0,32,[[0,1],[0.5,0.45],[1,0]]]],[255,255,255]);
 const FX=[],dropGeo=new T.SphereGeometry(0.05,6,4);
 function puff(x,y,z,o){o=o||{};const m=new T.SpriteMaterial({map:puffTex,color:lin(o.col||0xffffff),transparent:true,opacity:0,depthWrite:false});const s=new T.Sprite(m);s.position.set(x,y,z);
   const sz=o.size||0.6;s.scale.set(sz,sz,1);scene.add(s);FX.push({o:s,t:0,life:o.life||1.6,v:new T.Vector3((Math.random()-0.5)*(o.spread||0.3),o.vy==null?0.9:o.vy,(Math.random()-0.5)*(o.spread||0.3)),sz,grow:o.grow==null?1.3:o.grow,op:o.op||0.6,sprite:true});}
