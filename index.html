@@ -1354,6 +1354,9 @@ const azuT=mkTex((c,s)=>{c.fillStyle='#f4efe2';c.fillRect(0,0,s,s);const n=4,t=s
 const balT=mkTex((c,s)=>{c.fillStyle='#f3ecdc';c.fillRect(0,0,s,s);c.fillStyle='#1f4f9a';c.fillRect(0,0,s,s*0.14);c.fillRect(0,s*0.86,s,s*0.14);c.fillStyle='#f0b83a';c.fillRect(0,s*0.14,s,s*0.03);c.fillRect(0,s*0.83,s,s*0.03);
   for(let k=0;k<8;k++){const x=k*s/8+s/16;const gr=c.createLinearGradient(x-9,0,x+9,0);gr.addColorStop(0,'#c9c0ad');gr.addColorStop(0.5,'#ffffff');gr.addColorStop(1,'#c9c0ad');c.fillStyle=gr;
     c.beginPath();c.moveTo(x-5,s*0.2);c.quadraticCurveTo(x-13,s*0.45,x-6,s*0.8);c.lineTo(x+6,s*0.8);c.quadraticCurveTo(x+13,s*0.45,x+5,s*0.2);c.closePath();c.fill();}},4,1);
+const balTerrT=mkTex((c,s)=>{c.fillStyle='#6e3a24';c.fillRect(0,0,s,s);c.fillStyle='#b36a44';c.fillRect(0,0,s,s*0.16);c.fillRect(0,s*0.86,s,s*0.14);c.fillStyle='#2f5f9e';c.fillRect(0,s*0.12,s,s*0.03);
+  for(let k=0;k<8;k++){const x=k*s/8+s/16;c.fillStyle=k%2?'#c07a50':'#b8714a';c.beginPath();c.moveTo(x-6,s*0.2);c.quadraticCurveTo(x-14,s*0.48,x-7,s*0.82);c.lineTo(x+7,s*0.82);c.quadraticCurveTo(x+14,s*0.48,x+6,s*0.2);c.closePath();c.fill();
+    c.fillStyle='rgba(255,220,180,0.25)';c.fillRect(x-3,s*0.3,2,s*0.4);}_speck(c,s,1200,18,1);},4,1);
 const paveT=mkTex((c,s)=>{c.fillStyle='#e2cfa6';c.fillRect(0,0,s,s);const t=s/8;for(let y=0;y<8;y++)for(let x=0;x<8;x++){c.fillStyle=(x+y)%2?'#d9c49a':'#e8d7b2';c.fillRect(x*t+1,y*t+1,t-2,t-2);}_speck(c,s,2000,18,2);c.strokeStyle='#b0552f';c.lineWidth=3;c.strokeRect(1.5,1.5,s-3,s-3);},1,1);
 // glazed roof tiles (the wings' pale tiled roofs with a faint diamond lattice) and fish-scale dome tiles
 const roofTileT=mkTex((c,s)=>{c.fillStyle='#8f7c62';c.fillRect(0,0,s,s);const rows=16,cols=16,tw=s/cols,th=s/rows;
@@ -1438,11 +1441,11 @@ const PLZ={s:1.31,fa:135,fb:88,ca:105,cb:52,cw:12,depth:24,height:20,t0:Math.PI-
 function buildPlaza(){
   plaza=new T.Group();plaza.visible=false;scene.add(plaza);
   const S=PLZ.s,FA=PLZ.fa*S,FB=PLZ.fb*S,CA=PLZ.ca*S,CB=PLZ.cb*S,CW=PLZ.cw*S,DEP=PLZ.depth*S,HT=PLZ.height*S,T0=PLZ.t0,T1=PLZ.t1;
-  const cream=0xe7dcc4,tile=0x9c4a2a;
+  const cream=0xcfa77c,tile=0x9c4a2a;
   const mBrick=new T.MeshStandardMaterial({map:rep(brickT,1,1),color:0xffffff,roughness:0.92}),mBrickL=new T.MeshStandardMaterial({map:rep(brickT,1,1),color:0xfff6ec,roughness:0.92});
   mBrick.map.anisotropy=mBrickL.map.anisotropy=8;
   const mAzu=new T.MeshStandardMaterial({map:rep(azuT,1,1),roughness:0.35}),mDome=new T.MeshStandardMaterial({map:rep(scaleT,6,3),roughness:0.35,metalness:0.25}),mRoof=new T.MeshStandardMaterial({map:roofTileT,roughness:0.55}),mRoofC=new T.MeshStandardMaterial({map:rep(roofTileT,6,3),roughness:0.55}),mMarble=mat(0xf4f1ea,{roughness:0.35});
-  const mCream=mat(cream,{roughness:0.85}),mTile=mat(tile,{roughness:0.9}),mShade=mat(0x2a2018,{roughness:1.0}),mBlue=mat(0x2f5f9e,{roughness:0.5});
+  const mCream=mat(cream,{roughness:0.85}),mTerra=mat(0xa95c38,{roughness:0.85}),balTT=new T.MeshStandardMaterial({map:rep(balTerrT,1,1),roughness:0.75}),mTile=mat(tile,{roughness:0.9}),mShade=mat(0x2a2018,{roughness:1.0}),mBlue=mat(0x2f5f9e,{roughness:0.5});
   const water=new T.MeshStandardMaterial({color:0x2f7f9a,roughness:0.08,metalness:0.35,normalMap:(()=>{const t=rippleN.clone();t.needsUpdate=true;t.repeat.set(0.25,0.25);return t;})(),normalScale:new T.Vector2(0.3,0.3),side:T.DoubleSide});
   const E=(a,b,t)=>new T.Vector3(a*Math.cos(t),0,b*Math.sin(t));                         // point on an ellipse (z = b·sinθ, pavilion at θ=3π/2)
   const N=(a,b,t)=>new T.Vector3(Math.cos(t)/a,0,Math.sin(t)/b).normalize();              // outward normal
@@ -1470,7 +1473,7 @@ function buildPlaza(){
   [[CA-hw-0.6,CB-hw-0.6],[CA+hw+0.6,CB+hw+0.6]].forEach(([a,b])=>{const {ts}=arcT(a,b,Math.round(Math.PI*(a+b)/2*1.16/2.4));
     ts.forEach(t=>{if(nearBridge(t,a,b,5.0))return;const p=E(a,b,t),r=new T.Mesh(new T.BoxGeometry(2.45,1.1,0.4),balM);r.position.set(p.x,0.6,p.z);r.rotation.y=yawIn(a,b,t);plaza.add(r);
       const cap=new T.Mesh(new T.BoxGeometry(2.5,0.14,0.5),mBlue);cap.position.set(p.x,1.2,p.z);cap.rotation.y=r.rotation.y;plaza.add(cap);});});
-  const PM={brick:mBrick,brickL:mBrickL,stone:mCream,dome:mDome,shade:mShade,bal:balM,azu:mAzu,roof:mRoofC};
+  const PM={brick:mBrick,brickL:mBrickL,stone:mCream,dome:mDome,shade:mShade,bal:balTT,azu:mAzu,roof:mRoofC};
   bridgeT.forEach(t=>{const p=E(CA,CB,t),yaw=yawIn(CA,CB,t);const g=new T.Group();g.position.copy(p);g.rotation.y=yaw;plaza.add(g);
     const L=CW+4;const sh=new T.Shape();sh.moveTo(-L/2,0);sh.quadraticCurveTo(0,2.6,L/2,0);sh.lineTo(L/2,0.8);sh.quadraticCurveTo(0,3.4,-L/2,0.8);sh.closePath();
     const dg=new T.ExtrudeGeometry(sh,{depth:7,bevelEnabled:false,curveSegments:12});dg.translate(0,-0.1,-3.5);dg.rotateY(Math.PI/2);
@@ -1483,23 +1486,23 @@ function buildPlaza(){
   bayT.forEach((t,i)=>{const p=E(FA,FB,t),yaw=yawIn(FA,FB,t);if(Math.abs(t-1.5*Math.PI)<0.16||PAVT.some(q=>Math.abs(t-q)<0.1))return;  // pavilions sit here
     const g=new T.Group();g.position.copy(p);g.rotation.y=yaw;plaza.add(g);
     const mass=new T.Mesh(new T.BoxGeometry(bw+0.4,HT,DEP),mBrick);mass.position.set(0,HT/2,-DEP/2);mass.castShadow=true;mass.receiveShadow=true;g.add(mass);
-    const pl=new T.Mesh(new T.BoxGeometry(bw,1.6,1.0),mCream);pl.position.set(0,0.8,0.4);g.add(pl);
+    const pl=new T.Mesh(new T.BoxGeometry(bw,1.6,1.0),mTerra);pl.position.set(0,0.8,0.4);g.add(pl);
     // arcade: two arches per bay
     [-bw/4,bw/4].forEach(x=>{const op=new T.Mesh(new T.BoxGeometry(bw*0.34,7.2,0.8),mShade);op.position.set(x,1.6+3.6,0.35);g.add(op);
-      const a=new T.Mesh(arch,mCream);a.scale.setScalar(bw*0.17);a.position.set(x,1.6+7.2,0.8);g.add(a);});
+      const a=new T.Mesh(arch,mTerra);a.scale.setScalar(bw*0.17);a.position.set(x,1.6+7.2,0.8);g.add(a);});
     [-bw/2,0,bw/2].forEach(x=>{[-0.38,0.38].forEach(o=>{const c=new T.Mesh(new T.CylinderGeometry(0.22,0.26,7.2,10),mMarble);c.position.set(x+o,1.6+3.6,0.9);c.castShadow=true;g.add(c);});
       const cap=new T.Mesh(new T.BoxGeometry(1.4,0.5,0.8),mCream);cap.position.set(x,8.95,0.9);g.add(cap);});
-    const band=new T.Mesh(new T.BoxGeometry(bw,1.2,1.3),mCream);band.position.set(0,12.2,0.55);g.add(band);
+    const band=new T.Mesh(new T.BoxGeometry(bw,1.2,1.3),mTerra);band.position.set(0,12.2,0.55);g.add(band);
     // upper storeys: windows with cream surrounds + a tiled balcony
     [15.4,20.6].forEach((y,k)=>{[-bw/4,bw/4].forEach(x=>{const w=new T.Mesh(new T.BoxGeometry(2.2,3.2,0.3),mShade);w.position.set(x,y,0.12);g.add(w);
         const hd=new T.Mesh(new T.CircleGeometry(1.1,12,0,Math.PI),mShade);hd.position.set(x,y+1.6,0.28);g.add(hd);
-        const sur=new T.Mesh(new T.TorusGeometry(1.28,0.18,5,12,Math.PI),mCream);sur.position.set(x,y+1.6,0.32);g.add(sur);
-        const sill=new T.Mesh(new T.BoxGeometry(2.7,0.25,0.5),mCream);sill.position.set(x,y-1.7,0.3);g.add(sill);});});
-    const ter=new T.Mesh(new T.BoxGeometry(bw,1.1,0.35),balM);ter.position.set(0,13.35,1.05);g.add(ter);
-    const cor=new T.Mesh(new T.BoxGeometry(bw+0.5,0.9,1.4),mCream);cor.position.set(0,HT-0.8,0.4);g.add(cor);
-    const par=new T.Mesh(new T.BoxGeometry(bw+0.4,1.2,0.6),balM);par.position.set(0,HT+0.6,0.2);g.add(par);
+        const sur=new T.Mesh(new T.TorusGeometry(1.28,0.18,5,12,Math.PI),mTerra);sur.position.set(x,y+1.6,0.32);g.add(sur);
+        const sill=new T.Mesh(new T.BoxGeometry(2.7,0.25,0.5),mTerra);sill.position.set(x,y-1.7,0.3);g.add(sill);});});
+    const ter=new T.Mesh(new T.BoxGeometry(bw,1.1,0.35),balTT);ter.position.set(0,13.35,1.05);g.add(ter);
+    const cor=new T.Mesh(new T.BoxGeometry(bw+0.5,0.9,1.4),mTerra);cor.position.set(0,HT-0.8,0.4);g.add(cor);
+    const par=new T.Mesh(new T.BoxGeometry(bw+0.4,1.2,0.6),balTT);par.position.set(0,HT+0.6,0.2);g.add(par);
     const fbx=new T.Mesh(new T.BoxGeometry(0.6,0.6,0.6),mCream);fbx.position.set(-bw/2,HT+1.5,0.2);g.add(fbx);const fco=new T.Mesh(new T.ConeGeometry(0.26,1.3,6),mCream);fco.position.set(-bw/2,HT+2.45,0.2);g.add(fco);
-    if(i%2===0){const dmr=new T.Mesh(new T.BoxGeometry(1.7,1.9,1.7),mCream);dmr.position.set(0,HT+2.0,-3.2);g.add(dmr);const dw=new T.Mesh(new T.BoxGeometry(0.8,1.1,0.1),mShade);dw.position.set(0,HT+2.0,-2.33);g.add(dw);
+    if(i%2===0){const dmr=new T.Mesh(new T.BoxGeometry(1.7,1.9,1.7),mBrickL);dmr.position.set(0,HT+2.0,-3.2);g.add(dmr);const dw=new T.Mesh(new T.BoxGeometry(0.8,1.1,0.1),mShade);dw.position.set(0,HT+2.0,-2.33);g.add(dw);
       const dr=new T.Mesh(new T.ConeGeometry(1.35,1.2,4).rotateY(Math.PI/4),mRoofC);dr.position.set(0,HT+3.55,-3.2);g.add(dr);}});
   // pitched glazed-tile roof following the curve (front slope faces the plaza)
   const roofStrip=(tA,tB)=>{const seg=Math.max(8,Math.round((tB-tA)*90)),P=[],U=[],I=[],rise=(DEP/2+0.8)*0.55,vs=Math.hypot(DEP/2+0.8,rise)/6.3;let arc=0,prev=null;
@@ -1528,7 +1531,7 @@ function buildPlaza(){
   const recess=box(5.6,7.6,2.2,0x241a12);recess.position.set(0,4.2,PD+1.4);pav.add(recess);
   const litWall=new T.Mesh(new T.BoxGeometry(4.4,5.2,0.3),new T.MeshStandardMaterial({color:0xcaa15a,emissive:0x6b4a18,emissiveIntensity:0.6,roughness:0.8}));litWall.position.set(0,3.6,PD+0.4);pav.add(litWall);
   [-4.4,-3.4,3.4,4.4].forEach(x=>{const c=cyl(0.42,0.46,7.2,cream,14);c.position.set(x,3.8,PD+3.0);pav.add(c);const cap=box(1.0,0.4,1.0,cream);cap.position.set(x,7.5,PD+3.0);pav.add(cap);});
-  [-1,1].forEach(sd=>{const bl=new T.Mesh(new T.BoxGeometry(4.6,0.5,0.6),balM);bl.position.set(sd*7.5,7.9,PD+3.25);pav.add(bl);const ld=box(4.8,0.25,0.9,cream);ld.position.set(sd*7.5,7.55,PD+3.2);pav.add(ld);
+  [-1,1].forEach(sd=>{const bl=new T.Mesh(new T.BoxGeometry(4.6,0.5,0.6),balTT);bl.position.set(sd*7.5,7.9,PD+3.25);pav.add(bl);const ld=box(4.8,0.25,0.9,cream);ld.position.set(sd*7.5,7.55,PD+3.2);pav.add(ld);
     [5.9,8.3].forEach(ax=>{const x=sd*ax,w=new T.Mesh(new T.BoxGeometry(1.5,2.4,0.3),mShade);w.position.set(x,9.6,PD+3.02);pav.add(w);const hd=new T.Mesh(new T.CircleGeometry(0.75,12,0,Math.PI),mShade);hd.position.set(x,10.8,PD+3.18);pav.add(hd);
       const wa=new T.Mesh(new T.TorusGeometry(0.9,0.16,5,12,Math.PI),mCream);wa.position.set(x,10.8,PD+3.2);pav.add(wa);[-0.85,0.85].forEach(o=>{const c=cyl(0.1,0.1,2.4,0xf4f1ea,8);c.position.set(x+o,9.6,PD+3.2);pav.add(c);});});
     const dr=new T.Mesh(new T.BoxGeometry(1.6,3.6,0.3),mShade);dr.position.set(sd*7.1,1.9,PD+3.02);pav.add(dr);const dh=new T.Mesh(new T.CircleGeometry(0.8,12,0,Math.PI),mShade);dh.position.set(sd*7.1,3.7,PD+3.18);pav.add(dh);
