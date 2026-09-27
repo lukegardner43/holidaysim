@@ -73,7 +73,11 @@ Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributor
 
 ## Controls
 
-Move with WASD, the arrow keys or the on-screen pad. Drag to look around. Interact with Space or **DO IT**. Q and E spin the camera, R resets the view and T tilts it.
+Move with WASD, the arrow keys or the on-screen pad. Drag to look around. Interact with Space or **DO IT**. Q and E spin the camera, R resets the view and T tilts it. Press M or the 🔊 button to mute.
+
+## Sound
+
+All music and sound is generated in the browser (Web Audio), with no audio files. By day there's a sunny Spanish-guitar rumba, and at night a gentle fingerpicked guitar. The ambience follows the scene: waves and gulls at the villa, crickets at night, the fountain and crowd in Seville, and engines on the plane. The activities have their own sounds: splashes, the BBQ sizzle, the sangria pour and clink, the sauna door and steam, the ice-cream bell, sandcastle digging, the car engine, the camera shutter and chatty family voices. Sound starts on your first tap, and it still plays with an iPhone's silent switch on.
 
 ## Tech notes
 
