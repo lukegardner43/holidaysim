@@ -1,0 +1,23 @@
+{
+  "skill_name": "family-holiday-game",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Make a Christmas game where we all go to Nana and Papa's house in the Cotswolds for Christmas 2026 - snow, decorating the tree, a snowman, opening presents on Christmas morning, and a trip to the Christmas market. Countdown to 24 December 2026.",
+      "expected_output": "A new folder (e.g. christmas/) with its own src/ copied from the engine, re-themed title, countdown to 24 Dec 2026, a winter palette with snow, a generic cottage (not a real address) with tree, fireplace and garden, animated activities (tree, snowman, presents on Christmas morning, market day trip), festive but chilled music, built index.html, screenshots incl. phone portrait, pushed and fast-forwarded to main, URL shared.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Can we swap the holiday location to Lanzarote? We're staying near Playa Blanca 10-17 August 2027. Keep all the same stuff but make the day trip Timanfaya volcano park instead of Seville.",
+      "expected_output": "A new game folder with the Villa Escape mechanics kept, OSM geography rebuilt around Playa Blanca (black-sand/volcanic landscape, white low houses), countdown to 10 Aug 2027, activities adapted (pool, BBQ, beach etc. kept where sensible), the Seville plaza scene replaced by a Timanfaya day trip, intro adjusted (flight to Lanzarote), tested on phone, published.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "add a crazy golf activity to the villa game where papa and the little one play too",
+      "expected_output": "Edits to the root game's src/game.js only: a real-size crazy golf prop, a spot and doAction case, an animated runScript (putting pose, ball rolling, Papa via n.hold, the little one via kidHold), sound, itinerary line, loves; rebuilt index.html; screenshots desktop + phone; no console errors; pushed to main.",
+      "files": []
+    }
+  ]
+}

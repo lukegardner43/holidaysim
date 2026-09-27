@@ -71,6 +71,16 @@ Close to the villa and the plaza, distances are true to scale. Further out they 
 
 Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, available under the Open Database License.
 
+## Make another family game
+
+This repo contains the engine as well as the game, plus a Claude skill that knows how to reuse it:
+`.claude/skills/family-holiday-game`. Ask Claude something like *"make a Christmas game where we go to Nana and Papa's"* or *"swap the holiday to Lanzarote"*. It keeps the family, characters, activities system, day and night, music and countdown, and changes the place, activities and theme.
+
+- `src/` holds this game's sources (`head.html`, `game.js`, `tail.html`), and `vendor/three.html` is the shared Three.js r128 bundle.
+- Each new game gets its own folder with its own `src/` copy, e.g. `christmas/` builds to `christmas/index.html` at `https://lukegardner43.github.io/holidaysim/christmas/`.
+- Build with `bash .claude/skills/family-holiday-game/scripts/build.sh <folder>` (the root game is `.`). `index.html` files are generated, so don't edit them by hand.
+- Headless checks live in `.claude/skills/family-holiday-game/scripts/test/`.
+
 ## Controls
 
 Move with WASD, the arrow keys or the on-screen pad. Drag to look around. Interact with Space or **DO IT**. Q and E spin the camera, R resets the view and T tilts it. Press M or the 🔊 button to mute.
