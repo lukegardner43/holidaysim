@@ -778,6 +778,11 @@ function buildVillaWorld(){
   // ===== BBQ + paella — east terrace, clear of the entrance path =====
   const bx=22,bz=11;const bbq=box(2.2,1.2,1.4,0x3a3a3a);bbq.position.set(bx,0.9,bz);world.add(bbq);
   const grill=box(1.8,0.2,1.1,0x111111);grill.position.set(bx,1.55,bz);world.add(grill);
+  {const fg=new T.Group();fg.visible=false;const fm=new T.MeshBasicMaterial({color:0xff7a1a,transparent:true,opacity:0.85,depthWrite:false});
+   for(let i=0;i<7;i++){const f=new T.Mesh(new T.ConeGeometry(0.1,0.35,6).translate(0,0.17,0),fm);f.position.set(bx-0.7+i*0.23,1.63,bz+(i%2?0.22:-0.22));f.userData.flame=true;fg.add(f);}
+   [[-0.5,0.25],[-0.2,-0.2],[0.1,0.22],[0.4,-0.25]].forEach(q=>{const m=new T.Mesh(new T.SphereGeometry(0.1,8,6),mat(0xf07a4a,{roughness:0.6}));m.scale.set(1.6,0.6,0.8);m.position.set(bx+q[0],1.7,bz+q[1]);fg.add(m);});
+   [[0.62,0.05],[-0.78,0]].forEach(q=>{const m=new T.Mesh(new T.SphereGeometry(0.08,8,6),mat(0xb8c4cc,{metalness:0.4,roughness:0.3}));m.scale.set(3,0.6,1);m.position.set(bx+q[0],1.7,bz+q[1]);fg.add(m);});
+   world.add(fg);world.userData.bbqFx=fg;}
   solids.push({x:bx,z:bz,rx:1.4,rz:1.0});
   spots.push({x:bx,z:bz+3,r:5,id:'bbq',label:'fire up the BBQ'});
   // paella station beside the BBQ
@@ -805,7 +810,7 @@ function buildVillaWorld(){
   spots.push({x:ix,z:iz-2.9,r:3.6,id:'ice',label:'grab ice creams 🍦'});
 
   // ===== car on the drive =====
-  const car=carMesh(0x2f6f9e);car.position.set(-24,0,22);car.rotation.y=0.3;world.add(car);
+  const car=carMesh(0x2f6f9e);car.position.set(-24,0,22);car.rotation.y=0.3;world.add(car);car.userData.home=car.position.clone();world.userData.car=car;
   solids.push({x:-24,z:22,rx:2.2,rz:3.1});
   spots.push({x:-21,z:22,r:4,id:'car',label:'drive to Seville (Naboo!)'});
 
@@ -880,7 +885,9 @@ function buildVillaWorld(){
   const sxx=-12.5,szz=6.5;
   const sca=box(3.4,2.8,3,0x8a5a32);sca.position.set(sxx,1.4,szz);world.add(sca);
   const sroof=box(3.8,0.3,3.4,0x6e4423);sroof.position.set(sxx,2.95,szz);world.add(sroof);
-  const sdoor=box(1.1,2.0,0.2,0x4a2f18);sdoor.position.set(sxx,1.0,szz-1.5);world.add(sdoor);
+  const sdp=new T.Group();sdp.position.set(sxx-0.55,0,szz-1.62);world.add(sdp);const sdoor=box(1.1,2.0,0.12,0x4a2f18);sdoor.position.set(0.55,1.0,0);sdp.add(sdoor);world.userData.saunaDoor=sdp;
+  const sdark=box(1.0,1.95,0.05,0x120c08);sdark.position.set(sxx,0.98,szz-1.52);world.add(sdark);
+  const chim=cyl(0.14,0.16,0.8,0x55504a,8);chim.position.set(sxx+0.9,3.45,szz+0.4);world.add(chim);world.userData.saunaChim=[sxx+0.9,3.9,szz+0.4];
   solids.push({x:sxx,z:szz,rx:1.9,rz:1.7});
   spots.push({x:sxx,z:szz-2.4,r:3.2,id:'sauna',label:'warm up in the sauna'});
 
@@ -917,7 +924,8 @@ function buildVillaWorld(){
   // shells on the beach
   for(let i=0;i<10;i++){const sx=-70+Math.random()*140,sz=-38+Math.random()*14;const sh=new T.Mesh(new T.SphereGeometry(0.3,8,8),mat(0xfff1dd));sh.scale.y=0.5;sh.position.set(sx,0.15,sz);world.add(sh);collectibles.push({mesh:sh,type:'shell',x:sx,z:sz});}
   // sandcastle on the beach (spot handled in nearest() — toddlers must be awake + daytime)
-  {const scg=new T.Group();const base=cyl(2.2,2.5,0.7,0xd4b96a,16);base.position.y=0.35;scg.add(base);[[0,0,1.6,1.2],[1.3,0,0.9,1.4],[-1.2,0.2,0.95,1.3],[0.4,0,1.1,1.5]].forEach(p=>{const t=cyl(p[2],p[2]*0.85,p[3],0xd4b96a,10);t.position.set(p[0],p[3]/2+0.7,p[1]);scg.add(t);const b=new T.Mesh(new T.ConeGeometry(p[2],0.5,10),mat(0xc9a85a));b.position.set(p[0],p[3]+0.95,p[1]);scg.add(b);});scg.position.set(-8,0.05,-38);world.add(scg);}
+  {const scg=new T.Group();const base=cyl(2.2,2.5,0.7,0xd4b96a,16);base.position.y=0.35;scg.add(base);[[0,0,1.6,1.2],[1.3,0,0.9,1.4],[-1.2,0.2,0.95,1.3],[0.4,0,1.1,1.5]].forEach(p=>{const t=cyl(p[2],p[2]*0.85,p[3],0xd4b96a,10);t.position.set(p[0],p[3]/2+0.7,p[1]);scg.add(t);const b=new T.Mesh(new T.ConeGeometry(p[2],0.5,10),mat(0xc9a85a));b.position.set(p[0],p[3]+0.95,p[1]);scg.add(b);});scg.position.set(-8,0.05,-38);world.add(scg);
+   const fg=new T.Group(),fp=cyl(0.03,0.03,1.2,0xffffff,6);fp.position.set(0.4,3.25,0);fg.add(fp);const fl=new T.Mesh(new T.PlaneGeometry(0.6,0.36),mat(0xc8102e,{side:T.DoubleSide}));fl.position.set(0.72,3.66,0);fg.add(fl);scg.add(fg);fg.visible=false;scg.userData.flag=fg;scg.scale.y=0.25;world.userData.castle=scg;}
   spots.push({x:-8,z:-38,r:7,id:'sandcastle',label:'build a sandcastle with the little one 🏖️'});
   // sunscreen bottle by the sun loungers
   {const sb=new T.Group();const st=box(0.55,0.5,0.55,0xf2efe8,{roughness:0.6});st.position.y=0.25;sb.add(st);
@@ -948,7 +956,7 @@ function buildVillaWorld(){
 
   spots.push({x:0,z:-42,r:200,id:'sea',label:'paddle in the sea',shore:true});
   // bake the static villa props into shared-material batches (anything animated, toggled or collectible is left alone)
-  {const U=world.userData,skip=new Set([U.doorArrow,U.sea,U.lighthouse&&U.lighthouse.lant,...(U.birds||[]).map(b=>b.mesh),...(U.sailboats||[]).map(b=>b.mesh),...collectibles.map(c=>c.mesh),...(U.lampPosts||[])]);mergeStatic(world,skip);}
+  {const U=world.userData,skip=new Set([U.doorArrow,U.sea,U.car,U.castle,U.saunaDoor,U.bbqFx,U.lighthouse&&U.lighthouse.lant,...(U.birds||[]).map(b=>b.mesh),...(U.sailboats||[]).map(b=>b.mesh),...collectibles.map(c=>c.mesh),...(U.lampPosts||[])]);mergeStatic(world,skip);}
 }
 
   // boats: pointed hull lofted from U-shaped sections
@@ -1177,10 +1185,10 @@ function buildPlaza(){
   plaza.userData.canal={a:CA,b:CB,t0:T0,t1:T1};
   plaza.userData.boats=[0.1,0.3,0.5,0.7,0.9].map((f,i)=>{const b=boatHull(3.6,1.5,0.6,[0xf2efe6,0x2f6f9e,0xc2562f,0x3f7d6e,0xe8a838][i],0xffffff);const oar=cyl(0.04,0.04,3,0xb08a5a,5);oar.rotation.x=Math.PI/2;oar.position.y=0.6;b.add(oar);plaza.add(b);return {m:b,t:T0+f*(T1-T0),s:(i%2?1:-1)*0.004};});
   // ---- return car + photo marker ----
-  const car=carMesh(0x2f6f9e);car.position.set(26,0,FB*0.25+DEP*0.2+32);car.rotation.y=Math.PI/2;plaza.add(car);plaza.userData.car={x:26,z:car.position.z};
+  const car=carMesh(0x2f6f9e);car.position.set(26,0,FB*0.25+DEP*0.2+32);car.rotation.y=Math.PI/2;plaza.add(car);plaza.userData.car={x:26,z:car.position.z};car.userData.home=car.position.clone();plaza.userData.carMesh=car;
   const ring=new T.Mesh(new T.RingGeometry(2,2.6,32),new T.MeshBasicMaterial({color:0xe8a838,side:T.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.set(0,0.05,30);plaza.add(ring);plaza.userData.photo={x:0,z:30};
   plaza.userData.start={x:0,z:52};
-  mergeStatic(plaza,new Set(plaza.userData.boats.map(b=>b.m).concat([spray])));
+  mergeStatic(plaza,new Set(plaza.userData.boats.map(b=>b.m).concat([spray,car])));
   // ---- collision ----
   plazaSolids.push({x:0,z:0,rx:FR+0.6,rz:FR+0.6});
   const {ts:fsT}=arcT(FA+2,FB+2,Math.ceil(facLen/4.5));fsT.forEach(t=>{const p=E(FA+2,FB+2,t);plazaSolids.push({x:p.x,z:p.z,rx:3.2,rz:3.2});});
@@ -1335,7 +1343,7 @@ function buildTerminal(){
 
   // rental car (blue, engine running, waiting outside)
   const carCol=0x2f6f9e;
-  const car=carMesh(carCol);car.position.set(2,0,-32);car.rotation.y=0.15;terminal.add(car);
+  const car=carMesh(carCol);car.position.set(2,0,-32);car.rotation.y=Math.PI/2;terminal.add(car);car.userData.home=car.position.clone();terminal.userData.carMesh=car;
   // luggage on roof
   {const rb=new T.Shape();rb.moveTo(-0.8,0);rb.lineTo(0.75,0);rb.quadraticCurveTo(0.9,0.02,0.85,0.18);rb.quadraticCurveTo(0.7,0.38,0.2,0.4);rb.lineTo(-0.7,0.38);rb.quadraticCurveTo(-0.9,0.3,-0.8,0);
    const bg=new T.ExtrudeGeometry(rb,{depth:0.9,bevelEnabled:true,bevelThickness:0.08,bevelSize:0.06,bevelSegments:3});bg.translate(0,0,-0.45);bg.rotateY(-Math.PI/2);
@@ -1383,7 +1391,7 @@ function buildTerminal(){
   [-11,-6,8,13].forEach(x=>{const t=tree(x,-28.5);t.scale.setScalar(1.1);terminal.add(t);});
   const taxi=new T.Mesh(new T.PlaneGeometry(2.4,0.8),new T.MeshBasicMaterial({map:signTex(240,80,'#1a1a1a',[{t:'🚕 TAXI  ·  🚗 P',s:30,y:42,b:true,c:'#ffd24a'}])}));taxi.position.set(-9,3.2,-27.6);terminal.add(taxi);
   const tpost=cyl(0.08,0.08,3,0x333333,6);tpost.position.set(-9,1.5,-27.65);terminal.add(tpost);
-  mergeStatic(terminal,new Set([terminal.userData.bags]));
+  mergeStatic(terminal,new Set([terminal.userData.bags,terminal.userData.carMesh]));
 }
 
 // ===================== AIRPLANE CABIN (3D intro scene) =====================
@@ -1935,8 +1943,10 @@ function animPerson(p,dt,snapNow){
   let bx=0,by=0,bz=0,brx=0,bry=0,brz=0,hipsZ=0,skirtX=0,showBlob=true,closed=p.eyesClosed,snapArms=false;
   const sp=[p.stoop,0,0],nk=[0,0,0],hd=[0,0,0];
   let lsh=[0,0,0.07],rsh=[0,0,-0.07],lel=[-0.12,0,0],rel=[-0.12,0,0];
-  let lhp=[0,0,0],rhp=[0,0,0],lkn=[0.03,0,0],rkn=[0.03,0,0],lan=[0,0,0],ran=[0,0,0];
+  let lhp=[0,0,0],rhp=[0,0,0],lkn=[0.03,0,0],rkn=[0.03,0,0],lan=[0,0,0],ran=[0,0,0],lha=[0,0,0],rha=[0,0,0];
   const seatBy=()=>p.seatH+p.thR*0.55-p.legL;
+  // body drop for a given hip/knee angle so the feet stay planted
+  const legY=(th,kn)=>p.thighL*Math.cos(th)+p.shinL*Math.cos(th+kn)+(p.legL-p.thighL-p.shinL)*0.9-p.legL;
   let w=0;
   const idleLayer=(amt)=>{hipsZ+=Math.sin(t*0.7)*0.03*amt;lsh[0]+=Math.sin(t*1.1)*0.03*amt;rsh[0]+=Math.sin(t*1.1+1)*0.03*amt;
     p.lookT-=dt;if(p.lookT<0){p.lookT=2+Math.random()*4;p.lookY=Math.random()<0.35?0:(Math.random()-0.5)*1.2;}
@@ -1959,6 +1969,27 @@ function animPerson(p,dt,snapNow){
       hd[0]=-0.55;hd[1]=Math.sin(p.ph)*0.35;bry=Math.sin(p.ph)*0.28;break;}
     case 'soak':{by=seatBy();lhp=[-1.3,0,0.12];rhp=[-1.3,0,-0.12];lkn=[1.0,0,0];rkn=[1.0,0,0];lsh=[0.25,0,1.25];rsh=[0.25,0,-1.25];lel=[-0.35,0,0];rel=[-0.35,0,0];
       hd[0]=-0.3;hd[1]=Math.sin(t*0.3)*0.25;closed=(t%9)<5;showBlob=false;skirtX=-1;if(p.def.prop==='glass'){rsh=[-0.6,0,-0.5];rel=[-1.5,0,0];}break;}
+    // ---- activity poses ----
+    case 'stir':{sp[0]=0.2;hd[0]=0.5;const c=t*3.2;lsh=[-0.75,0,0.12];lel=[-0.85,0,0];rsh=[-1.0+Math.sin(c)*0.18,0,-0.12+Math.cos(c)*0.16];rel=[-0.45,0,0];hipsZ=Math.sin(c)*0.03;break;}
+    case 'flip':{sp[0]=0.14;hd[0]=0.42;lsh=[-0.7,0,0.1];lel=[-0.9,0,0];const f=Math.max(0,Math.sin(t*3.4));rsh=[-0.85-f*0.35,0,-0.1];rel=[-0.55-f*0.6,0,0];rha=[0,0,-f*1.1];break;}
+    case 'pour':{sp[0]=0.12;hd[0]=0.45;rsh=[-1.05,0.25,-0.1];rel=[-0.55,0,0];rha=[0,0,-0.9-Math.sin(t*2)*0.1];lsh=[-0.85,-0.2,0.1];lel=[-1.0,0,0];break;}
+    case 'lick':{idleLayer(0.5);const l=Math.max(0,Math.sin(t*3));rsh=[-0.45,0,-0.28];rel=[-1.95-l*0.15,0,0.25];hd[0]=0.05+l*0.1;break;}
+    case 'rub':{const sw=(t%3)<1.5?1:-1,r=Math.sin(t*7)*0.28;if(sw>0){rsh=[-0.55,0.45+r,-0.05];rel=[-1.55,0,0];lsh=[-0.2,0,0.45];lel=[-0.5,0,0];}else{lsh=[-0.55,-0.45-r,0.05];lel=[-1.55,0,0];rsh=[-0.2,0,-0.45];rel=[-0.5,0,0];}hd[0]=0.28;hd[1]=sw*0.35;break;}
+    case 'wade':{const q=t*5;lsh=[-0.35+Math.sin(q)*0.6,0,0.55];rsh=[-0.35+Math.sin(q+Math.PI)*0.6,0,-0.55];lel=[-0.35,0,0];rel=[-0.35,0,0];lkn=[0.2,0,0];rkn=[0.2,0,0];lhp=[-0.12,0,0.05];rhp=[-0.12,0,-0.05];by=-Math.abs(Math.sin(q))*0.04*p.H;hd[0]=0.25;sp[0]=0.12;showBlob=false;break;}
+    case 'dig':{const kn=Math.PI/2;lhp=[-0.1,0,0.14];rhp=[-0.1,0,-0.14];lkn=[kn,0,0];rkn=[kn,0,0];lan=[1.35,0,0];ran=[1.35,0,0];by=legY(0,kn);
+      sp[0]=0.55;hd[0]=0.45;const d=t*4.2;lsh=[-1.15+Math.sin(d)*0.4,0,0.18];rsh=[-1.15+Math.sin(d+Math.PI)*0.4,0,-0.18];lel=[-0.35,0,0];rel=[-0.35,0,0];skirtX=-0.4;break;}
+    case 'crouch':{const th=-1.45,kn=2.0;lhp=[th,0,0.2];rhp=[th,0,-0.2];lkn=[kn,0,0];rkn=[kn,0,0];lan=[-(th+kn),0,0];ran=[-(th+kn),0,0];by=legY(th,kn);sp[0]=0.6;hd[0]=0.5;rsh=[-1.25,0,-0.12];rel=[-0.15,0,0];lsh=[-0.5,0,0.25];lel=[-0.8,0,0];skirtX=-1.0;break;}
+    case 'reach':{rsh=[-2.85,0,-0.12];rel=[-0.2,0,0];lsh=[-0.2,0,0.2];hd[0]=-0.55;by=0.035*p.H;lan=[0.35,0,0];ran=[0.35,0,0];sp[0]=-0.08;break;}
+    case 'sitground':{const th=-2.0,kn=0.86;lhp=[th,0,0.16];rhp=[th,0,-0.16];lkn=[kn,0,0];rkn=[kn,0,0];lan=[-(th+kn),0,0];ran=[-(th+kn),0,0];by=p.thR*0.8-p.legL;
+      sp[0]=0.2;lsh=[-1.0,0,-0.02];rsh=[-1.0,0,0.02];lel=[-0.85,0,0];rel=[-0.85,0,0];hd[0]=-0.12;skirtX=-1.6;break;}
+    case 'stargaze':{brx=-Math.PI/2;by=p.thR*1.15+p.py;bz=p.legL;showBlob=false;lhp=[0,0,0.1];rhp=[0,0,-0.1];lkn=[0.1,0,0];rkn=[0.1,0,0];lan=[0.3,0,0];ran=[0.3,0,0];
+      rsh=[-1.45+Math.sin(t*0.7)*0.15,Math.sin(t*0.5)*0.25,-0.1];rel=[-0.1,0,0];lsh=[-0.1,0,0.95];lel=[-0.4,0,0];hd[0]=-0.25;break;}
+    case 'stretch':{lsh=[-0.15,0,2.75];rsh=[-0.15,0,-2.75];lel=[0,0,0.25];rel=[0,0,-0.25];sp[0]=-0.18;hd[0]=-0.35;closed=true;by=0.02*p.H;lan=[0.3,0,0];ran=[0.3,0,0];break;}
+    case 'fan':{idleLayer(0.4);rsh=[-0.55,0,-0.3];rel=[-2.0,0,0];rha=[0,0,Math.sin(t*12)*0.7];lsh=[0.1,0,0.35];lel=[-1.3,0,0];hd[0]=-0.25;sp[0]=-0.06;break;}
+    case 'tuck':{sp[0]=0.95;hd[0]=0.35;const g=Math.sin(t*1.6)*0.08;lsh=[-1.45+g,0,0.12];rsh=[-1.45-g,0,-0.12];lel=[-0.25,0,0];rel=[-0.25,0,0];lhp=[-0.25,0,0.06];rhp=[-0.25,0,-0.06];lkn=[0.2,0,0];rkn=[0.2,0,0];break;}
+    case 'talk':{idleLayer(0.4);lsh=[-0.5+Math.sin(t*3)*0.2,0,0.22];lel=[-1.2+Math.sin(t*4)*0.3,0,0];rsh=[-0.5+Math.sin(t*3.5+1)*0.2,0,-0.22];rel=[-1.1+Math.sin(t*4.5+2)*0.35,0,0];hd[0]=Math.sin(t*5)*0.07;break;}
+    case 'laugh':{const q=Math.abs(Math.sin(t*9));lsh=[-0.45,0,0.12];lel=[-1.45,0,0];rsh=[-0.45,0,-0.12];rel=[-1.45,0,0];sp[0]=0.08+q*0.1;hd[0]=-0.3+q*0.12;by=-q*0.008*p.H;closed=true;break;}
+    case 'give':{lsh=[-1.25,0,0.18];rsh=[-1.25,0,-0.18];lel=[-0.35,0,0];rel=[-0.35,0,0];hd[0]=0.2;sp[0]=0.08;break;}
     case 'bbq':{sp[0]+=0.12;hd[0]=0.35;lsh=[-0.85,0,0.05];rsh=[-0.95,0,-0.05];lel=[-0.8,0,0];rel=[-0.6+Math.sin(t*4.5)*0.35,0,0];hipsZ=Math.sin(t*0.9)*0.02;break;}
     case 'drink':{idleLayer(0.8);const sip=Math.max(0,Math.sin(t*0.8)-0.6)/0.4;rsh=[-0.5,0,-0.22];rel=[-1.5-0.75*sip,0,0.2];hd[0]-=0.18*sip;break;}
     case 'wave':{idleLayer(0.5);rsh=[-0.1,0,-2.6];rel=[0,0,-0.3+Math.sin(t*10)*0.45];hd[0]=-0.08;break;}
@@ -1991,7 +2022,7 @@ function animPerson(p,dt,snapNow){
   R(B,[brx,bry,brz]);j.hips.rotation.z+=(hipsZ-j.hips.rotation.z)*k;
   R(j.spine,sp);R(j.neck,nk);R(j.head,hd);
   if(snapArms){j.lSh.rotation.set(lsh[0],lsh[1],lsh[2]);j.rSh.rotation.set(rsh[0],rsh[1],rsh[2]);}else{R(j.lSh,lsh);R(j.rSh,rsh);}
-  R(j.lEl,lel);R(j.rEl,rel);R(j.lHip,lhp);R(j.rHip,rhp);R(j.lKn,lkn);R(j.rKn,rkn);R(j.lAn,lan);R(j.rAn,ran);
+  R(j.lEl,lel);R(j.rEl,rel);R(j.lHa,lha);R(j.rHa,rha);R(j.lHip,lhp);R(j.rHip,rhp);R(j.lKn,lkn);R(j.rKn,rkn);R(j.lAn,lan);R(j.rAn,ran);
   // breathing
   const br=Math.sin(t*2.3);p.torso.scale.x=1+br*0.012;p.torso.scale.z=p.depth*(1+br*0.02);
   if(p.skirt){p.skirt.rotation.x+=(skirtX-p.skirt.rotation.x)*k;p.skirt.rotation.z=Math.sin(p.ph)*0.05*w;}
@@ -2133,40 +2164,40 @@ function transition(to){if(fadeDir!==0)return;fadeDir=1;pending=to;}
 function doAction(s){
   if(!s)return;
   if(scn==='bed'){
-    if(s&&s.id==='leaveroom') exitBedroom();
-    if(s&&s.id==='wakeup'){todsAsleep=false;bedtimeWarned=false;wakeupWarned=false;addV(8);kid.mood=Math.max(kid.mood,80);toast('☀️ Rise and shine! One very excited toddler.');exitBedroom();}
+    if(s&&s.id==='leaveroom') scriptLeaveRoom();
+    if(s&&s.id==='wakeup') scriptWake();
     return;
   }
   if(scn==='terminal'){
-    if(s.id==='getincar'){toast('🚗 Bags loaded, car seat clicked in — Chiclana, here we come!');setTimeout(()=>transition('villa'),1200);}
+    if(s.id==='getincar'){toast('🚗 Bags loaded, car seat clicked in — Chiclana, here we come!');scriptCar(terminal.userData.carMesh,'villa');}
     else if(s.id==='npc')talkTo(s.npc);
     return;
   }
   if(scn==='plaza'){
-    if(s.id==='back')transition('villa');
+    if(s.id==='back'){toast('🚗 Back to the villa — sleepy heads in the back.');scriptCar(plaza.userData.carMesh,'villa');}
     else if(s.id==='snap'){addV(8);FAMILY_ORDER.forEach(id=>fam[id].mood=Math.min(100,fam[id].mood+20));kid.mood=Math.min(100,kid.mood+20);startPhoto();setTimeout(()=>toast('📸 All six of us on Naboo. Framed the minute we get home.'),1700);}
     else if(s.id==='npc')talkTo(s.npc);
     return;
   }
   switch(s.id){
-    case'sangria':{doneSangria=true;drunk+=1;if(drunk<=1){addV(5);toast('🍷 One sangria in the sun. Lovely.');}else if(drunk<3){vibes=Math.max(0,vibes-6);toast('🍷🍷 Steady on… the garden is tilting.');}else{vibes=Math.max(0,vibes-12);toast('🍷🍷🍷 Whoa — everything is wonky now! 🤣');}cheer(2);break;}
+    case'sangria':{doneSangria=true;drunk+=1;if(drunk<=1){addV(5);toast('🍷 One sangria in the sun. Lovely.');}else if(drunk<3){vibes=Math.max(0,vibes-6);toast('🍷🍷 Steady on… the garden is tilting.');}else{vibes=Math.max(0,vibes-12);toast('🍷🍷🍷 Whoa — everything is wonky now! 🤣');}cheer(2);scriptSangria();break;}
     case'pool':donePool=true;addV(7);cheer(16);toast('💦 Cannonbaaall into the warm water!');playerAnim={type:'swim',t:0,sx:player.position.x,sz:player.position.z};break;
     case'jacuzzi':{doneJacuzzi=true;const tod=timeOfDay;addV(6);cheer(10);timeOfDay+=0.2;toast(tod>=20||tod<7?'🛁 Bubbles under the stars.':'🛁 Hot water, blazing sun — absolute bliss.');playerAnim={type:'jacuzzi',t:0,sx:player.position.x,sz:player.position.z};break;}
-    case'sauna':doneSauna=true;addV(6);cheer(6);timeOfDay+=0.2;toast('🧖 Sauna steam — toasty.');break;
-    case'paella':donePaella=true;addV(9);cheer(14);timeOfDay+=0.5;toast('🥘 Giant paella on the fire — saffron everywhere!');break;
-    case'bbq':doneBBQ=true;addV(9);cheer(8);timeOfDay+=0.4;toast('🍤 BBQ on — prawns & sardines.');break;
+    case'sauna':doneSauna=true;addV(6);cheer(6);timeOfDay+=0.2;toast('🧖 Sauna steam — toasty.');scriptSauna();break;
+    case'paella':donePaella=true;addV(9);cheer(14);timeOfDay+=0.5;toast('🥘 Giant paella on the fire — saffron everywhere!');scriptPaella();break;
+    case'bbq':doneBBQ=true;addV(9);cheer(8);timeOfDay+=0.4;toast('🍤 BBQ on — prawns & sardines.');scriptBBQ();break;
     case'lounge':{doneLounge=true;addV(5);timeOfDay+=0.3;toast('😎 Pure horizontal excellence.');const score=k=>(hauntTaken[k]?1000:0)+Math.hypot(HAUNTS[k].x-player.position.x,HAUNTS[k].z-player.position.z);const lk=['lounger1','lounger2','lounger3'].sort((a,b)=>score(a)-score(b))[0];
       if(!hauntTaken[lk])hauntTaken[lk]='player';playerAnim={type:'lounge',t:0,sx:player.position.x,sz:player.position.z,h:HAUNTS[lk],hid:lk};break;}
-    case'sea':doneSea=true;addV(6);cheer(14);toast('🌊 Warm Atlantic shallows.');break;
-    case'ice':doneIce=true;addV(4);cheer(26);drunk=Math.max(0,drunk-0.5);ADULTS.forEach(id=>fam[id].mood=Math.min(100,fam[id].mood+8));toast('🍦 Ice creams all round — six happy faces.');break;
-    case'nap':{const wasNight=timeOfDay>=21||timeOfDay<5;doneNap=true;drunk=0;if(wasNight){day++;timeOfDay=7;}else{timeOfDay+=4;if(timeOfDay>=24){timeOfDay-=24;day++;}}toast(wasNight?'🛏️ Out cold until morning. Well earned.':'😴 Siesta… time drifts on.');break;}
-    case'stargaze':doneStargaze=true;addV(5);timeOfDay+=0.1;toast('⭐ Milky Way wall-to-wall. No light pollution out here.');break;
-    case'sunset':doneSunset=true;addV(6);toast('🌅 Sky on fire. Every shade of orange and pink across the Atlantic.');break;
-    case'bed':enterBedroom();return;
-    case'car':if(drunk>=1){vibes=Math.max(0,vibes-10);toast('🚗🍷 No driving after sangria — sober up first!');}else transition('plaza');break;
-    case'sandcastle':addV(10);cheer(30);timeOfDay+=0.4;toast('🏖️ Epic four-towered sandcastle — the little one is DELIGHTED.');break;
+    case'sea':doneSea=true;addV(6);cheer(14);toast('🌊 Warm Atlantic shallows.');scriptSea();break;
+    case'ice':doneIce=true;addV(4);cheer(26);drunk=Math.max(0,drunk-0.5);ADULTS.forEach(id=>fam[id].mood=Math.min(100,fam[id].mood+8));toast('🍦 Ice creams all round — six happy faces.');scriptIce();break;
+    case'nap':{const wasNight=timeOfDay>=21||timeOfDay<5;doneNap=true;drunk=0;scriptNap(wasNight);break;}
+    case'stargaze':doneStargaze=true;addV(5);timeOfDay+=0.1;toast('⭐ Milky Way wall-to-wall. No light pollution out here.');scriptStargaze();break;
+    case'sunset':doneSunset=true;addV(6);toast('🌅 Sky on fire. Every shade of orange and pink across the Atlantic.');scriptSunset();break;
+    case'bed':scriptBed();return;
+    case'car':if(drunk>=1){vibes=Math.max(0,vibes-10);toast('🚗🍷 No driving after sangria — sober up first!');}else{toast('🚗 Everyone in — Seville, here we come!');scriptCar(world.userData.car,'plaza');}break;
+    case'sandcastle':addV(10);cheer(30);timeOfDay+=0.4;toast('🏖️ Epic four-towered sandcastle — the little one is DELIGHTED.');scriptSandcastle();break;
     case'nokid':toast('👶 The little one is with '+fam[kid.minder].def.name+' — go and grab them (or press the 👶 button).');break;
-    case'sunscreen':sunscreenApplied=true;sunburnWarned=false;addV(2);toast('🧴 Factor 50 on. You are protected from the Cádiz sun.');break;
+    case'sunscreen':sunscreenApplied=true;sunburnWarned=false;addV(2);toast('🧴 Factor 50 on. You are protected from the Cádiz sun.');scriptSunscreen();break;
     case'npc':talkTo(s.npc);break;
   }
   if(LOVE_TXT[s.id])familyReact(s.id);
@@ -2222,8 +2253,8 @@ function update(dt){
       else if(t<4.4){player.position.set(h.x,0,h.z);player.rotation.y=h.yaw;P.pose='recline';}
       else if(t<5.0){const e=ease((t-4.4)/0.6);player.position.set(h.x+(h.ap.x-h.x)*e,0,h.z+(h.ap.z-h.z)*e);P.pose='auto';}
       else{player.position.set(h.ap.x,0,h.ap.z);playerYaw=player.rotation.y;P.pose='auto';if(hauntTaken[a.hid]==='player')delete hauntTaken[a.hid];playerAnim=null;}
-    }
-    P.lx=player.position.x;P.lz=player.position.z;
+    } else if(a.type==='script')stepScript(a,dt);
+    if(a.type!=='script'){P.lx=player.position.x;P.lz=player.position.z;}
   } else {
   playerP.pose='auto';
   // input vector
@@ -2265,7 +2296,7 @@ function update(dt){
   if(scn==='villa'){
     for(let i=collectibles.length-1;i>=0;i--){const c=collectibles[i];
       if(Math.hypot(player.position.x-c.x,player.position.z-c.z)<2){
-        world.remove(c.mesh);collectibles.splice(i,1);addV(2);
+        world.remove(c.mesh);collectibles.splice(i,1);addV(2);scriptPickup(c.type);
         if(c.type==='shell'){shellsTotal++;$('shellCount').textContent=shellsTotal;cheer(4);toast('🐚 Shell pocketed!');}
         else{orangesTotal++;$('orangeCount').textContent=orangesTotal;toast('🍊 Fresh Seville orange.');}
       }}
@@ -2301,6 +2332,8 @@ function update(dt){
   if(scn==='plaza'&&plaza.userData.boats){const t=performance.now()*0.001;const C=plaza.userData.canal;plaza.userData.boats.forEach(b=>{b.t+=b.s*dt;if(b.t<C.t0+0.05)b.s=Math.abs(b.s);if(b.t>C.t1-0.05)b.s=-Math.abs(b.s);
       const x=C.a*Math.cos(b.t),z=C.b*Math.sin(b.t),tx=-C.a*Math.sin(b.t)*Math.sign(b.s),tz=C.b*Math.cos(b.t)*Math.sign(b.s);b.m.position.set(x,0.3+Math.sin(t*1.3+b.t*9)*0.04,z);b.m.rotation.y=Math.atan2(-tz,tx);});
     const sp=plaza.userData.spray;if(sp){sp.scale.set(1+Math.sin(t*3)*0.05,1+Math.sin(t*2.3)*0.08,1+Math.sin(t*3)*0.05);}}
+  updateFX(dt);
+  if(scn==='villa'&&vendor){vendor.lookAt=player.position;animPerson(vendor,dt);}
   // bedroom mobile
   if(scn==='bed'&&kidsRoom.userData.mobile)kidsRoom.userData.mobile.rotation.y+=dt*0.35;
 
@@ -2320,11 +2353,14 @@ function update(dt){
     if(t<1){const k=Math.max(0.25,t-0.06);cx=ox+(cx-ox)*k;cy=oy+(cy-oy)*k+ (1-k)*2.5;cz=oz+(cz-oz)*k;}}
   else if(scn==='plaza'){const FA=PLZ.fa*PLZ.s-3,FB=PLZ.fb*PLZ.s-3,ox=player.position.x,oz=player.position.z,out=(x,z)=>(z<18&&(x/FA)**2+(z/FB)**2>1)||(Math.abs(x)<30&&z<-FB+12);
     if(out(cx,cz)){let lo=0,hi=1;for(let k=0;k<12;k++){const m=(lo+hi)/2;if(out(ox+(cx-ox)*m,oz+(cz-oz)*m))hi=m;else lo=m;}const k=Math.max(0.2,lo);cx=ox+(cx-ox)*k;cz=oz+(cz-oz)*k;cy+= (1-k)*4;}}
-  cam.position.x+=(cx-cam.position.x)*Math.min(1,dt*5);
-  cam.position.y+=(cy-cam.position.y)*Math.min(1,dt*5);
-  cam.position.z+=(cz-cam.position.z)*Math.min(1,dt*5);
+  if(camBlend<0.001)camFollow.copy(cam.position);
+  {const kf=Math.min(1,dt*5);camFollow.x+=(cx-camFollow.x)*kf;camFollow.y+=(cy-camFollow.y)*kf;camFollow.z+=(cz-camFollow.z)*kf;}
   const dsx=drunk>1?Math.sin(performance.now()*0.003)*(drunk-1)*1.6:0;
-  cam.lookAt(player.position.x+dsx,Math.max(0,player.position.y)+2+camPitch,player.position.z);
+  _lookF.set(player.position.x+dsx,Math.max(0,player.position.y)+2+camPitch,player.position.z);
+  // activity cut-aways (stargazing, sunsets) blend smoothly in and out of the follow camera
+  if(scriptCam)lastScriptCam=scriptCam;camBlend+=((scriptCam?1:0)-camBlend)*Math.min(1,dt*2.2);if(!scriptCam&&camBlend<0.002)camBlend=0;
+  if(camBlend>0&&lastScriptCam){const b=camBlend*camBlend*(3-2*camBlend);cam.position.copy(camFollow).lerp(lastScriptCam.p,b);_camLook.copy(_lookF).lerp(lastScriptCam.l,b);cam.lookAt(_camLook);}
+  else{cam.position.copy(camFollow);cam.lookAt(_lookF);}
 
   // transition
   if(fadeDir===1){fade+=dt*2.2;if(fade>=1){fade=1;setScene(pending);fadeDir=-1;}}
@@ -2436,6 +2472,7 @@ function setScene(to){
   world.visible=(to==='villa');plaza.visible=(to==='plaza');terminal.visible=(to==='terminal');cabin.visible=(to==='cabin');
   if(wingview)wingview.visible=(to==='wingview');if(landing)landing.visible=(to==='landing');
   if(kidsRoom)kidsRoom.visible=false;
+  [world.userData.car,plaza.userData.carMesh,terminal.userData.carMesh].forEach(c=>{if(c&&c.userData.home)c.position.copy(c.userData.home);});
   skyGroup.visible=(to==='villa'||to==='plaza'||to==='terminal'||to==='wingview'||to==='landing');
   scene.background=new T.Color(0x0d1421);
   player.visible=(to!=='wingview'&&to!=='landing');
@@ -2522,6 +2559,7 @@ function applyTime(){
 
 // ===================== FAMILY: roles, AI, interactions =====================
 function buildFamily(){
+  buildVendor();
   FAMILY_ORDER.forEach(id=>{const def=FAMILY[id];const p=makePerson(def);scene.add(p.root);
     fam[id]={id,def,p,mood:48,state:'idle',path:[],haunt:null,stayT:0,lastHaunt:null,talkI:0,react:0,tw:null};});
   kid=fam.toddler;kid.minder='player';kid.untilAbs=0;kid.hop=0;kid.t=0;
@@ -2620,6 +2658,11 @@ function walkPath(n,dt,spd){const p=n.p,rp=p.root.position;const w=n.path[0];if(
   p.root.rotation.y=lerpAng(p.root.rotation.y,Math.atan2(dx,dz),Math.min(1,dt*8));return false;}
 function npcVilla(n,dt){
   const p=n.p,rp=p.root.position;
+  if(n.hold){n.hold.t-=dt;
+    if(n.hold.t<=0){if(n.hold.prev!=null)p.pose=n.hold.prev;n.hold=null;}
+    else{if(n.hold.prev==null)n.hold.prev=p.pose;
+      if(['auto','drink','bbq','dance','wave','talk','laugh','give'].includes(n.hold.prev)&&p.root.visible){p.root.rotation.y=lerpAng(p.root.rotation.y,Math.atan2(player.position.x-rp.x,player.position.z-rp.z),Math.min(1,dt*6));p.pose=n.hold.pose;}
+      else n.react=1;return;}}
   if(n.react>0)n.react-=dt;
   switch(n.state){
     case 'inside':{p.root.visible=false;n.stayT-=dt;if(n.stayT<=0){n.stayT=4;const b=bandFor(n);if(b&&b[2][0]!=='inside'){p.root.visible=true;placePerson(p,DOOR.x,DOOR.z,Math.PI);n.state='idle';}}return;}
@@ -2646,6 +2689,7 @@ function resetVillaAI(){for(const k in hauntTaken)delete hauntTaken[k];npcs.forE
 // ---- away from the villa everyone trails the player ----
 const FOLLOW_SLOTS=[[-2.3,-2.1],[2.3,-2.3],[-1.2,-4.3],[1.4,-4.5]];
 function npcFollow(n,i,dt,list){
+  if(n.hold){n.hold.t-=dt;if(n.hold.t<=0)n.hold=null;else{const r0=n.p.root.position;n.p.root.rotation.y=lerpAng(n.p.root.rotation.y,Math.atan2(player.position.x-r0.x,player.position.z-r0.z),Math.min(1,dt*6));n.p.pose=n.hold.pose;return;}}
   const p=n.p,rp=p.root.position,yaw=player.rotation.y,o=FOLLOW_SLOTS[i%4];
   const tx=player.position.x+Math.cos(yaw)*o[0]+Math.sin(yaw)*o[1],tz=player.position.z-Math.sin(yaw)*o[0]+Math.cos(yaw)*o[1];
   const dx=tx-rp.x,dz=tz-rp.z,d=Math.hypot(dx,dz);
@@ -2664,6 +2708,11 @@ function updateKid(dt,list){
   if(scn==='bed')return;
   p.root.visible=true;k.t+=dt;k.hop=Math.max(0,k.hop-dt*1.6);
   if(k.minder!=='player'){const m=fam[k.minder];if(scn!=='villa'||absNow()>=k.untilAbs||!m.p.root.visible)kidBack(absNow()>=k.untilAbs?'The little one toddles back to you for a cuddle.':null);}
+  if(k.hold&&k.minder==='player'){if(k.hold.hidden){p.root.visible=false;return;}const h=k.hold,rp=p.root.position,dx=h.x-rp.x,dz=h.z-rp.z,d=Math.hypot(dx,dz);
+    if(d>0.15){const st=Math.min(d,4.5*dt);rp.x+=dx/d*st;rp.z+=dz/d*st;p.root.rotation.y=lerpAng(p.root.rotation.y,Math.atan2(dx,dz),Math.min(1,dt*10));p.pose='auto';rp.y+=(0-rp.y)*Math.min(1,dt*4);}
+    else{p.root.rotation.y=lerpAng(p.root.rotation.y,h.yaw,Math.min(1,dt*6));p.pose=h.pose||'auto';rp.y+=((h.y||0)-rp.y)*Math.min(1,dt*4);}
+    const want=h.prop?h.prop+'R':null;if((p.curProp||null)!==want)setProp(p,h.prop||null);
+    k.mood=Math.max(0,k.mood-dt*0.2);return;}
   const m=k.minder==='player'?playerP:fam[k.minder].p,mp=m.root.position;
   const tx=mp.x+Math.cos(k.t*0.7)*2.1,tz=mp.z+(k.minder==='player'?2.3:1.6)+Math.sin(k.t*0.6)*1.1;
   const rp=p.root.position,dx=tx-rp.x,dz=tz-rp.z,d=Math.hypot(dx,dz);
@@ -2682,6 +2731,7 @@ function handTarget(){
     if(d<3.6){if(kid.minder==='player')return {n,give:true};if(kid.minder===n.id)return {n,give:false};}}
   return null;}
 function doHand(){const h=handTarget();if(!h)return;const n=h.n;
+  n.hold={t:1.2,pose:'give'};runScript([{face:[n.p.root.position.x,n.p.root.position.z],dur:0.3},{pose:'give',dur:0.8}]);
   if(h.give){kid.minder=n.id;kid.untilAbs=absNow()+3;n.mood=Math.min(100,n.mood+15);n.react=1.6;addV(4);
     const say={nana:'👵 "Give them here, you go and relax!"',papa:'👴 "Come here, trouble. Let\'s find some crabs."',auntie:'💃 "Auntie time! We\'re going to be SO fabulous."',mum:'👩 "Go on — have a sit-down."',dad:'👨 "Right, little one. Mischief?"'};
     toast(say[n.id]||'👶 Handed over.');}
@@ -2690,20 +2740,20 @@ function doHand(){const h=handTarget();if(!h)return;const n=h.n;
 
 // ---- chatting with the family ----
 const FAMILY_TALK={
-  mum:[{l:'bring Mum a cuppa ☕',t:'☕ "You absolute angel. Hot tea at 30 degrees — perfect."',v:3},{l:'plan tomorrow with Mum 🗺️',t:'🗺️ "Beach in the morning, Vejer for lunch, nap. Deal?"',v:3},{l:'tell Mum she\'s smashing it 💛',t:'💛 "Stop it, you\'ll make me cry into my sun cream."',v:4},{l:'slow dance with Mum 💃',t:'💃 A slow dance on the terrace. The little one pretends to be sick.',v:5,villa:1}],
-  dad:[{l:'challenge Dad to a swim race 🏊',t:'🏊 "Last one in buys the sangria!" *massive splash*',v:5,villa:1},{l:'ask Dad about the BBQ 🍤',t:'🍤 A twenty-minute lecture on charcoal. Riveting.',v:3,villa:1},{l:'laugh at Dad\'s joke 😂',t:'😂 "I used to hate facial hair… but then it grew on me."',v:3},{l:'compare sunburns with Dad 🔴',t:'🔴 You\'re both the same shade of lobster. Solidarity.',v:2}],
-  nana:[{l:'have a natter with Nana 🫖',t:'🫖 "Have you eaten? You look thin. Here, have a biscuit."',v:3},{l:'ask Nana about her book 📖',t:'📖 "It\'s a murder mystery. The butler did it. Probably."',v:3},{l:'let Nana do your sun cream 🧴',t:'🧴 Factor 50, applied with the precision of a surgeon.',v:3},{l:'find Nana\'s glasses 👓',t:'👓 They were on her head the whole time. Classic.',v:4}],
-  papa:[{l:'hear one of Papa\'s stories 👴',t:'👴 "When I first came to Spain, a pint was twenty pesetas…"',v:4,time:0.25},{l:'ask Papa for the cricket score 🏏',t:'🏏 One earphone in, very serious face. "Don\'t jinx it."',v:3},{l:'admire Papa\'s socks 🧦',t:'🧦 "White socks and sandals. It\'s called style, look it up."',v:3},{l:'help Papa with the crossword ✏️',t:'✏️ "Seven letters, sunny region…" — "Andalucía is nine, Papa."',v:3}],
-  auntie:[{l:'take a selfie with Auntie 🤳',t:'🤳 Forty-seven attempts. The first one was best.',v:3},{l:'get the gossip from Auntie 🗣️',t:'🗣️ Twenty minutes of pure, high-quality gossip.',v:4},{l:'dance with Auntie 🎶',t:'🎶 A full choreographed routine on the terrace. Iconic.',v:5,villa:1},{l:'borrow Auntie\'s sunglasses 🕶️',t:'🕶️ "Keep them. I\'ve got six more pairs in my bag."',v:2}],
+  mum:[{pp:'give',l:'bring Mum a cuppa ☕',t:'☕ "You absolute angel. Hot tea at 30 degrees — perfect."',v:3},{l:'plan tomorrow with Mum 🗺️',t:'🗺️ "Beach in the morning, Vejer for lunch, nap. Deal?"',v:3},{l:'tell Mum she\'s smashing it 💛',t:'💛 "Stop it, you\'ll make me cry into my sun cream."',v:4},{pp:'dance',np:'dance',l:'slow dance with Mum 💃',t:'💃 A slow dance on the terrace. The little one pretends to be sick.',v:5,villa:1}],
+  dad:[{np:'laugh',l:'challenge Dad to a swim race 🏊',t:'🏊 "Last one in buys the sangria!" *massive splash*',v:5,villa:1},{l:'ask Dad about the BBQ 🍤',t:'🍤 A twenty-minute lecture on charcoal. Riveting.',v:3,villa:1},{pp:'laugh',np:'talk',l:'laugh at Dad\'s joke 😂',t:'😂 "I used to hate facial hair… but then it grew on me."',v:3},{l:'compare sunburns with Dad 🔴',t:'🔴 You\'re both the same shade of lobster. Solidarity.',v:2}],
+  nana:[{np:'talk',l:'have a natter with Nana 🫖',t:'🫖 "Have you eaten? You look thin. Here, have a biscuit."',v:3},{l:'ask Nana about her book 📖',t:'📖 "It\'s a murder mystery. The butler did it. Probably."',v:3},{pp:'rub',np:'talk',l:'let Nana do your sun cream 🧴',t:'🧴 Factor 50, applied with the precision of a surgeon.',v:3},{l:'find Nana\'s glasses 👓',t:'👓 They were on her head the whole time. Classic.',v:4}],
+  papa:[{pp:'laugh',np:'talk',l:'hear one of Papa\'s stories 👴',t:'👴 "When I first came to Spain, a pint was twenty pesetas…"',v:4,time:0.25},{l:'ask Papa for the cricket score 🏏',t:'🏏 One earphone in, very serious face. "Don\'t jinx it."',v:3},{l:'admire Papa\'s socks 🧦',t:'🧦 "White socks and sandals. It\'s called style, look it up."',v:3},{l:'help Papa with the crossword ✏️',t:'✏️ "Seven letters, sunny region…" — "Andalucía is nine, Papa."',v:3}],
+  auntie:[{pp:'reach',np:'wave',l:'take a selfie with Auntie 🤳',t:'🤳 Forty-seven attempts. The first one was best.',v:3},{l:'get the gossip from Auntie 🗣️',t:'🗣️ Twenty minutes of pure, high-quality gossip.',v:4},{pp:'dance',np:'dance',l:'dance with Auntie 🎶',t:'🎶 A full choreographed routine on the terrace. Iconic.',v:5,villa:1},{l:'borrow Auntie\'s sunglasses 🕶️',t:'🕶️ "Keep them. I\'ve got six more pairs in my bag."',v:2}],
 };
 const FAMILY_TIPSY={mum:'🙄 Mum: "Seriously? It\'s not even dark yet."',dad:'😬 Dad: "Mate… maybe have some water?"',nana:'👵 Nana: "I think that\'s enough sangria, dear."',papa:'👴 Papa: "In my day we paced ourselves. Mostly."',auntie:'💃 Auntie: "Another one? Go on then!"'};
 function talkLine(n){const L=FAMILY_TALK[n.id];for(let k=0;k<L.length;k++){const l=L[(n.talkI+k)%L.length];if(!l.villa||scn==='villa'){n.talkI+=k;return l;}}return L[0];}
 function talkTo(n){
   n.react=1.6;
-  if(drunk>=2){if(n.id==='auntie'){addV(2);n.mood=Math.min(100,n.mood+10);}else{vibes=Math.max(0,vibes-5);n.mood=Math.max(0,n.mood-8);}toast(FAMILY_TIPSY[n.id]);return;}
+  if(drunk>=2){if(n.id==='auntie'){addV(2);n.mood=Math.min(100,n.mood+10);}else{vibes=Math.max(0,vibes-5);n.mood=Math.max(0,n.mood-8);}toast(FAMILY_TIPSY[n.id]);scriptTalk(n,'laugh','talk');return;}
   const line=talkLine(n);n.talkI++;
-  if(drunk>=1&&n.id!=='auntie'){addV(Math.max(1,line.v-2));n.mood=Math.min(100,n.mood+10);toast('🍷 '+n.def.name+': "You alright there? Maybe slow it down a notch…"');return;}
-  addV(line.v);n.mood=Math.min(100,n.mood+20);fam[playerId].mood=Math.min(100,fam[playerId].mood+6);toast(line.t);if(line.time)timeOfDay+=line.time;
+  if(drunk>=1&&n.id!=='auntie'){addV(Math.max(1,line.v-2));n.mood=Math.min(100,n.mood+10);toast('🍷 '+n.def.name+': "You alright there? Maybe slow it down a notch…"');scriptTalk(n,'talk','talk');return;}
+  addV(line.v);n.mood=Math.min(100,n.mood+20);fam[playerId].mood=Math.min(100,fam[playerId].mood+6);toast(line.t);if(line.time)timeOfDay+=line.time;scriptTalk(n,line.pp,line.np);
   if(n.p.root.visible)spawnHeart(n.p.root.position.x,n.p.root.position.z,n.p.H+0.5);
 }
 // favourite activities: everyone who loves it perks up
@@ -2759,6 +2809,140 @@ function familyToScene(to,from){
   if(to==='villa')resetVillaAI();
 }
 function animateFamily(dt){FAMILY_ORDER.forEach(id=>{const p=fam[id].p;if(p.root.visible)animPerson(p,dt);});}
+
+// ===================== ACTIVITY ANIMATIONS =====================
+// Every villa activity plays a short scripted scene: walk there, do the thing (with props and effects),
+// then hand control back — the same idea as the swim in the pool.
+
+// ---- hand props (built lazily per person, in hand space: −y runs from the wrist along the fingers) ----
+const PROP_BUILD={
+  cone:()=>{const g=new T.Group();const c=new T.Mesh(new T.ConeGeometry(0.055,0.17,12),stdM(0xd9a05a,0.8));c.position.set(0,-0.1,0.02);c.rotation.x=Math.PI;g.add(c);
+    const s1=new T.Mesh(new T.SphereGeometry(0.062,12,10),stdM(0xf2a0c0,0.6));s1.position.set(0,-0.2,0.02);g.add(s1);const s2=new T.Mesh(new T.SphereGeometry(0.05,12,10),stdM(0xfff0b0,0.6));s2.position.set(0,-0.27,0.02);g.add(s2);return g;},
+  paddle:()=>{const g=new T.Group();const h=new T.Mesh(new T.CylinderGeometry(0.016,0.016,1.0,8),stdM(0xb08a5a,0.7));h.position.y=-0.42;g.add(h);
+    const b=new T.Mesh(new T.BoxGeometry(0.11,0.17,0.02),stdM(0xa47c4c,0.7));b.position.y=-0.95;g.add(b);g.rotation.x=1.05;return g;},
+  spatula:()=>{const g=new T.Group();const h=new T.Mesh(new T.CylinderGeometry(0.014,0.014,0.32,8),stdM(0x1a1a1a,0.5));h.position.y=-0.14;g.add(h);
+    const b=new T.Mesh(new T.BoxGeometry(0.1,0.13,0.012),stdM(0xc9cdd2,0.25,{metalness:0.9}));b.position.y=-0.36;g.add(b);g.rotation.x=0.5;return g;},
+  jug:()=>{const g=new T.Group();const gl=new T.Mesh(new T.CylinderGeometry(0.08,0.095,0.24,14),mc('jugGlass',()=>new T.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:0.35,roughness:0.05})));
+    const lq=new T.Mesh(new T.CylinderGeometry(0.074,0.088,0.15,14),stdM(0x9c1f32,0.3));lq.position.y=-0.04;gl.add(lq);gl.rotation.x=Math.PI/2;gl.position.set(0,-0.07,0.12);g.add(gl);return g;},
+  bottle:()=>{const g=new T.Group();const b=new T.Mesh(new T.CylinderGeometry(0.04,0.044,0.17,10),stdM(0xffffff,0.5));b.position.y=-0.09;g.add(b);
+    const l=new T.Mesh(new T.CylinderGeometry(0.045,0.045,0.07,10),stdM(0xf29a2e,0.5));l.position.y=-0.09;g.add(l);const c=new T.Mesh(new T.CylinderGeometry(0.025,0.03,0.05,8),stdM(0xff6633,0.5));c.position.y=-0.2;g.add(c);return g;},
+  spade:()=>{const g=new T.Group();const h=new T.Mesh(new T.CylinderGeometry(0.016,0.016,0.36,8),stdM(0xe0402a,0.6));h.position.y=-0.16;g.add(h);
+    const b=new T.Mesh(new T.BoxGeometry(0.13,0.15,0.02),stdM(0xf5c433,0.6));b.position.y=-0.4;g.add(b);g.rotation.x=0.7;return g;},
+};
+function setProp(p,name,left){p.propObjs=p.propObjs||{};for(const k in p.propObjs)p.propObjs[k].visible=false;if(!name){p.curProp=null;return;}
+  const key=name+(left?'L':'R');if(!p.propObjs[key]){const g=PROP_BUILD[name]();g.position.y+=-p.H*0.028;g.scale.multiplyScalar(p.H/2.3);(left?p.j.lHa:p.j.rHa).add(g);p.propObjs[key]=g;}
+  p.propObjs[key].visible=true;p.curProp=key;}
+
+// ---- little particle effects: steam, smoke, sand, splashes ----
+const puffTex=(()=>{const cv=document.createElement('canvas');cv.width=cv.height=64;const c=cv.getContext('2d');const g=c.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(0.5,'rgba(255,255,255,0.45)');g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.fillRect(0,0,64,64);return new T.CanvasTexture(cv);})();
+const FX=[],dropGeo=new T.SphereGeometry(0.05,6,4);
+function puff(x,y,z,o){o=o||{};const m=new T.SpriteMaterial({map:puffTex,color:lin(o.col||0xffffff),transparent:true,opacity:0,depthWrite:false});const s=new T.Sprite(m);s.position.set(x,y,z);
+  const sz=o.size||0.6;s.scale.set(sz,sz,1);scene.add(s);FX.push({o:s,t:0,life:o.life||1.6,v:new T.Vector3((Math.random()-0.5)*(o.spread||0.3),o.vy==null?0.9:o.vy,(Math.random()-0.5)*(o.spread||0.3)),sz,grow:o.grow==null?1.3:o.grow,op:o.op||0.6,sprite:true});}
+function splash(x,y,z,n,col){for(let i=0;i<n;i++){const m=new T.MeshBasicMaterial({color:lin(col||0xffffff),transparent:true,opacity:0.9});const d=new T.Mesh(dropGeo,m);d.position.set(x,y,z);d.scale.setScalar(0.6+Math.random()*0.8);scene.add(d);
+  const a=Math.random()*Math.PI*2,sp=0.8+Math.random()*1.6;FX.push({o:d,t:0,life:0.7+Math.random()*0.3,v:new T.Vector3(Math.cos(a)*sp,2+Math.random()*2.2,Math.sin(a)*sp)});}}
+function updateFX(dt){for(let i=FX.length-1;i>=0;i--){const f=FX[i];f.t+=dt;const u=f.t/f.life;
+  if(u>=1){scene.remove(f.o);f.o.material.dispose();FX.splice(i,1);continue;}
+  if(f.sprite){f.o.position.addScaledVector(f.v,dt);const s=f.sz*(1+f.grow*u);f.o.scale.set(s,s,1);f.o.material.opacity=f.op*(1-u)*Math.min(1,u*6);}
+  else{f.v.y-=9.8*dt;f.o.position.addScaledVector(f.v,dt);f.o.material.opacity=0.9*(1-u);}}}
+
+// ---- script runner ----
+let scriptCam=null,lastScriptCam=null,camBlend=0;const camFollow=new T.Vector3(),_camLook=new T.Vector3(),_lookF=new T.Vector3();
+function runScript(steps){playerAnim={type:'script',steps,i:0,t:0,init:false};}
+const kidOk=()=>kid&&!todsAsleep&&kid.minder==='player'&&kid.p.root.visible;
+function kidHold(h){if(kidOk())kid.hold=h;}
+const vec3=a=>new T.Vector3(a[0],a[1],a[2]);
+function stepScript(a,dt){
+  const P=playerP,s=a.steps[a.i];if(!s){endScript();return;}
+  if(!a.init){a.init=true;a.st=0;a.fired=false;
+    if(s.go){const g=typeof s.go==='function'?s.go():s.go;a.tgt=g;a.path=(scn==='villa'&&!s.direct)?navPath(player.position.x,player.position.z,g[0],g[1]):[];a.path.push({x:g[0],z:g[1]});}
+    if(s.do)s.do();
+    if(s.prop!==undefined)setProp(P,s.prop,s.left);
+    if(s.cam!==undefined){const c=typeof s.cam==='function'?s.cam():s.cam;scriptCam=c?{p:vec3(c.p),l:vec3(c.l)}:null;}}
+  a.st+=dt;const t=a.st;let done=false;
+  if(s.go){P.pose='auto';const w=a.path[0];
+    if(w){const dx=w.x-player.position.x,dz=w.z-player.position.z,d=Math.hypot(dx,dz);
+      if(d<0.2)a.path.shift();else{const st=Math.min(d,(s.speed||5.5)*dt);player.position.x+=dx/d*st;player.position.z+=dz/d*st;player.rotation.y=lerpAng(player.rotation.y,Math.atan2(dx,dz),Math.min(1,dt*10));}}
+    player.position.y+=((s.y||0)-player.position.y)*Math.min(1,dt*3);
+    if(!a.path.length)done=true;
+    if(t>10){player.position.x=a.tgt[0];player.position.z=a.tgt[1];done=true;}}
+  else{
+    if(s.face!=null){const f=typeof s.face==='function'?s.face():s.face;const yaw=typeof f==='number'?f:Math.atan2(f[0]-player.position.x,f[1]-player.position.z);player.rotation.y=lerpAng(player.rotation.y,yaw,Math.min(1,dt*9));}
+    if(s.pose)P.pose=s.pose;if(s.seatH)P.seatH=s.seatH;
+    if(s.y!=null)player.position.y+=(s.y-player.position.y)*Math.min(1,dt*4);
+    if(s.fx)s.fx(Math.min(1,t/(s.dur||1e-3)),dt,t,a);
+    if(t>=(s.dur||0))done=true;}
+  if(done){if(s.end)s.end();a.i++;a.init=false;}
+}
+function endScript(){playerAnim=null;scriptCam=null;playerP.pose='auto';setProp(playerP,null);player.visible=true;player.position.y=0;playerYaw=player.rotation.y;
+  if(!fadeDir)fade=0;if(kid.hold){kid.hold=null;setProp(kid.p,null);if(!todsAsleep&&scn!=='bed')kid.p.root.visible=true;}if(vendor)vendor.pose='auto';}
+const fadeTo=(dur,on)=>({dur,fx:u=>{fade=on?u:1-u;}});
+
+// ---- the scripts ----
+function scriptSangria(){runScript([{go:[5.5,7.45]},{face:0,dur:0.35},{pose:'pour',prop:'jug',dur:1.6,fx:(u,dt)=>{if(Math.random()<dt*8)splash(player.position.x+Math.sin(player.rotation.y)*0.55,1.25,player.position.z+Math.cos(player.rotation.y)*0.55,1,0x9c1f32);}},{prop:null,pose:'drink',dur:2.4}]);}
+function scriptSauna(){const d=world.userData.saunaDoor,c=world.userData.saunaChim,sx=d.position.x+0.55,sz=d.position.z;
+  const door=(to)=>({dur:0.55,fx:u=>{const e=u*u*(3-2*u);d.rotation.y=to?1.35*e:1.35*(1-e);}});
+  kidHold({x:sx+2.4,z:sz-2.2,yaw:0,pose:'auto'});
+  runScript([{go:[sx,sz-1.3]},{face:0,dur:0.3},door(true),{go:[sx,sz+1.2],direct:true,speed:2.6},{do:()=>{player.visible=false;}},door(false),
+    {dur:3.2,fx:(u,dt)=>{if(Math.random()<dt*9)puff(c[0],c[1],c[2],{size:1.1,vy:1.1,op:0.85,life:2.4,spread:0.5,col:0xf4f4f4});}},
+    door(true),{do:()=>{player.visible=true;player.position.set(sx,0,sz+0.4);player.rotation.y=Math.PI;flush(playerP,true);}},{go:[sx,sz-1.6],direct:true,speed:2.6},door(false),
+    {pose:'fan',dur:2.2,fx:(u,dt)=>{if(Math.random()<dt*3)puff(player.position.x,playerP.H*0.9,player.position.z,{size:0.35,vy:0.5,op:0.35,life:1.2});}},{do:()=>flush(playerP,false)}]);}
+function flush(p,on){p.root.traverse(o=>{if(o.isMesh&&o.material===skinM(p.def.skin)){o.material.emissive.copy(lin(p.def.skin).multiplyScalar(0.05));if(on)o.material.emissive.add(new T.Color(0.35,0.04,0.02));}});}
+function scriptPaella(){runScript([{go:[15.1,11.0]},{face:Math.PI/2,dur:0.35},{pose:'stir',prop:'paddle',dur:3.8,fx:(u,dt)=>{if(Math.random()<dt*6)puff(17.5+(Math.random()-0.5)*1.6,1.75,11+(Math.random()-0.5)*1.6,{size:0.7,vy:1.1,op:0.45,life:1.9});}}]);}
+function scriptBBQ(){const fx=world.userData.bbqFx;
+  runScript([{go:[22.2,12.55]},{face:Math.PI,dur:0.35,do:()=>{fx.visible=true;}},
+    {pose:'flip',prop:'spatula',dur:4.0,fx:(u,dt,t)=>{fx.children.forEach((f,i)=>{if(f.userData.flame){const k=0.7+0.5*Math.abs(Math.sin(t*9+i*1.7));f.scale.set(1,k,1);}});
+      if(Math.random()<dt*7)puff(22+(Math.random()-0.5)*1.4,1.9,11+(Math.random()-0.5)*0.8,{col:0x9a9690,size:0.8,vy:1.3,op:0.45,life:2.2,spread:0.4});}},
+    {do:()=>{fx.children.forEach(f=>{if(f.userData.flame)f.visible=false;});setTimeout(()=>{fx.visible=false;fx.children.forEach(f=>f.visible=true);},25000);}}]);}
+function scriptSea(){const x=Math.max(-60,Math.min(60,player.position.x));
+  runScript([{go:[x,-42.6]},{go:[x,-48.6],direct:true,speed:3,y:-0.45,do:()=>kidHold({x:x+1.5,z:-46.4,yaw:Math.PI,pose:'wade',y:-0.1})},
+    {face:Math.PI,pose:'wade',y:-0.5,dur:3.6,fx:(u,dt)=>{if(Math.random()<dt*9)splash(player.position.x+(Math.random()-0.5)*0.9,0.15,player.position.z+(Math.random()-0.5)*0.9,3);
+      if(kid.hold&&Math.random()<dt*5)splash(kid.p.root.position.x,0.12,kid.p.root.position.z,2);}},
+    {go:[x,-42.4],direct:true,speed:4,do:()=>{if(kid.hold)kid.hold=null;}}]);}
+function scriptIce(){
+  runScript([{go:[30,-16.35]},{face:0,dur:0.4,do:()=>{vendor.pose='give';kidHold({x:31.3,z:-16.9,yaw:0,pose:'auto'});}},{dur:1.0},
+    {do:()=>{setProp(playerP,'cone');if(kid.hold)kid.hold.prop='cone';vendor.pose='wave';}},{face:Math.PI,dur:0.5,do:()=>{if(kid.hold){kid.hold.yaw=Math.PI;kid.hold.pose='lick';}}},
+    {pose:'lick',dur:2.8},{do:()=>{vendor.pose='auto';}}]);}
+function scriptNap(night){
+  runScript([{go:[DOOR.x,DOOR.z-0.2]},{face:0,dur:0.3},fadeTo(0.9,true),
+    {do:()=>{if(night){day++;timeOfDay=7;}else{timeOfDay+=4;if(timeOfDay>=24){timeOfDay-=24;day++;}}player.position.set(DOOR.x,0,DOOR.z-0.9);player.rotation.y=Math.PI;
+      if(kidOk())placePerson(kid.p,DOOR.x+1.1,DOOR.z-1.6,Math.PI);applyTime();refreshEnv(true);toast(night?'🛏️ Out cold until morning. Well earned.':'😴 Siesta… time drifts on.');}},
+    {dur:0.7},fadeTo(0.9,false),{pose:'stretch',dur:1.9}]);}
+function scriptStargaze(){const px=16.5,pz=2.0;kidHold({x:px,z:pz+1.1,yaw:Math.PI/2,pose:'lie'});
+  runScript([{go:[px,pz]},{face:Math.PI/2,dur:0.3},{pose:'stargaze',dur:5.0,cam:{p:[px+0.4,0.9,pz+3.6],l:[px-0.2,2.4,pz-3.5]}}]);}
+function scriptSunset(){const px=-10,pz=1.6;kidHold({x:px+1.0,z:pz+0.3,yaw:Math.PI,pose:'sitground'});
+  runScript([{go:[px,pz]},{face:Math.PI,dur:0.35},{pose:'sitground',dur:5.0,cam:{p:[px+2.3,2.0,pz+4.8],l:[px-5,4.5,pz-90]}}]);}
+function scriptSandcastle(){const c=world.userData.castle;
+  kidHold({x:-10.7,z:-37.3,yaw:Math.PI/2,pose:'dig'});
+  runScript([{go:[-5.1,-37.4]},{face:[-8,-38],dur:0.35,do:()=>{c.scale.y=0.15;c.userData.flag.visible=false;}},
+    {pose:'dig',prop:'spade',dur:4.4,fx:(u,dt)=>{c.scale.y=0.15+0.85*(1-Math.pow(1-u,2));if(Math.random()<dt*6)puff(-6.3+(Math.random()-0.5)*0.6,0.35,-37.7+(Math.random()-0.5)*0.6,{col:0xd9c08a,size:0.35,vy:0.5,op:0.7,life:0.9,grow:0.8});
+      if(kid.hold&&Math.random()<dt*4)puff(-9.8,0.3,-37.6,{col:0xd9c08a,size:0.3,vy:0.4,op:0.7,life:0.8,grow:0.8});}},
+    {do:()=>{c.userData.flag.visible=true;setProp(playerP,null);if(kid.hold)kid.hold.pose='cheer';spawnHeart(-8,-38,4);}},{pose:'cheer',dur:1.3}]);}
+function scriptSunscreen(){runScript([{go:[-4,8.55]},{face:0,dur:0.3},{pose:'give',dur:0.45},{prop:'bottle',left:true,pose:'rub',dur:3.0}]);}
+// get in the car (nearest front door), the car pulls away, then fade to the next place
+function scriptCar(car,to){const h=car.userData.home,ry=car.rotation.y,f=new T.Vector3(Math.sin(ry),0,Math.cos(ry));
+  const side=k=>{const o=new T.Vector3(k*1.55,0,0.35).applyAxisAngle(new T.Vector3(0,1,0),ry);return [h.x+o.x,h.z+o.z];};
+  const a=side(1),b=side(-1),dr=Math.hypot(a[0]-player.position.x,a[1]-player.position.z)<Math.hypot(b[0]-player.position.x,b[1]-player.position.z)?a:b;
+  runScript([{go:dr,direct:scn!=='villa'},{face:[h.x,h.z],dur:0.35},
+    {do:()=>{player.visible=false;if(kidOk()){kid.hold={hidden:true};kid.p.root.visible=false;}if(scn!=='villa')npcs.forEach(n=>n.p.root.visible=false);}},{dur:0.45},
+    {dur:2.6,cam:{p:[h.x+f.z*8.5-f.x*2.5,2.6,h.z-f.x*8.5-f.z*2.5],l:[h.x+f.x*5,0.9,h.z+f.z*5]},fx:(u,dt,t,st)=>{const d=0.5*5.5*t*t;car.position.set(h.x+f.x*d,h.y,h.z+f.z*d);if(Math.random()<dt*6)puff(car.position.x-f.x*2.6,0.4,car.position.z-f.z*2.6,{col:0xbdb8b0,size:0.4,vy:0.3,op:0.35,life:1.0});
+      if(t>1.5&&!st.fired){st.fired=true;transition(to);}}}]);}
+const COT_CAM={p:[2.2,2.5,1.1],l:[-1.3,0.95,-2.1]};
+function scriptBed(){const putting=!todsAsleep;
+  const steps=[{go:[DOOR.x+0.9,DOOR.z-0.2]},{face:0,dur:0.3},fadeTo(0.6,true),{do:()=>enterBedroom()},fadeTo(0.6,false)];
+  if(putting)steps.push({go:[-1.2,-1.3],direct:true,speed:2.4},{face:Math.PI,dur:0.3},{pose:'tuck',dur:2.6,cam:COT_CAM});
+  runScript(steps);}
+function scriptWake(){const b=kidsRoom.userData.bed;
+  runScript([{go:[-1.2,-1.3],direct:true,speed:3},{face:Math.PI,dur:0.3},{pose:'tuck',dur:1.0,cam:COT_CAM},
+    {do:()=>{placePerson(kid.p,b.x,b.z,0,0.92);kid.p.py=0;kid.p.pose='cheer';}},{pose:'wave',dur:1.7,cam:COT_CAM},fadeTo(0.5,true),
+    {do:()=>{todsAsleep=false;bedtimeWarned=false;wakeupWarned=false;addV(8);kid.mood=Math.max(kid.mood,80);toast('☀️ Rise and shine! One very excited toddler.');exitBedroom();}},fadeTo(0.5,false)]);}
+function scriptLeaveRoom(){runScript([{go:[0,4.6],direct:true,speed:2.2},fadeTo(0.5,true),{do:()=>exitBedroom()},fadeTo(0.5,false)]);}
+function scriptTalk(n,pp,np){n.hold={t:2.6,pose:np||'laugh'};runScript([{face:()=>[n.p.root.position.x,n.p.root.position.z],dur:0.35},{pose:pp||'talk',dur:2.1}]);}
+function scriptPickup(kind){if(playerAnim)return;runScript([{pose:kind==='orange'?'reach':'crouch',dur:0.6}]);}
+
+// ---- the chiringuito's ice-cream seller ----
+let vendor=null;
+function buildVendor(){vendor=makePerson({h:2.28,skin:0xd9a47c,hair:0x2a1d14,hairStyle:'short',top:{type:'tee',col:0xe05a4a,pat:'stripes',pat2:0xfbf6ec},bottom:{type:'shorts',col:0x2f3e5a},shoes:{type:'trainer',col:0xffffff},hat:'bucket',hatCol:0xf2efe6});
+  world.add(vendor.root);placePerson(vendor,33.7,-15.8,-2.0);vendor.lookAt=null;solids.push({x:33.7,z:-15.8,rx:0.4,rz:0.4});}
 
 function enterBedroom(){
   bedtimeEntry=!todsAsleep; // remember if we came in to put them down vs. to wake them

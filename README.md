@@ -21,6 +21,28 @@ Six of you on this holiday. You play one of the five adults, and everyone else l
 - Press **H** (or the 👶 button) to hand the little one to a nearby family member for a few hours of free time.
 - Keep the whole family happy (the faces in the top-left HUD) for a bonus.
 
+### Activities
+
+Every villa activity plays out on screen, like the pool swim:
+
+| Activity | What you see |
+| --- | --- |
+| Sangria | pour a glass from the jug, then sip |
+| Sauna | open the door, step inside, steam pours from the chimney, come out flushed and fanning |
+| Paella | stir the giant pan with a paddle while it steams |
+| BBQ | flip prawns and sardines over real flames and smoke |
+| Sea | wade into the shallows with splashes; the little one paddles too |
+| Ice cream | the beach vendor hands over cones for you and the little one |
+| Sandcastle | dig with a spade while the castle rises and the flag goes up |
+| Sun cream | squeeze the bottle and rub it in |
+| Sunset | sit down facing the Atlantic (close-up camera) |
+| Stargazing | lie on the lawn pointing out stars (close-up camera) |
+| Siesta / sleep | head indoors, fade out, then wake with a big stretch |
+| Bedtime / wake-up | tuck the little one into the cot; in the morning they stand up cheering |
+| Car | walk to the door, climb in and watch the car pull away (also at the airport and in Seville) |
+| Chats | each person talks, laughs or waves depending on the conversation |
+| Shells and oranges | crouch or reach to pick them up |
+
 To rename anyone or change how they look, edit the `FAMILY` table near the top of the characters section in `index.html`. You can change names, heights, skin, hair, outfits, hats, glasses and favourite activities.
 
 ## Real places
@@ -53,6 +75,6 @@ Move with WASD, the arrow keys or the on-screen pad. Drag to look around. Intera
 
 ## Tech notes
 
-- The characters are built procedurally from jointed parts. Walking, running, sitting, reclining, swimming, soaking, waving, dancing and sleeping are all animated in code.
+- The characters are built procedurally from jointed parts. Walking, running, sitting, reclining, swimming, soaking, waving, dancing, sleeping and every activity pose (stirring, pouring, digging, wading and more) are all animated in code. Activities run as small step scripts (walk, face, pose, props, effects, camera).
 - The sky is a shader dome with a smoothly blended time-of-day palette. It also feeds a PMREM environment map, so water, glass and skin pick up the sky light.
 - Open `index.html?debug` to get the `window.VillaDebug` testing helpers.
