@@ -25,6 +25,8 @@ Six of you on this holiday. You play one of the five adults, and everyone else l
 
 Every villa activity plays out on screen, like the pool swim:
 
+The activity props are modelled at real size too: a brick barbecue with glowing coals, a paella pan on a gas ring with an orange butane bottle, a cedar sauna with benches and a stove inside, a beach chiringuito with a striped awning, chalk menu and freezer, a glass sangria jug, and a sandcastle with towers and battlements.
+
 | Activity | What you see |
 | --- | --- |
 | Sangria | pour a glass from the jug, then sip |
@@ -63,7 +65,7 @@ The areas around the villa, the Seville day trip, the flyover and the Jerez land
 - **Jerez airport:** runway 02/20 and the terminal, aprons and taxiways.
 - **Mountains:** Medina Sidonia's hill, the Retín and Plata sierras, Los Alcornocales and the Sierra de Grazalema, on their true bearings with exaggerated height so they read on the horizon.
 
-People, buildings and the plane share one scale (1.31 game units per metre): Plaza de España is built at its real size, and the plane is an easyJet Airbus A320neo modelled on a Wikimedia Commons photo of G-UZLB using the published A320neo dimensions.
+People, buildings and the plane share one scale (1.31 game units per metre): Plaza de España is built at its real size, with its 74 m towers, pavilions, arcades, glazed-tile roofs and real-size brickwork modelled from Wikimedia Commons photos, and the plane is an easyJet Airbus A320neo modelled on a Wikimedia Commons photo of G-UZLB using the published A320neo dimensions.
 
 Close to the villa and the plaza, distances are true to scale. Further out they are compressed so far-off landmarks stay visible, but every direction is geographically true.
 

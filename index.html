@@ -632,6 +632,316 @@ function buildGeoVilla(){
      const deck=new T.Mesh(new T.BoxGeometry(30*s,6*s,1400*s),pm);deck.position.set(x,69*s,z);deck.rotation.y=Math.atan2(0.5,0.85);world.add(deck);}}
 }
 
+// ===================== ACTIVITY PROPS (realism pass) =====================
+// map a texture in world units (box projection) so bricks, slats and boards keep their real size on any shape
+function worldUV(o,tw,th){const g=o.geometry=o.geometry.clone(),p=g.attributes.position,n=g.attributes.normal,uv=g.attributes.uv;if(!uv||!n)return o;
+  const ws=new T.Vector3();o.updateMatrixWorld(true);o.getWorldScale(ws);th=th||tw;
+  for(let i=0;i<p.count;i++){const x=p.getX(i)*ws.x,y=p.getY(i)*ws.y,z=p.getZ(i)*ws.z,ax=Math.abs(n.getX(i)),ay=Math.abs(n.getY(i)),az=Math.abs(n.getZ(i));
+    if(ay>ax&&ay>az)uv.setXY(i,x/tw,z/tw);else if(ax>=az)uv.setXY(i,z/tw,y/th);else uv.setXY(i,x/tw,y/th);}
+  uv.needsUpdate=true;return o;}
+function cvTex(w,h,draw,wrap){const cv=document.createElement('canvas');cv.width=w;cv.height=h;const c=cv.getContext('2d');draw(c,w,h);const t=new T.CanvasTexture(cv);t.encoding=T.sRGBEncoding;t.anisotropy=4;if(wrap)t.wrapS=t.wrapT=T.RepeatWrapping;return t;}
+function _grain(c,w,h,n,rgb,horiz){for(let i=0;i<n;i++){c.strokeStyle='rgba('+rgb+','+(0.04+Math.random()*0.1).toFixed(3)+')';c.lineWidth=0.6+Math.random();c.beginPath();const o=Math.random()*6;
+  if(horiz){const y=Math.random()*h;c.moveTo(0,y);for(let x=0;x<=w;x+=16)c.lineTo(x,y+Math.sin(x*0.05+o)*1.5);}else{const x=Math.random()*w;c.moveTo(x,0);for(let y=0;y<=h;y+=16)c.lineTo(x+Math.sin(y*0.05+o)*1.5,y);}c.stroke();}}
+// a straight rod between two points
+function rod(a,b,r,m,seg){const d=new T.Vector3().subVectors(b,a),L=d.length(),o=new T.Mesh(new T.CylinderGeometry(r,r,L,seg||6),m);o.position.copy(a).addScaledVector(d,0.5);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());o.castShadow=true;return o;}
+// teardrop flame sprite texture, computed in JS (hot = yellow/orange wood fire, else blue gas)
+function flameTex(hot){const w=32,h=64,d=new Uint8Array(w*h*4);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const v=y/(h-1),u=(x+0.5)/w*2-1,half=Math.sin(Math.PI*Math.pow(v,0.6))*0.9,e=half>0.01?Math.abs(u)/half:9;
+    let a=Math.max(0,1-e);a=a*a*(3-2*a)*Math.min(1,v*8)*(1-Math.pow(v,3));const core=Math.max(0,1-e*1.7)*(1-v),i=(y*w+x)*4;
+    if(hot){d[i]=255;d[i+1]=Math.round(80+150*core+30*(1-v));d[i+2]=Math.round(15+190*core*core);}else{d[i]=Math.round(70+160*core);d[i+1]=Math.round(120+120*core);d[i+2]=255;}
+    d[i+3]=Math.round(Math.min(1,a)*255);}
+  const t=new T.DataTexture(d,w,h,T.RGBAFormat);t.magFilter=T.LinearFilter;t.minFilter=T.LinearFilter;t.needsUpdate=true;return t;}
+
+// ---- textures (all opaque canvases, so Safari's canvas noise is invisible on them) ----
+const slatT=cvTex(256,256,(c,w,h)=>{const C=['#c28a55','#b67d49','#cb9660','#b07645','#bd8550'];for(let i=0;i<8;i++){const y=i*32;c.fillStyle=C[Math.floor(Math.random()*C.length)];c.fillRect(0,y,w,32);
+  c.fillStyle='rgba(255,235,200,0.28)';c.fillRect(0,y+1,w,2);c.fillStyle='rgba(40,20,8,0.85)';c.fillRect(0,y+29,w,3);}
+  _grain(c,w,h,90,'90,50,20',true);for(let k=0;k<6;k++){c.fillStyle='rgba(80,40,15,0.5)';c.beginPath();c.ellipse(Math.random()*w,Math.random()*h,5,2.5,0,0,Math.PI*2);c.fill();}_speck(c,w,800,14,1);},true);
+const boardT=cvTex(256,256,(c,w,h)=>{for(let i=0;i<8;i++){const x=i*32,g=Math.round(236*(0.9+Math.random()*0.1));c.fillStyle='rgb('+g+','+Math.round(g*0.97)+','+Math.round(g*0.92)+')';c.fillRect(x,0,32,h);
+  c.fillStyle='rgba(60,45,30,0.55)';c.fillRect(x+30,0,2,h);c.fillStyle='rgba(255,255,255,0.25)';c.fillRect(x+1,0,1,h);}_grain(c,w,h,110,'120,95,70',false);_speck(c,w,1200,16,1);},true);
+const shingleT=cvTex(256,256,(c,w,h)=>{c.fillStyle='#2b2d30';c.fillRect(0,0,w,h);for(let r=0;r<8;r++)for(let k=-1;k<5;k++){const x=k*64+(r%2?32:0),y=r*32,v=Math.random()*18;
+  c.fillStyle='rgb('+Math.round(52+v)+','+Math.round(54+v)+','+Math.round(58+v)+')';c.fillRect(x+2,y+2,60,28);c.fillStyle='rgba(0,0,0,0.35)';c.fillRect(x+2,y+26,60,4);}_speck(c,w,2500,26,1);},true);
+const sandCT=cvTex(128,128,(c,w,h)=>{c.fillStyle='#e2cb98';c.fillRect(0,0,w,h);_speck(c,w,3500,46,1);for(let i=0;i<400;i++){c.fillStyle='rgba(110,80,40,0.28)';c.fillRect(Math.random()*w,Math.random()*h,1,1);}},true);
+const waffleT=cvTex(128,128,(c,w,h)=>{c.fillStyle='#d9a05c';c.fillRect(0,0,w,h);_speck(c,w,700,30,1);c.strokeStyle='#a66c36';c.lineWidth=3;
+  for(let i=-w;i<w*2;i+=16){c.beginPath();c.moveTo(i,0);c.lineTo(i+h,h);c.stroke();c.beginPath();c.moveTo(i,h);c.lineTo(i+h,0);c.stroke();}},true);
+const paellaT=cvTex(512,512,(c,w)=>{const r=w/2;c.fillStyle='#94541a';c.fillRect(0,0,w,w);
+  const g=c.createRadialGradient(r,r,0,r,r,r);g.addColorStop(0,'#ebb94a');g.addColorStop(0.68,'#e2a538');g.addColorStop(0.9,'#c47f27');g.addColorStop(1,'#8f5018');c.fillStyle=g;c.beginPath();c.arc(r,r,r,0,Math.PI*2);c.fill();
+  for(let i=0;i<15000;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*r*0.985;c.save();c.translate(r+Math.cos(a)*d,r+Math.sin(a)*d);c.rotate(Math.random()*3.2);const v=Math.random();
+    c.fillStyle=v<0.5?'rgba(252,226,148,0.75)':v<0.8?'rgba(214,150,52,0.7)':'rgba(140,84,28,0.6)';c.beginPath();c.ellipse(0,0,3.4,1.5,0,0,Math.PI*2);c.fill();c.restore();}
+  const blob=(n,f)=>{for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,d=Math.sqrt(Math.random())*r*0.86;c.save();c.translate(r+Math.cos(a)*d,r+Math.sin(a)*d);c.rotate(Math.random()*6.3);f();c.restore();}};
+  blob(16,()=>{c.fillStyle='#c42a1c';c.fillRect(-26,-4,52,8);c.fillStyle='rgba(255,150,130,0.5)';c.fillRect(-24,-3,48,2);});       // roasted red pepper strips
+  blob(14,()=>{c.fillStyle='#5f8f2c';c.fillRect(-18,-5,36,10);c.fillStyle='rgba(30,60,10,0.5)';c.fillRect(-18,3,36,2);});           // flat green beans
+  blob(80,()=>{c.fillStyle='#6ea83a';c.beginPath();c.arc(0,0,5,0,Math.PI*2);c.fill();c.fillStyle='rgba(225,255,190,0.6)';c.beginPath();c.arc(-1.5,-1.5,1.6,0,Math.PI*2);c.fill();});   // peas
+  blob(8,()=>{c.fillStyle='rgba(55,85,35,0.85)';for(let k=0;k<7;k++){c.fillRect(k*4-14,-1,3,2);c.fillRect(k*4-14,k%2?-5:3,1.5,4);}});   // rosemary
+});
+const citrusT=(rind,flesh)=>cvTex(64,64,(c,w)=>{const r=w/2;c.fillStyle=rind;c.fillRect(0,0,w,w);c.fillStyle='#fff4d6';c.beginPath();c.arc(r,r,r*0.86,0,Math.PI*2);c.fill();
+  for(let k=0;k<10;k++){const a0=k/10*Math.PI*2+0.06,a1=(k+1)/10*Math.PI*2-0.06;c.fillStyle=flesh;c.beginPath();c.moveTo(r,r);c.arc(r,r,r*0.78,a0,a1);c.closePath();c.fill();}});
+const menuT=cvTex(256,384,(c,w,h)=>{c.fillStyle='#8a5a32';c.fillRect(0,0,w,h);c.fillStyle='#1f2825';c.fillRect(14,14,w-28,h-28);
+  for(let i=0;i<14;i++){const x=20+Math.random()*(w-40),y=20+Math.random()*(h-40),g=c.createRadialGradient(x,y,0,x,y,40);g.addColorStop(0,'rgba(255,255,255,0.05)');g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.fillRect(x-40,y-40,80,80);}
+  c.textAlign='center';c.fillStyle='#f6e27a';c.font='bold 40px Georgia, serif';c.fillText('HELADOS',w/2,62);c.strokeStyle='rgba(255,255,255,0.7)';c.lineWidth=2;c.beginPath();c.moveTo(40,76);c.lineTo(w-40,76);c.stroke();
+  const it=[['Fresa','2€','#f4a6b8'],['Chocolate','2€','#d8b08c'],['Pistacho','2,50€','#b8dc8a'],['Limón','2€','#fff2a0'],['Vainilla','2€','#fbf3dc'],['Turrón','2,50€','#f0d6a8'],['Polo de hielo','1,50€','#9fd8f4']];
+  c.font='24px Georgia, serif';it.forEach((q,i)=>{const y=116+i*36;c.textAlign='left';c.fillStyle=q[2];c.fillText(q[0],30,y);c.textAlign='right';c.fillStyle='#ffffff';c.fillText(q[1],w-30,y);});
+  c.textAlign='center';c.font='italic 20px Georgia, serif';c.fillStyle='#ffffff';c.fillText('¡Fresquitos!',w/2,h-30);});
+const signT=cvTex(512,96,(c,w,h)=>{c.fillStyle='#1f5f8e';c.fillRect(0,0,w,h);c.strokeStyle='#f7f2e6';c.lineWidth=5;c.strokeRect(8,8,w-16,h-16);
+  c.fillStyle='#f7f2e6';c.textAlign='center';c.textBaseline='middle';let fs=46;c.font='bold '+fs+'px Georgia, serif';const tw=c.measureText('CHIRINGUITO · HELADOS').width;if(tw>w-60){fs=Math.floor(fs*(w-60)/tw);c.font='bold '+fs+'px Georgia, serif';}c.fillText('CHIRINGUITO · HELADOS',w/2,h/2+2);_speck(c,w,900,30,1);});
+const freezerT=cvTex(256,128,(c,w,h)=>{c.fillStyle='#f7f7f4';c.fillRect(0,0,w,h);c.fillStyle='#1d58b8';c.fillRect(0,h-22,w,22);
+  c.fillStyle='#d9a05c';c.beginPath();c.moveTo(46,108);c.lineTo(28,50);c.lineTo(64,50);c.closePath();c.fill();c.fillStyle='#f29ab4';c.beginPath();c.arc(46,44,18,0,Math.PI*2);c.fill();
+  c.fillStyle='#d8322a';c.font='bold 34px Georgia, serif';c.textBaseline='middle';c.fillText('HELADOS',84,56);c.fillStyle='#1d58b8';c.font='18px Georgia, serif';c.fillText('artesanos · La Barrosa',86,88);});
+
+// ---- sangria: a glass pitcher with a pouring lip, fruit and ice, and tumblers ----
+function sangriaJugGroup(){const g=new T.Group(),V=(a)=>a.map(p=>new T.Vector2(p[0],p[1]));
+  const gg=new T.LatheGeometry(V([[0,0],[0.07,0],[0.088,0.012],[0.1,0.05],[0.104,0.13],[0.099,0.22],[0.086,0.29],[0.077,0.33],[0.08,0.37],[0.09,0.4]]),28),pos=gg.attributes.position;
+  for(let i=0;i<pos.count;i++){const y=pos.getY(i);if(y>0.33){const x=pos.getX(i),z=pos.getZ(i),c=Math.cos(Math.atan2(z,x));if(c>0)pos.setX(i,x+Math.pow(c,8)*0.045*(y-0.33)/0.07);}}gg.computeVertexNormals();
+  const glass=mc('sgGlass',()=>new T.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:0.2,roughness:0.03,metalness:0.1,side:T.DoubleSide,depthWrite:false}));
+  const jg=new T.Mesh(gg,glass);jg.renderOrder=3;g.add(jg);
+  const liq=new T.Mesh(new T.LatheGeometry(V([[0,0.012],[0.084,0.012],[0.097,0.05],[0.1,0.13],[0.095,0.22],[0.088,0.26],[0,0.26]]),24),mc('sgWine',()=>new T.MeshStandardMaterial({color:lin(0x7a0d22),transparent:true,opacity:0.84,roughness:0.12})));
+  liq.renderOrder=2;g.add(liq);
+  const h=new T.Mesh(new T.TorusGeometry(0.075,0.012,8,18,Math.PI),glass);h.rotation.z=Math.PI/2;h.position.set(-0.098,0.215,0);h.renderOrder=3;g.add(h);
+  const oc=mc('sgOrange',()=>new T.MeshStandardMaterial({map:citrusT('#f08a1c','#f7a53a'),roughness:0.6})),lc=mc('sgLemon',()=>new T.MeshStandardMaterial({map:citrusT('#e8cf2a','#f6e27a'),roughness:0.6}));
+  const or=mc('sgRindO',()=>new T.MeshStandardMaterial({color:lin(0xf08a1c),roughness:0.6})),lr=mc('sgRindL',()=>new T.MeshStandardMaterial({color:lin(0xe8cf2a),roughness:0.6}));
+  const sliceG=new T.CylinderGeometry(0.036,0.036,0.008,16);
+  for(let i=0;i<7;i++){const lem=i%3===2,s=new T.Mesh(sliceG,lem?[lr,lc,lc]:[or,oc,oc]);const a=Math.random()*6.3,d=Math.random()*0.05,top=i<3;
+    s.position.set(Math.cos(a)*d,top?0.255:0.05+Math.random()*0.18,Math.sin(a)*d);s.rotation.set(top?(Math.random()-0.5)*0.4:Math.random()*3,Math.random()*3,top?(Math.random()-0.5)*0.4:Math.random()*3);g.add(s);}
+  const apple=mc('sgApple',()=>new T.MeshStandardMaterial({color:lin(0xf1e3a8),roughness:0.7}));for(let i=0;i<6;i++){const b=new T.Mesh(new T.BoxGeometry(0.022,0.022,0.022),apple);b.position.set((Math.random()-0.5)*0.12,0.03+Math.random()*0.2,(Math.random()-0.5)*0.12);b.rotation.set(Math.random()*3,Math.random()*3,0);g.add(b);}
+  const ice=mc('sgIce',()=>new T.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:0.45,roughness:0.05}));for(let i=0;i<4;i++){const b=new T.Mesh(new T.BoxGeometry(0.034,0.03,0.034),ice);b.position.set((Math.random()-0.5)*0.09,0.24,(Math.random()-0.5)*0.09);b.rotation.set(0.3,Math.random()*3,0.2);b.renderOrder=1;g.add(b);}
+  const stick=new T.Mesh(new T.CylinderGeometry(0.006,0.006,0.44,6),mc('sgSpoon',()=>new T.MeshStandardMaterial({color:lin(0xb08a5a),roughness:0.6})));stick.position.set(0.02,0.25,0.03);stick.rotation.set(0.28,0,-0.22);g.add(stick);
+  return g;}
+function buildSangria(){const X=5.5,Y=1.04,Z=9.0;
+  const j=sangriaJugGroup();j.position.set(X,Y,Z);j.rotation.y=-0.6;world.add(j);
+  const glass=mc('sgGlass',()=>null),wine=mc('sgWine',()=>null),V=(a)=>a.map(p=>new T.Vector2(p[0],p[1]));
+  const tG=new T.LatheGeometry(V([[0,0],[0.042,0],[0.046,0.006],[0.05,0.13],[0.052,0.134]]),20),lG=new T.LatheGeometry(V([[0,0.008],[0.043,0.008],[0.047,0.085],[0,0.085]]),16);
+  [[0.55,0.3],[-0.45,0.42],[0.25,-0.5],[-0.35,-0.35]].forEach((p,i)=>{const t=new T.Group();t.position.set(X+p[0],Y,Z+p[1]);
+    const gl=new T.Mesh(tG,glass);gl.renderOrder=3;t.add(gl);if(i<3){const l=new T.Mesh(lG,wine);l.renderOrder=2;t.add(l);
+      const s=new T.Mesh(new T.CylinderGeometry(0.034,0.034,0.007,14,1,false,0,Math.PI),[mc('sgRindO',()=>null),mc('sgOrange',()=>null),mc('sgOrange',()=>null)]);s.rotation.set(Math.PI/2,0,0.3);s.position.set(0.03,0.13,0.0);t.add(s);}
+    world.add(t);});
+  // fruit bowl
+  const bowl=new T.Mesh(new T.LatheGeometry(V([[0,0],[0.09,0],[0.16,0.05],[0.19,0.1],[0.185,0.105]]),24),mat(0x2f6fa8,{roughness:0.3,side:T.DoubleSide}));bowl.position.set(X-0.2,Y,Z+0.05);world.add(bowl);
+  [[0.05,0.02,0xf08a1c],[-0.06,0.03,0xf08a1c],[0.0,-0.07,0xe8cf2a],[0.02,0.08,0xf08a1c]].forEach(f=>{const o=new T.Mesh(new T.SphereGeometry(0.05,12,10),mat(f[2],{roughness:0.55}));o.position.set(X-0.2+f[0],Y+0.09,Z+0.05+f[1]);o.castShadow=true;world.add(o);});
+  solids.push({x:X,z:Z,rx:1.1,rz:1.1});
+  spots.push({x:X,z:7.2,r:3.2,id:'sangria',label:'pour a sangria 🍷'});}
+
+// ---- built-in brick barbecue with a charcoal bed, glowing coals, flames and food ----
+function buildBBQ(){const bx=22,bz=11,H=1.12,D=1.25,g=new T.Group();g.position.set(bx,0,bz);world.add(g);
+  const brick=new T.MeshStandardMaterial({map:brickT,color:0xf0c0a0,roughness:0.95}),stone=mat(0xe6dac4,{roughness:0.55}),steel=mat(0x26282a,{roughness:0.5,metalness:0.6});
+  const B=(w,h,d,m,x,y,z,uv)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;if(uv)worldUV(o,1.12,1.36);g.add(o);return o;};
+  B(0.7,H-0.08,D,brick,-0.95,(H-0.08)/2,0,true);B(0.7,H-0.08,D,brick,0.95,(H-0.08)/2,0,true);B(1.2,H-0.08,0.14,brick,0,(H-0.08)/2,-D/2+0.07,true);
+  B(1.2,0.1,D-0.14,mat(0x8a8580,{roughness:0.95}),0,0.78,0.07);
+  // log store under the firebox
+  const logM=mat(0x7a5a3a,{roughness:0.95}),endM=mat(0xc9a06a,{roughness:0.9});
+  for(let r=0;r<3;r++)for(let k=0;k<5-r;k++){const l=new T.Mesh(new T.CylinderGeometry(0.06,0.065,0.95,8),[logM,endM,endM]);l.rotation.x=Math.PI/2;l.position.set(-0.48+k*0.13+r*0.065,0.07+r*0.115,0.08);l.castShadow=true;g.add(l);}
+  // travertine worktops around the firebox
+  B(0.75,0.08,D+0.1,stone,-0.975,H-0.04,0);B(0.75,0.08,D+0.1,stone,0.975,H-0.04,0);B(1.2,0.08,0.13,stone,0,H-0.04,D/2-0.015);B(1.2,0.08,0.13,stone,0,H-0.04,-D/2+0.015);
+  // steel fire tray and charcoal
+  B(1.2,0.04,D-0.26,steel,0,0.86,0);[[0,-0.5],[0,0.5]].forEach(q=>B(1.2,0.2,0.03,steel,0,0.96,q[1]*(D-0.26)));
+  const coalM=new T.MeshStandardMaterial({color:0x1c1714,roughness:0.95,emissive:0xff4a12,emissiveIntensity:0.04});
+  const coals=new T.InstancedMesh(new T.DodecahedronGeometry(0.045,0),coalM,120),dm=new T.Object3D();
+  for(let i=0;i<120;i++){dm.position.set((Math.random()-0.5)*1.1,0.9+Math.random()*0.05,(Math.random()-0.5)*(D-0.34));dm.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3);dm.scale.setScalar(0.7+Math.random()*0.6);dm.updateMatrix();coals.setMatrixAt(i,dm.matrix);}
+  coals.receiveShadow=true;g.add(coals);
+  const ember=new T.Mesh(new T.PlaneGeometry(1.12,D-0.32),new T.MeshBasicMaterial({color:0xff5a1a,transparent:true,opacity:0,blending:T.AdditiveBlending,depthWrite:false}));ember.rotation.x=-Math.PI/2;ember.position.y=0.955;g.add(ember);
+  // cast-iron grate
+  for(let i=0;i<17;i++){const b=new T.Mesh(new T.CylinderGeometry(0.009,0.009,D-0.28,5),steel);b.rotation.x=Math.PI/2;b.position.set(-0.56+i*0.07,1.09,0);g.add(b);}
+  [-0.46,0.46].forEach(z=>{const r=new T.Mesh(new T.BoxGeometry(1.18,0.03,0.03),steel);r.position.set(0,1.08,z);g.add(r);});
+  // worktop bits: plate of prawns, olive oil, tongs, a board of lemons
+  const plate=new T.Mesh(new T.CylinderGeometry(0.2,0.17,0.025,20),mat(0xf6f3ee,{roughness:0.3}));plate.position.set(0.95,H+0.012,0.15);g.add(plate);
+  const prawnM=mat(0xe2552e,{roughness:0.45}),rawM=mat(0xd9a0a0,{roughness:0.45}),fishM=mat(0xb9c4cc,{roughness:0.25,metalness:0.5}),pepM=mat(0x3f8a2a,{roughness:0.35}),chorM=mat(0x9a2a1c,{roughness:0.5});
+  const prawn=(m)=>{const p=new T.Group(),b=new T.Mesh(new T.TorusGeometry(0.05,0.02,6,10,Math.PI*1.25),m);b.rotation.x=-Math.PI/2;p.add(b);const hd=new T.Mesh(new T.SphereGeometry(0.026,8,6),m);hd.scale.set(1,0.8,1.5);hd.position.set(0.05,0,0);p.add(hd);return p;};
+  for(let i=0;i<4;i++){const p=prawn(rawM);p.position.set(0.95+(i%2-0.5)*0.14,H+0.04,0.15+(i<2?-0.06:0.06));p.rotation.y=i*1.3;g.add(p);}
+  const oil=new T.Mesh(new T.CylinderGeometry(0.04,0.045,0.26,12),mat(0x3d5a1e,{roughness:0.15,metalness:0.1}));oil.position.set(1.18,H+0.13,-0.3);g.add(oil);const neck=new T.Mesh(new T.CylinderGeometry(0.014,0.02,0.07,8),mat(0x3d5a1e,{roughness:0.15}));neck.position.set(1.18,H+0.295,-0.3);g.add(neck);
+  const tong=mat(0xc9cdd2,{roughness:0.25,metalness:0.9});[-0.012,0.012].forEach(o=>{const t=new T.Mesh(new T.BoxGeometry(0.34,0.01,0.018),tong);t.position.set(0.8,H+0.01,-0.35+o);t.rotation.y=0.12+o*3;g.add(t);});
+  const board=new T.Mesh(new T.BoxGeometry(0.42,0.03,0.28),mat(0xb0834f,{roughness:0.7}));board.position.set(-0.95,H+0.015,0.1);g.add(board);
+  [[-1.02,0.08],[-0.9,0.14]].forEach(q=>{const l=new T.Mesh(new T.SphereGeometry(0.045,12,8,0,Math.PI*2,0,Math.PI/2),mat(0xf2d33a,{roughness:0.5}));l.position.set(q[0],H+0.03,q[1]);g.add(l);});
+  // fire + food (shown while cooking)
+  const fx=new T.Group();fx.visible=false;g.add(fx);const flames=[],fT=flameTex(true);
+  for(let i=0;i<12;i++){const s=new T.Sprite(new T.SpriteMaterial({map:fT,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:0.9}));s.position.set(-0.5+Math.random()*1.0,1.02,(Math.random()-0.5)*0.7);
+    s.userData.b=0.12+Math.random()*0.1;s.userData.ph=Math.random()*9;s.center.set(0.5,0.05);fx.add(s);flames.push(s);}
+  for(let i=0;i<6;i++){const p=prawn(prawnM);p.position.set(-0.42+(i%3)*0.2,1.12,i<3?0.22:0.36);p.rotation.y=i*0.9;fx.add(p);}
+  for(let i=0;i<4;i++){const f=new T.Group(),b=new T.Mesh(new T.SphereGeometry(0.03,10,6),fishM);b.scale.set(4.2,0.9,1.2);f.add(b);const tl=new T.Mesh(new T.ConeGeometry(0.035,0.06,4),fishM);tl.rotation.z=Math.PI/2;tl.scale.z=0.3;tl.position.x=-0.15;f.add(tl);
+    const st=new T.Mesh(new T.BoxGeometry(0.2,0.004,0.012),mat(0x2a2a2a));st.position.y=0.028;f.add(st);f.position.set(0.18+(i%2)*0.2,1.13,-0.3+Math.floor(i/2)*0.17);f.rotation.y=0.2;fx.add(f);}
+  for(let i=0;i<5;i++){const p=new T.Mesh(new T.SphereGeometry(0.02,8,6),pepM);p.scale.set(1,3,1);p.rotation.set(Math.PI/2,0,i);p.position.set(-0.4+i*0.1,1.12,-0.3);fx.add(p);}
+  for(let i=0;i<3;i++){const c=new T.Mesh(new T.CylinderGeometry(0.03,0.03,0.2,10),chorM);c.rotation.z=Math.PI/2;c.position.set(0.3,1.13,0.12+i*0.09);fx.add(c);}
+  fx.userData={flames,tick:(t,u)=>{coalM.emissiveIntensity=0.7+0.25*Math.sin(t*5.3)+0.1*Math.sin(t*13.1);ember.material.opacity=0.28+0.12*Math.sin(t*4.1);
+      flames.forEach(s=>{const k=s.userData,f=0.65+0.45*Math.abs(Math.sin(t*(7+k.ph)+k.ph));s.scale.set(k.b*(0.8+0.25*Math.sin(t*11+k.ph)),k.b*2.3*f,1);s.material.opacity=0.55+0.4*f;});},
+    cool:()=>{flames.forEach(s=>s.visible=false);coalM.emissiveIntensity=0.35;ember.material.opacity=0.12;},
+    off:()=>{flames.forEach(s=>s.visible=true);coalM.emissiveIntensity=0.04;ember.material.opacity=0;}};
+  world.userData.bbqFx=fx;world.userData.bbqCoals=coals;
+  solids.push({x:bx,z:bz,rx:1.45,rz:0.8});
+  spots.push({x:bx,z:bz+3,r:5,id:'bbq',label:'fire up the BBQ'});}
+
+// ---- paella: tripod stand with a concentric gas ring, a real pan, saffron rice and seafood, orange butane bottle ----
+function buildPaella(){const qx=16.25,qz=11,g=new T.Group();g.position.set(qx,0,qz);world.add(g);world.userData.paellaAt={x:qx,z:qz};
+  const V=(a)=>a.map(p=>new T.Vector2(p[0],p[1])),steel=mat(0x2a2c2e,{roughness:0.45,metalness:0.7}),burnM=mat(0x5e5850,{roughness:0.5,metalness:0.6});
+  for(let k=0;k<3;k++){const a=k/3*Math.PI*2+0.5;g.add(rod(new T.Vector3(Math.cos(a)*0.3,0.84,Math.sin(a)*0.3),new T.Vector3(Math.cos(a)*0.5,0,Math.sin(a)*0.5),0.014,steel));
+    const sup=new T.Mesh(new T.BoxGeometry(0.1,0.03,0.02),steel);sup.position.set(Math.cos(a)*0.3,0.855,Math.sin(a)*0.3);sup.rotation.y=-a;g.add(sup);}
+  const ring=new T.Mesh(new T.TorusGeometry(0.3,0.012,6,32),steel);ring.rotation.x=Math.PI/2;ring.position.y=0.84;g.add(ring);
+  [0.12,0.24].forEach(r=>{const t=new T.Mesh(new T.TorusGeometry(r,0.018,6,32),burnM);t.rotation.x=Math.PI/2;t.position.y=0.79;g.add(t);});
+  for(let k=0;k<4;k++){const s=new T.Mesh(new T.BoxGeometry(0.26,0.02,0.02),burnM);s.position.set(Math.cos(k*Math.PI/2)*0.13,0.79,Math.sin(k*Math.PI/2)*0.13);s.rotation.y=-k*Math.PI/2;g.add(s);}
+  g.add(rod(new T.Vector3(0.24,0.79,0),new T.Vector3(0.36,0.79,0),0.012,burnM));const knob=new T.Mesh(new T.CylinderGeometry(0.025,0.025,0.03,10),mat(0xc8281e,{roughness:0.4}));knob.rotation.z=Math.PI/2;knob.position.set(0.37,0.79,0);g.add(knob);
+  // the pan (≈95 cm) with two handles
+  const pan=new T.Mesh(new T.LatheGeometry(V([[0,0],[0.58,0],[0.6,0.01],[0.64,0.07],[0.652,0.078],[0.66,0.072]]),48),mat(0x6a6d72,{roughness:0.32,metalness:0.85,side:T.DoubleSide}));pan.position.y=0.855;pan.castShadow=pan.receiveShadow=true;g.add(pan);
+  [1,-1].forEach(s=>{const h=new T.Mesh(new T.TorusGeometry(0.05,0.011,6,12,Math.PI),pan.material);h.rotation.x=s*Math.PI/2;h.position.set(0,0.925,s*0.645);g.add(h);});
+  const rice=new T.Mesh(new T.CircleGeometry(0.6,48),new T.MeshStandardMaterial({map:paellaT,roughness:0.7}));rice.rotation.x=-Math.PI/2;rice.position.y=0.9;rice.receiveShadow=true;g.add(rice);
+  const top=new T.Group();top.position.y=0.9;g.add(top);
+  const prM=mat(0xe2552e,{roughness:0.4}),shM=mat(0x1b2130,{roughness:0.3}),meatM=mat(0xe88a3a,{roughness:0.5}),lemM=mat(0xf2d33a,{roughness:0.5,side:T.DoubleSide}),chM=mat(0xb57236,{roughness:0.6}),redM=mat(0xb8261a,{roughness:0.3});
+  for(let k=0;k<8;k++){const a=k/8*Math.PI*2,p=new T.Group();p.position.set(Math.cos(a)*0.4,0.012,Math.sin(a)*0.4);p.rotation.y=-a+Math.PI/2;
+    const b=new T.Mesh(new T.TorusGeometry(0.06,0.024,6,12,Math.PI*1.25),prM);b.rotation.x=-Math.PI/2;p.add(b);
+    const hd=new T.Mesh(new T.SphereGeometry(0.03,8,6),prM);hd.scale.set(1.6,0.8,1);hd.position.set(0.075,0.005,-0.02);p.add(hd);
+    const tl=new T.Mesh(new T.ConeGeometry(0.025,0.04,4),prM);tl.rotation.z=Math.PI/2;tl.scale.z=0.35;tl.position.set(-0.06,0,-0.035);p.add(tl);top.add(p);}
+  const shG=new T.SphereGeometry(0.042,10,6,0,Math.PI*2,0,Math.PI/2);
+  for(let k=0;k<10;k++){const a=(k+0.5)/10*Math.PI*2,r=k%2?0.52:0.22,m=new T.Group();m.position.set(Math.cos(a)*r,0.015,Math.sin(a)*r);m.rotation.y=Math.random()*6;
+    const s=new T.Mesh(shG,shM);s.scale.set(1,0.4,0.6);s.rotation.x=Math.PI;s.position.y=0.018;m.add(s);const mt=new T.Mesh(new T.SphereGeometry(0.03,8,6),meatM);mt.scale.set(1,0.35,0.5);mt.position.y=0.014;m.add(mt);top.add(m);}
+  for(let k=0;k<4;k++){const a=k/4*Math.PI*2+Math.PI/4,w=new T.Mesh(new T.SphereGeometry(0.055,10,8,0,Math.PI/2),lemM);w.position.set(Math.cos(a)*0.3,0.01,Math.sin(a)*0.3);w.rotation.set(0,-a,Math.PI/2);top.add(w);}
+  for(let k=0;k<6;k++){const a=k/6*Math.PI*2+0.3,c=new T.Mesh(new T.DodecahedronGeometry(0.045,0),chM);c.scale.set(1.3,0.6,1);c.position.set(Math.cos(a)*0.13,0.012,Math.sin(a)*0.13);c.rotation.y=a;top.add(c);}
+  for(let k=0;k<6;k++){const a=k/6*Math.PI*2,s=new T.Mesh(new T.BoxGeometry(0.13,0.012,0.026),redM);s.position.set(Math.cos(a)*0.31,0.01,Math.sin(a)*0.31);s.rotation.y=-a+Math.PI/2;top.add(s);}
+  // blue gas flames under the pan (shown while cooking)
+  const fx=new T.Group();fx.visible=false;g.add(fx);const gT=flameTex(false),jets=[];
+  [[0.12,14],[0.24,24]].forEach(([r,n])=>{for(let k=0;k<n;k++){const a=k/n*Math.PI*2,s=new T.Sprite(new T.SpriteMaterial({map:gT,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:0.85}));
+    s.center.set(0.5,0.05);s.position.set(Math.cos(a)*r,0.8,Math.sin(a)*r);s.userData.ph=Math.random()*6;fx.add(s);jets.push(s);}});
+  fx.userData.tick=t=>jets.forEach(s=>{const f=0.8+0.3*Math.sin(t*23+s.userData.ph);s.scale.set(0.035,0.075*f,1);});fx.userData.tick(0);
+  world.userData.paellaFx=fx;
+  // orange butane bottle and hose
+  const bot=new T.Group();bot.position.set(0.95,0,0.4);g.add(bot);
+  const bb=new T.Mesh(new T.LatheGeometry(V([[0,0],[0.17,0],[0.195,0.03],[0.2,0.08],[0.2,0.58],[0.18,0.68],[0.12,0.73],[0.05,0.75],[0,0.75]]),24),mat(0xf07a12,{roughness:0.4,metalness:0.2}));bb.castShadow=true;bot.add(bb);
+  const col=new T.Mesh(new T.CylinderGeometry(0.1,0.1,0.1,16,1,true),mat(0x9a9ea2,{roughness:0.4,metalness:0.7,side:T.DoubleSide}));col.position.y=0.8;bot.add(col);
+  const reg=new T.Mesh(new T.CylinderGeometry(0.04,0.04,0.07,12),mat(0x1a1a1a,{roughness:0.5}));reg.position.y=0.79;bot.add(reg);
+  const hose=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3([new T.Vector3(0.95,0.8,0.4),new T.Vector3(0.9,0.5,0.25),new T.Vector3(0.75,0.04,0.12),new T.Vector3(0.5,0.04,0.02),new T.Vector3(0.4,0.4,0),new T.Vector3(0.37,0.77,0)]),24,0.012,6),mat(0x151515,{roughness:0.6}));g.add(hose);
+  // folding side table: lemons, olive oil, garlic, stock pot
+  const tb=new T.Group();tb.position.set(0,0,1.35);g.add(tb);const wd=new T.MeshStandardMaterial({map:boardT,color:0xb98a5c,roughness:0.8});
+  const tt=worldUV(new T.Mesh(new T.BoxGeometry(0.95,0.04,0.55),wd),0.9);tt.position.y=0.84;tt.castShadow=tt.receiveShadow=true;tb.add(tt);
+  [[-0.42,-0.22],[0.42,-0.22],[-0.42,0.22],[0.42,0.22]].forEach(p=>tb.add(rod(new T.Vector3(p[0],0.82,p[1]),new T.Vector3(p[0]*1.05,0,p[1]*1.1),0.015,mat(0x8a6a44))));
+  const pot=new T.Mesh(new T.CylinderGeometry(0.16,0.16,0.26,18),mat(0xc9cdd2,{roughness:0.25,metalness:0.9}));pot.position.set(-0.22,0.99,0);tb.add(pot);const lid=new T.Mesh(new T.CylinderGeometry(0.165,0.165,0.02,18),pot.material);lid.position.set(-0.22,1.13,0);tb.add(lid);
+  const ob=new T.Mesh(new T.CylinderGeometry(0.035,0.04,0.24,12),mat(0x3d5a1e,{roughness:0.15}));ob.position.set(0.1,0.98,-0.12);tb.add(ob);
+  const lb=new T.Mesh(new T.LatheGeometry(V([[0,0],[0.07,0],[0.12,0.05],[0.13,0.08]]),18),mat(0xe9e2d6,{roughness:0.4,side:T.DoubleSide}));lb.position.set(0.26,0.86,0.08);tb.add(lb);
+  [[0.23,0.05],[0.3,0.11],[0.28,0.02]].forEach(p=>{const l=new T.Mesh(new T.SphereGeometry(0.04,10,8),mat(0xf2d33a,{roughness:0.5}));l.scale.set(1,0.85,1.25);l.position.set(p[0],0.93,p[1]);tb.add(l);});
+  const gar=new T.Mesh(new T.SphereGeometry(0.035,10,8),mat(0xf2ede0,{roughness:0.6}));gar.scale.y=0.8;gar.position.set(0.12,0.89,0.14);tb.add(gar);
+  solids.push({x:qx,z:qz,rx:0.8,rz:0.8});solids.push({x:qx,z:qz+1.35,rx:0.55,rz:0.35});solids.push({x:qx+0.95,z:qz+0.4,rx:0.25,rz:0.25});
+  spots.push({x:qx-1.2,z:qz+1.0,r:4,id:'paella',label:'cook a giant paella 🥘'});}
+
+// ---- beach chiringuito: timber hut, striped awning, ice-cream display, chalk menu, chest freezer ----
+function buildChiringuito(para){const ix=30,iz=-13,g=new T.Group();g.position.set(ix,0,iz);world.add(g);
+  const wash=new T.MeshStandardMaterial({map:boardT,color:0xf6f1e8,roughness:0.85}),nat=new T.MeshStandardMaterial({map:boardT,color:0xb98a5c,roughness:0.85}),post=mat(0x8a6440,{roughness:0.8});
+  const B=(w,h,d,m,x,y,z,t)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;if(t)worldUV(o,t);g.add(o);return o;};
+  B(6.6,0.18,4.6,nat,0,0.09,0.1,1.6);                                   // deck
+  const F=0.18,WH=2.6;
+  B(6,WH,0.12,wash,0,F+WH/2,1.9,1.6);B(0.12,WH,3.8,wash,-2.94,F+WH/2,0,1.6);B(0.12,WH,3.8,wash,2.94,F+WH/2,0,1.6);   // back + sides
+  B(6,1.0,0.12,wash,0,F+0.5,-1.9,1.6);B(6,0.45,0.12,wash,0,F+WH-0.225,-1.9,1.6);[-2.7,2.7].forEach(x=>B(0.5,1.15,0.12,wash,x,F+1.575,-1.9,1.6));   // front with a serving hatch
+  [[-3,-1.96],[3,-1.96],[-3,1.96],[3,1.96]].forEach(p=>B(0.16,WH+0.1,0.16,post,p[0],F+(WH+0.1)/2,p[1]));
+  B(5.2,0.07,0.55,nat,0,F+1.02,-2.08,1.2);                              // counter shelf
+  // interior: shade, shelves with bottles, the ice-cream display under a glass hood
+  B(5.7,0.02,3.6,mat(0x3a2e24,{roughness:1}),0,F+0.01,0);
+  const shelfM=nat;[1.35,1.8].forEach(y=>B(5.4,0.05,0.3,shelfM,0,F+y,1.7));
+  const bC=[0x2f7a3a,0xc8a24a,0x9c1f32,0x2a4f8e,0xe8e2d6,0xd8622a];for(let i=0;i<22;i++){const y=i<11?1.35:1.8,b=new T.Mesh(new T.CylinderGeometry(0.05,0.05,0.28,8),mat(bC[i%6],{roughness:0.25}));b.position.set(-2.5+(i%11)*0.5,F+y+0.165,1.7);g.add(b);}
+  B(4.4,0.9,0.75,mat(0xf4f4f2,{roughness:0.4}),0,F+0.45,-1.45);
+  const tubs=[0xf4a6b8,0x5a3622,0xb8dc8a,0xfff2a0,0xfbf3dc,0xf0b25a,0x7a5aa8,0x9fe0c8];tubs.forEach((c,i)=>{const x=-1.75+i*0.5;B(0.44,0.08,0.4,mat(0x9aa0a6,{roughness:0.3,metalness:0.6}),x,F+0.93,-1.45);
+    const s=new T.Mesh(new T.SphereGeometry(0.2,12,8,0,Math.PI*2,0,Math.PI/2),mat(c,{roughness:0.8}));s.scale.set(1,0.45,0.9);s.position.set(x,F+0.96,-1.45);g.add(s);});
+  const hood=new T.Mesh(new T.BoxGeometry(4.3,0.02,0.8),new T.MeshStandardMaterial({color:0xdff4f8,transparent:true,opacity:0.25,roughness:0.05,metalness:0.2}));hood.position.set(0,F+1.25,-1.5);hood.rotation.x=0.35;g.add(hood);
+  // roof, fascia sign, ice-cream cone sign
+  B(6.8,0.18,4.8,nat,0,F+WH+0.09,0.1,1.6);B(6.8,0.35,0.06,mat(0xf7f2e6,{roughness:0.8}),0,F+WH+0.05,-2.52);
+  const sign=new T.Mesh(new T.PlaneGeometry(4.4,0.52),new T.MeshStandardMaterial({map:signT,roughness:0.7}));sign.position.set(0,F+WH+0.05,-2.56);sign.rotation.y=Math.PI;g.add(sign);
+  const cg=new T.Group();cg.position.set(1.8,F+WH+0.18,0.8);g.add(cg);cg.add(rod(new T.Vector3(0,0,0),new T.Vector3(0,0.5,0),0.04,post));
+  const cone=new T.Mesh(new T.ConeGeometry(0.36,1.2,20),new T.MeshStandardMaterial({map:waffleT,roughness:0.8}));cone.rotation.x=Math.PI;cone.position.y=1.1;cone.castShadow=true;cg.add(cone);
+  [[0xf4a6b8,0.34,1.78],[0x9fe0c8,0.3,2.2],[0x5a3622,0.26,2.56]].forEach(q=>{const s=new T.Mesh(new T.SphereGeometry(q[1],18,12),mat(q[0],{roughness:0.6}));s.position.y=q[2];s.scale.y=0.88;s.castShadow=true;cg.add(s);
+    for(let k=0;k<5;k++){const a=k/5*Math.PI*2+q[2],d=new T.Mesh(new T.SphereGeometry(q[1]*0.22,8,6),s.material);d.scale.y=1.8;d.position.set(Math.cos(a)*q[1]*0.9,q[2]-q[1]*0.55,Math.sin(a)*q[1]*0.9);cg.add(d);}});
+  const cherry=new T.Mesh(new T.SphereGeometry(0.09,12,10),mat(0xc8102e,{roughness:0.3}));cherry.position.y=2.86;cg.add(cherry);
+  // striped awning over the hatch, scalloped valance, support arms
+  const aw=new T.Group();aw.position.set(0,F+2.33,-1.97);aw.rotation.x=-0.28;g.add(aw);const L=1.4;
+  const st=stripeT('#d33a2c','#f7f2e6');st.wrapS=T.RepeatWrapping;st.repeat.set(2.6,1);
+  const cloth=new T.Mesh(new T.PlaneGeometry(6.2,L),new T.MeshStandardMaterial({map:st,roughness:0.9,side:T.DoubleSide}));cloth.rotation.x=-Math.PI/2;cloth.position.z=-L/2;cloth.castShadow=true;aw.add(cloth);
+  const val=new T.Group();val.position.z=-L;val.rotation.x=0.28;aw.add(val);const vr=mat(0xd33a2c,{roughness:0.9,side:T.DoubleSide}),vw=mat(0xf7f2e6,{roughness:0.9,side:T.DoubleSide});
+  for(let i=0;i<20;i++){const s=new T.Mesh(new T.CircleGeometry(0.155,10,Math.PI,Math.PI),i%2?vw:vr);s.position.set(-3.1+0.155+i*0.31,0,0);val.add(s);}
+  [-2.9,2.9].forEach(x=>g.add(rod(new T.Vector3(x,F+1.55,-1.97),new T.Vector3(x,F+2.33-Math.sin(0.28)*L,-1.97-Math.cos(0.28)*L),0.02,mat(0xc8ccd0,{metalness:0.8,roughness:0.3}))));
+  // chalk A-frame menu
+  const mb=new T.Group();mb.position.set(-2.9,0,-3.05);mb.rotation.y=0.35;g.add(mb);const mM=new T.MeshStandardMaterial({map:menuT,roughness:0.9}),fr=mat(0x8a5a32,{roughness:0.8});
+  [[-0.12,0.2,5],[0.12,-0.2,4]].forEach(q=>{const mats=[fr,fr,fr,fr,fr,fr];mats[q[2]]=mM;const b=new T.Mesh(new T.BoxGeometry(0.66,1.0,0.035),mats);b.position.set(0,0.5,q[0]);b.rotation.x=q[1];b.castShadow=true;mb.add(b);});
+  // chest freezer by the vendor
+  const fz=new T.Group();fz.position.set(2.4,0,-2.75);g.add(fz);const fzM=mat(0xf7f7f4,{roughness:0.35});
+  const body=new T.Mesh(new T.BoxGeometry(1.2,0.82,0.62),[fzM,fzM,fzM,fzM,fzM,new T.MeshStandardMaterial({map:freezerT,roughness:0.35})]);body.position.y=0.41;body.castShadow=body.receiveShadow=true;fz.add(body);
+  [0xf4a6b8,0x5a3622,0xfff2a0,0xb8dc8a,0x9fd8f4,0xf0b25a].forEach((c,i)=>{const t=new T.Mesh(new T.BoxGeometry(0.34,0.06,0.24),mat(c,{roughness:0.7}));t.position.set(-0.4+(i%3)*0.4,0.8,i<3?-0.13:0.13);fz.add(t);});
+  const gl=new T.Mesh(new T.BoxGeometry(1.14,0.03,0.56),new T.MeshStandardMaterial({color:0x9fc8ff,transparent:true,opacity:0.35,roughness:0.05,metalness:0.3}));gl.position.y=0.84;fz.add(gl);
+  // bar stools, lifebuoy, surfboard
+  [-1.6,-2.4].forEach(x=>{const s=new T.Group();s.position.set(x,0,-2.75);g.add(s);const seat=new T.Mesh(new T.CylinderGeometry(0.2,0.2,0.06,16),nat);seat.position.y=0.95;seat.castShadow=true;s.add(seat);
+    [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(p=>s.add(rod(new T.Vector3(p[0]*0.12,0.93,p[1]*0.12),new T.Vector3(p[0]*0.18,0,p[1]*0.18),0.015,post)));});
+  const lbT=stripeT('#d8322a','#f7f2e6');lbT.wrapS=T.RepeatWrapping;lbT.repeat.set(0.5,1);const buoy=new T.Mesh(new T.TorusGeometry(0.28,0.075,10,24),new T.MeshStandardMaterial({map:lbT,roughness:0.6}));buoy.position.set(3.03,F+1.8,0.5);buoy.rotation.y=Math.PI/2;g.add(buoy);
+  const surf=new T.Mesh(new T.SphereGeometry(0.28,20,10),mat(0x2aa6b8,{roughness:0.3}));surf.scale.set(1,4.2,0.12);surf.position.set(3.3,1.15,-0.9);surf.rotation.set(0,Math.PI/2,-0.18);surf.castShadow=true;g.add(surf);
+  const strip=new T.Mesh(new T.BoxGeometry(0.02,2.2,0.036),mat(0xf7f2e6));strip.position.copy(surf.position);strip.rotation.copy(surf.rotation);g.add(strip);
+  world.add(para(ix-6,iz-3,0xefb13a));
+  solids.push({x:ix,z:iz+0.1,rx:3.3,rz:2.3});solids.push({x:ix+2.4,z:iz-2.75,rx:0.65,rz:0.4});solids.push({x:ix-2.9,z:iz-3.05,rx:0.4,rz:0.35});
+  spots.push({x:ix,z:iz-2.9,r:3.6,id:'ice',label:'grab ice creams 🍦'});}
+
+// ---- cedar sauna cabin: slatted walls, gable roof, glass-panel door, benches and stove inside, window, porch bench ----
+function buildSauna(){const sxx=-12.5,szz=6.5,W=3.4,D=3.0,H=2.45,t=0.12,g=new T.Group();g.position.set(sxx,0,szz);world.add(g);
+  const cedar=new T.MeshStandardMaterial({map:slatT,roughness:0.8}),aspen=mat(0xe6c79c,{roughness:0.8}),trim=mat(0x5e3d22,{roughness:0.8}),roofM=new T.MeshStandardMaterial({map:shingleT,roughness:0.95});
+  const B=(w,h,d,m,x,y,z,uv)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;if(uv)worldUV(o,1.3);g.add(o);return o;};
+  const fz=-D/2+t/2;
+  B(W,H,t,cedar,0,H/2,D/2-t/2,true);B(t,H,D-2*t,cedar,-(W/2-t/2),H/2,0,true);B(t,H,D-2*t,cedar,W/2-t/2,H/2,0,true);
+  B(1.15,H,t,cedar,-1.125,H/2,fz,true);B(1.15,H,t,cedar,1.125,H/2,fz,true);B(1.1,H-2.0,t,cedar,0,2.0+(H-2)/2,fz,true);
+  B(W-2*t,0.06,D-2*t,mat(0x4a3322,{roughness:0.9}),0,0.03,0);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(p=>B(0.1,H,0.1,trim,p[0]*(W/2-0.02),H/2,p[1]*(D/2-0.02)));
+  B(0.08,2.05,0.14,trim,-0.59,1.02,fz-0.01);B(0.08,2.05,0.14,trim,0.59,1.02,fz-0.01);B(1.26,0.08,0.14,trim,0,2.04,fz-0.01);
+  // gable roof (ridge along x) with shingles, gable ends and a ridge cap
+  const k=0.7/1.5,ang=Math.atan(k),Lr=1.8/Math.cos(ang);
+  [1,-1].forEach(s=>{const r=new T.Mesh(new T.BoxGeometry(W+0.5,0.08,Lr),roofM);r.position.set(0,H+0.7-k*0.9+0.05,s*0.9);r.rotation.x=s*ang;r.castShadow=r.receiveShadow=true;worldUV(r,1.2);g.add(r);});
+  const tri=new T.Shape();tri.moveTo(-W/2,0);tri.lineTo(W/2,0);tri.lineTo(0,0.7);tri.closePath();
+  [D/2-0.1,-D/2].forEach(z=>{const m=new T.Mesh(new T.ExtrudeGeometry(tri,{depth:0.1,bevelEnabled:false}),cedar);m.position.set(0,H,z);m.castShadow=true;worldUV(m,1.3);g.add(m);});
+  B(W+0.55,0.1,0.2,trim,0,H+0.76,0);
+  // interior: two-tier aspen benches, stove with sauna stones, bucket
+  [[0.48,0.55,0.45],[0.95,1.08,0.5]].forEach(([y,z,d])=>{for(let i=0;i<4;i++)B(W-0.4,0.035,d/4-0.02,aspen,0,y,z-d/2+(i+0.5)*d/4);B(W-0.4,y,0.05,aspen,0,y/2,z-d/2);});
+  const stove=B(0.42,0.62,0.38,mat(0x1c1c1e,{roughness:0.6,metalness:0.5}),1.05,0.31,-0.95);
+  const stoneM=[mat(0x6d6a66,{roughness:0.9}),mat(0x8a8680,{roughness:0.9}),mat(0x55524e,{roughness:0.9,emissive:0xff3300,emissiveIntensity:0.25})];
+  for(let i=0;i<18;i++){const s=new T.Mesh(new T.DodecahedronGeometry(0.05+Math.random()*0.02,0),stoneM[i%3]);s.position.set(1.05+(Math.random()-0.5)*0.32,0.66+Math.random()*0.12,-0.95+(Math.random()-0.5)*0.28);s.rotation.set(Math.random()*3,Math.random()*3,0);g.add(s);}
+  const flueTop=3.5;g.add(rod(new T.Vector3(1.05,0.62,-0.95),new T.Vector3(1.05,flueTop,-0.95),0.06,mat(0x2a2a2c,{roughness:0.4,metalness:0.7}),10));
+  const cap=new T.Mesh(new T.ConeGeometry(0.14,0.12,10),mat(0x2a2a2c,{roughness:0.4,metalness:0.7}));cap.position.set(1.05,flueTop+0.1,-0.95);g.add(cap);
+  world.userData.saunaChim=[sxx+1.05,flueTop+0.2,szz-0.95];
+  // warm-lit window on the east wall
+  B(0.06,0.62,0.62,trim,W/2+0.02,1.55,0.3);const win=new T.Mesh(new T.BoxGeometry(0.07,0.5,0.5),new T.MeshStandardMaterial({color:0x3a2410,emissive:0xffa050,emissiveIntensity:0.55,roughness:0.1}));win.position.set(W/2+0.03,1.55,0.3);g.add(win);
+  // glass-panel door on its hinge (the script swings this group)
+  const sdp=new T.Group();sdp.position.set(sxx-0.55,0,szz-D/2-0.03);world.add(sdp);world.userData.saunaDoor=sdp;
+  const door=new T.Mesh(new T.BoxGeometry(1.08,1.98,0.06),cedar);door.position.set(0.55,1.0,0);door.castShadow=true;worldUV(door,1.3);sdp.add(door);
+  const dg=new T.Mesh(new T.BoxGeometry(0.42,1.1,0.07),new T.MeshStandardMaterial({color:0x6b4a2a,transparent:true,opacity:0.6,roughness:0.05,metalness:0.3}));dg.position.set(0.5,1.25,0);sdp.add(dg);
+  const hdl=new T.Mesh(new T.BoxGeometry(0.05,0.45,0.05),trim);hdl.position.set(0.95,1.05,-0.07);sdp.add(hdl);
+  // porch deck, bench with a bucket and ladle, towels on hooks
+  const deck=worldUV(new T.Mesh(new T.BoxGeometry(2.6,0.05,1.1),new T.MeshStandardMaterial({map:boardT,color:0xa9774a,roughness:0.85})),1.2);deck.position.set(0,0.025,-D/2-0.55);deck.receiveShadow=true;g.add(deck);
+  B(0.95,0.05,0.36,aspen,-1.2,0.46,-D/2-0.3);[-1.6,-0.8].forEach(x=>B(0.06,0.44,0.3,trim,x,0.22,-D/2-0.3));
+  const bk=new T.Mesh(new T.CylinderGeometry(0.12,0.1,0.2,14),mat(0xa87a4a,{roughness:0.8}));bk.position.set(-1.4,0.585,-D/2-0.3);bk.castShadow=true;g.add(bk);
+  [0.04,-0.06].forEach(y=>{const bnd=new T.Mesh(new T.TorusGeometry(0.115,0.008,4,20),mat(0x9a9ea2,{metalness:0.8,roughness:0.3}));bnd.rotation.x=Math.PI/2;bnd.position.set(-1.4,0.585+y,-D/2-0.3);g.add(bnd);});
+  g.add(rod(new T.Vector3(-1.4,0.62,-D/2-0.3),new T.Vector3(-1.1,0.9,-D/2-0.32),0.01,mat(0xa87a4a)));
+  [[0.95,0xf6f3ee],[1.3,0x3b7fbf]].forEach(([x,c])=>{const tw=new T.Mesh(new T.BoxGeometry(0.3,0.6,0.02),mat(c,{roughness:1}));tw.position.set(x,1.3,-D/2-0.02);tw.rotation.z=(Math.random()-0.5)*0.1;tw.castShadow=true;g.add(tw);});
+  solids.push({x:sxx,z:szz,rx:1.9,rz:1.7});
+  spots.push({x:sxx,z:szz-2.4,r:3.2,id:'sauna',label:'warm up in the sauna'});}
+
+// ---- sandcastle: moat, platform, four bucket towers, crenellated walls, keep with turret, gate and shells ----
+// built part by part (setBuild 0..1) so it rises while the family digs
+function buildSandcastle(){const g=new T.Group();g.position.set(-8,0.02,-38);world.add(g);
+  const sW=new T.MeshStandardMaterial({map:sandCT,color:0xe6cf9c,roughness:1}),sD=new T.MeshStandardMaterial({map:sandCT,color:0xc9a870,roughness:1}),dark=mat(0x5a4630,{roughness:1});
+  const parts=[],part=(x,y,z)=>{const p=new T.Group();p.position.set(x,y,z);g.add(p);parts.push(p);return p;};
+  const M=(geo,m,x,y,z,par)=>{const o=new T.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;par.add(o);return o;};
+  const merlons=(par,n,r,y)=>{for(let k=0;k<n;k++){const a=k/n*Math.PI*2;const b=M(new T.BoxGeometry(0.075,0.08,0.075),sW,Math.cos(a)*r,y,Math.sin(a)*r,par);b.rotation.y=-a;}};
+  const p0=part(0,0,0);
+  const moat=M(new T.RingGeometry(1.2,1.5,40),mat(0x8a7450,{roughness:0.7}),0,0.005,0,p0);moat.rotation.x=-Math.PI/2;moat.castShadow=false;
+  const wtr=new T.Mesh(new T.RingGeometry(1.24,1.46,40),new T.MeshStandardMaterial({color:0x7fb3c2,transparent:true,opacity:0.55,roughness:0.05,metalness:0.2}));wtr.rotation.x=-Math.PI/2;wtr.position.y=0.02;p0.add(wtr);
+  const heap=M(new T.TorusGeometry(1.72,0.17,6,40),sW,0,0,0,p0);heap.rotation.x=-Math.PI/2;heap.scale.z=0.5;
+  M(new T.CylinderGeometry(1.08,1.2,0.22,32),sD,0,0.11,0,p0);
+  const TW=[[-0.62,-0.62],[0.62,-0.62],[0.62,0.62],[-0.62,0.62]];
+  TW.forEach(([x,z])=>{const p=part(x,0.22,z);M(new T.CylinderGeometry(0.17,0.21,0.5,16),sW,0,0.25,0,p);
+    [0.14,0.32].forEach(y=>{const r=M(new T.TorusGeometry(0.2-y*0.06,0.012,4,20),sD,0,y,0,p);r.rotation.x=Math.PI/2;});merlons(p,6,0.14,0.54);
+    const a=Math.atan2(x,z),w=M(new T.BoxGeometry(0.05,0.08,0.02),dark,Math.sin(a)*0.195,0.32,Math.cos(a)*0.195,p);w.rotation.y=a;});
+  for(let i=0;i<4;i++){const [ax,az]=TW[i],[bx,bz]=TW[(i+1)%4],p=part((ax+bx)/2,0.22,(az+bz)/2),rot=Math.atan2(bz-az,bx-ax);p.rotation.y=-rot;
+    M(new T.BoxGeometry(0.95,0.3,0.14),sW,0,0.15,0,p);for(let k=0;k<5;k++)M(new T.BoxGeometry(0.08,0.07,0.14),sW,-0.36+k*0.18,0.335,0,p);}
+  const kp=part(0,0.22,0);M(new T.CylinderGeometry(0.28,0.33,0.72,20),sW,0,0.36,0,kp);[0.2,0.45].forEach(y=>{const r=M(new T.TorusGeometry(0.33-y*0.07,0.014,4,24),sD,0,y,0,kp);r.rotation.x=Math.PI/2;});
+  merlons(kp,8,0.24,0.76);M(new T.ConeGeometry(0.16,0.3,14),sD,0,0.87,0,kp);
+  const gp=part(0,0.22,-0.62);M(new T.BoxGeometry(0.18,0.16,0.02),dark,0,0.08,-0.075,gp);const arch=M(new T.CircleGeometry(0.09,12,0,Math.PI),dark,0,0.16,-0.086,gp);arch.rotation.y=Math.PI;
+  const shells=[0xfbf3e6,0xf4c6c0,0xf2b27a,0xfbf3e6];for(let k=0;k<10;k++){const a=k/10*Math.PI*2,s=M(new T.SphereGeometry(0.035,8,6),mat(shells[k%4],{roughness:0.5}),Math.cos(a)*1.02,0.02,Math.sin(a)*1.02,gp);s.position.x-=0;s.position.z+=0.62;s.scale.set(1,0.35,0.8);}
+  const star=new T.Group();star.position.set(0.72,0.03,1.05);gp.add(star);for(let k=0;k<5;k++){const a=k/5*Math.PI*2,c=M(new T.ConeGeometry(0.028,0.12,5),mat(0xe8742a,{roughness:0.7}),Math.cos(a)*0.05,0,Math.sin(a)*0.05,star);c.rotation.set(0,-a,-Math.PI/2);c.scale.z=0.45;}
+  // a flag on the keep once it's finished
+  const fg=new T.Group(),fp=new T.Mesh(new T.CylinderGeometry(0.012,0.012,0.5,6),mat(0xd8c8a8));fp.position.set(0,1.3,0);fg.add(fp);
+  const fl=new T.Mesh(new T.PlaneGeometry(0.24,0.15),mat(0xc8102e,{side:T.DoubleSide}));fl.position.set(0.12,1.47,0);fg.add(fl);g.add(fg);fg.visible=false;
+  // bucket and rake left on the sand
+  const bu=new T.Mesh(new T.CylinderGeometry(0.15,0.11,0.2,16,1,true),mat(0x2f7fd8,{roughness:0.5,side:T.DoubleSide}));bu.position.set(1.95,0.1,-0.9);bu.rotation.set(0,0,2.9);g.add(bu);
+  const rk=new T.Group();rk.position.set(-1.9,0.02,0.9);rk.rotation.y=0.6;g.add(rk);rk.add(rod(new T.Vector3(0,0.01,0),new T.Vector3(0.5,0.01,0),0.012,mat(0x3aa845,{roughness:0.5})));
+  const rh=new T.Mesh(new T.BoxGeometry(0.03,0.02,0.2),mat(0x3aa845,{roughness:0.5}));rh.position.set(0.5,0.01,0);rk.add(rh);
+  parts.forEach(p=>mergeStatic(p));
+  const setBuild=u=>{const N=parts.length;parts.forEach((p,i)=>{let k=Math.max(0,Math.min(1,u*N-i));k=k*k*(3-2*k);p.visible=k>0.002;p.scale.set(1,Math.max(0.002,k),1);});};
+  setBuild(0.08);g.userData.flag=fg;g.userData.setBuild=setBuild;world.userData.castle=g;
+  spots.push({x:-8,z:-38,r:7,id:'sandcastle',label:'build a sandcastle with the little one 🏖️'});}
+
 function buildVillaWorld(){
   world=new T.Group();scene.add(world);
   // ground planes with a hole cut where the sunken pool basin sits (x ±8, z 1.75..8.25)
@@ -756,12 +1066,7 @@ function buildVillaWorld(){
   const dtbl=cyl(0.9,0.9,0.08,0xf2efe8,20);dtbl.position.set(5.5,1.0,9.0);world.add(dtbl);
   const dstem=cyl(0.08,0.08,1.0,0xc8ccd0,10);dstem.position.set(5.5,0.5,9.0);world.add(dstem);
   const dfoot=cyl(0.5,0.55,0.06,0xc8ccd0,16);dfoot.position.set(5.5,0.03,9.0);world.add(dfoot);
-  const jug=new T.Mesh(new T.CylinderGeometry(0.28,0.34,0.6,14),new T.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:0.35,roughness:0.05}));jug.position.set(5.5,1.35,9.0);world.add(jug);
-  const jugL=cyl(0.26,0.31,0.42,0x9c1f32,14);jugL.position.set(5.5,1.26,9.0);world.add(jugL);
-  [[0.25,0.35,0xf08a1c],[0.05,0.2,0xf2d34a]].forEach(f=>{const fr=new T.Mesh(new T.SphereGeometry(0.08,8,6),mat(f[2]));fr.position.set(5.5+f[0]*0.4,1.5,9.0+f[1]*0.3);world.add(fr);});
-  [[0.6,0.3],[-0.5,0.4],[0.2,-0.5]].forEach(p=>{const gl=new T.Mesh(new T.CylinderGeometry(0.1,0.08,0.26,10),new T.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:0.35,roughness:0.05}));gl.position.set(5.5+p[0],1.17,9.0+p[1]);world.add(gl);const lq=cyl(0.085,0.07,0.14,0x9c1f32,10);lq.position.set(5.5+p[0],1.12,9.0+p[1]);world.add(lq);});
-  solids.push({x:5.5,z:9.0,rx:1.1,rz:1.1});
-  spots.push({x:5.5,z:7.2,r:3.2,id:'sangria',label:'pour a sangria 🍷'});
+  buildSangria();
   // modular outdoor sofas (teak frame, deep cushions)
   const sofa=(sx,sz,ry)=>{const gp=new T.Group();
     const base=box(4,0.3,1.6,0x8a6a4a,{roughness:0.8});base.position.y=0.3;gp.add(base);
@@ -785,38 +1090,10 @@ function buildVillaWorld(){
     ch.position.set(19+p[0],0,14+p[1]);ch.rotation.y=p[2];world.add(ch);});
 
   // ===== BBQ + paella — east terrace, clear of the entrance path =====
-  const bx=22,bz=11;const bbq=box(2.2,1.2,1.4,0x3a3a3a);bbq.position.set(bx,0.9,bz);world.add(bbq);
-  const grill=box(1.8,0.2,1.1,0x111111);grill.position.set(bx,1.55,bz);world.add(grill);
-  {const fg=new T.Group();fg.visible=false;const fm=new T.MeshBasicMaterial({color:0xff7a1a,transparent:true,opacity:0.85,depthWrite:false});
-   for(let i=0;i<7;i++){const f=new T.Mesh(new T.ConeGeometry(0.1,0.35,6).translate(0,0.17,0),fm);f.position.set(bx-0.7+i*0.23,1.63,bz+(i%2?0.22:-0.22));f.userData.flame=true;fg.add(f);}
-   [[-0.5,0.25],[-0.2,-0.2],[0.1,0.22],[0.4,-0.25]].forEach(q=>{const m=new T.Mesh(new T.SphereGeometry(0.1,8,6),mat(0xf07a4a,{roughness:0.6}));m.scale.set(1.6,0.6,0.8);m.position.set(bx+q[0],1.7,bz+q[1]);fg.add(m);});
-   [[0.62,0.05],[-0.78,0]].forEach(q=>{const m=new T.Mesh(new T.SphereGeometry(0.08,8,6),mat(0xb8c4cc,{metalness:0.4,roughness:0.3}));m.scale.set(3,0.6,1);m.position.set(bx+q[0],1.7,bz+q[1]);fg.add(m);});
-   world.add(fg);world.userData.bbqFx=fg;}
-  solids.push({x:bx,z:bz,rx:1.4,rz:1.0});
-  spots.push({x:bx,z:bz+3,r:5,id:'bbq',label:'fire up the BBQ'});
-  // paella station beside the BBQ
-  const qx=17.5,qz=11;
-  const wtop=box(3.2,0.2,1.8,0xd9cdb0);wtop.position.set(qx,1.0,qz);world.add(wtop);
-  [[-1.4,0.7],[1.4,0.7],[-1.4,-0.7],[1.4,-0.7]].forEach(p=>{const lg=box(0.18,1.0,0.18,0x8a8a8a);lg.position.set(qx+p[0],0.5,qz+p[1]);world.add(lg);});
-  const burner=cyl(0.9,0.95,0.25,0x2a2a2a,18);burner.position.set(qx,1.2,qz);world.add(burner);
-  const pan=cyl(1.5,1.5,0.18,0x4a4a4a,24);pan.position.set(qx,1.4,qz);world.add(pan);
-  const rice=cyl(1.35,1.35,0.12,0xe9b94a,24);rice.position.set(qx,1.5,qz);world.add(rice);
-  [[0.5,0.3,0xe0552f],[-0.4,0.5,0xe0552f],[0.2,-0.5,0xc23b2a],[-0.6,-0.2,0xd84f2a],[0.7,-0.3,0xf2a93a]].forEach(p=>{const b=new T.Mesh(new T.SphereGeometry(0.16,8,8),mat(p[2]));b.position.set(qx+p[0],1.62,qz+p[1]);world.add(b);});
-  solids.push({x:qx,z:qz,rx:2.0,rz:1.2});
-  spots.push({x:qx,z:qz+3,r:5,id:'paella',label:'cook a giant paella 🥘'});
+  buildBBQ();buildPaella();
 
-  // ===== beach ice cream shop (chiringuito) =====
-  const ix=30,iz=-13;
-  const shop=box(6,3,4,0xfaf3e6);shop.position.set(ix,1.5,iz);world.add(shop);
-  const stripe=box(6.2,0.6,4.2,0xe05a4a);stripe.position.set(ix,2.7,iz);world.add(stripe);
-  const sroofI=box(6.4,0.3,4.4,0xf2efe6);sroofI.position.set(ix,3.15,iz);world.add(sroofI);
-  const counter=box(5,1.1,0.7,0xd9cdb0);counter.position.set(ix,0.55,iz-2.1);world.add(counter);
-  const cone=new T.Mesh(new T.ConeGeometry(0.7,1.8,14),mat(0xd9a05a));cone.rotation.x=Math.PI;cone.position.set(ix,4.6,iz);world.add(cone);
-  const sc1=new T.Mesh(new T.SphereGeometry(0.6,12,12),mat(0xf2a0c0));sc1.position.set(ix,5.4,iz);world.add(sc1);
-  const sc2=new T.Mesh(new T.SphereGeometry(0.5,12,12),mat(0xfff0a0));sc2.position.set(ix,6.0,iz);world.add(sc2);
-  world.add(para(ix-6,iz-3,0xefb13a));
-  solids.push({x:ix,z:iz,rx:3.2,rz:2.2});
-  spots.push({x:ix,z:iz-2.9,r:3.6,id:'ice',label:'grab ice creams 🍦'});
+  // ===== beach chiringuito (ice creams) =====
+  buildChiringuito(para);
 
   // ===== car on the drive =====
   const car=carMesh(0x2f6f9e);car.position.set(-24,0,22);car.rotation.y=0.3;world.add(car);car.userData.home=car.position.clone();world.userData.car=car;
@@ -891,14 +1168,7 @@ function buildVillaWorld(){
   spots.push({x:vx+3.5,z:vz-5,r:2.4,id:'bed',label:'put the little one to bed 😴'});
 
   // ===== private sauna cabin (per the brochure) =====
-  const sxx=-12.5,szz=6.5;
-  const sca=box(3.4,2.8,3,0x8a5a32);sca.position.set(sxx,1.4,szz);world.add(sca);
-  const sroof=box(3.8,0.3,3.4,0x6e4423);sroof.position.set(sxx,2.95,szz);world.add(sroof);
-  const sdp=new T.Group();sdp.position.set(sxx-0.55,0,szz-1.62);world.add(sdp);const sdoor=box(1.1,2.0,0.12,0x4a2f18);sdoor.position.set(0.55,1.0,0);sdp.add(sdoor);world.userData.saunaDoor=sdp;
-  const sdark=box(1.0,1.95,0.05,0x120c08);sdark.position.set(sxx,0.98,szz-1.52);world.add(sdark);
-  const chim=cyl(0.14,0.16,0.8,0x55504a,8);chim.position.set(sxx+0.9,3.45,szz+0.4);world.add(chim);world.userData.saunaChim=[sxx+0.9,3.9,szz+0.4];
-  solids.push({x:sxx,z:szz,rx:1.9,rz:1.7});
-  spots.push({x:sxx,z:szz-2.4,r:3.2,id:'sauna',label:'warm up in the sauna'});
+  buildSauna();
 
   // ===== planting: bougainvillea over the villa, planters, agaves, geranium pots =====
   {const fl=new T.MeshStandardMaterial({color:0xffffff,roughness:0.8}),lf=new T.MeshStandardMaterial({color:0x3f6f34,roughness:0.9});
@@ -933,9 +1203,7 @@ function buildVillaWorld(){
   // shells on the beach
   for(let i=0;i<10;i++){const sx=-70+Math.random()*140,sz=-38+Math.random()*14;const sh=new T.Mesh(new T.SphereGeometry(0.3,8,8),mat(0xfff1dd));sh.scale.y=0.5;sh.position.set(sx,0.15,sz);world.add(sh);collectibles.push({mesh:sh,type:'shell',x:sx,z:sz});}
   // sandcastle on the beach (spot handled in nearest() — toddlers must be awake + daytime)
-  {const scg=new T.Group();const base=cyl(2.2,2.5,0.7,0xd4b96a,16);base.position.y=0.35;scg.add(base);[[0,0,1.6,1.2],[1.3,0,0.9,1.4],[-1.2,0.2,0.95,1.3],[0.4,0,1.1,1.5]].forEach(p=>{const t=cyl(p[2],p[2]*0.85,p[3],0xd4b96a,10);t.position.set(p[0],p[3]/2+0.7,p[1]);scg.add(t);const b=new T.Mesh(new T.ConeGeometry(p[2],0.5,10),mat(0xc9a85a));b.position.set(p[0],p[3]+0.95,p[1]);scg.add(b);});scg.position.set(-8,0.05,-38);world.add(scg);
-   const fg=new T.Group(),fp=cyl(0.03,0.03,1.2,0xffffff,6);fp.position.set(0.4,3.25,0);fg.add(fp);const fl=new T.Mesh(new T.PlaneGeometry(0.6,0.36),mat(0xc8102e,{side:T.DoubleSide}));fl.position.set(0.72,3.66,0);fg.add(fl);scg.add(fg);fg.visible=false;scg.userData.flag=fg;scg.scale.y=0.25;world.userData.castle=scg;}
-  spots.push({x:-8,z:-38,r:7,id:'sandcastle',label:'build a sandcastle with the little one 🏖️'});
+  buildSandcastle();
   // sunscreen bottle by the sun loungers
   {const sb=new T.Group();const st=box(0.55,0.5,0.55,0xf2efe8,{roughness:0.6});st.position.y=0.25;sb.add(st);
    const btl=cyl(0.12,0.13,0.42,0xffffff,12);btl.position.y=0.71;sb.add(btl);const lab=cyl(0.132,0.132,0.18,0xf29a2e,12);lab.position.y=0.68;sb.add(lab);const cap=cyl(0.08,0.1,0.12,0xff6633,10);cap.position.y=0.98;sb.add(cap);
@@ -965,7 +1233,7 @@ function buildVillaWorld(){
 
   spots.push({x:0,z:-42,r:200,id:'sea',label:'paddle in the sea',shore:true});
   // bake the static villa props into shared-material batches (anything animated, toggled or collectible is left alone)
-  {const U=world.userData,skip=new Set([U.doorArrow,U.sea,U.car,U.castle,U.saunaDoor,U.bbqFx,U.lighthouse&&U.lighthouse.lant,...(U.birds||[]).map(b=>b.mesh),...(U.sailboats||[]).map(b=>b.mesh),...collectibles.map(c=>c.mesh),...(U.lampPosts||[])]);mergeStatic(world,skip);}
+  {const U=world.userData,skip=new Set([U.doorArrow,U.sea,U.car,U.castle,U.saunaDoor,U.bbqFx,U.paellaFx,U.lighthouse&&U.lighthouse.lant,...(U.birds||[]).map(b=>b.mesh),...(U.sailboats||[]).map(b=>b.mesh),...collectibles.map(c=>c.mesh),...(U.lampPosts||[])]);mergeStatic(world,skip);}
 }
 
   // boats: pointed hull lofted from U-shaped sections
@@ -1067,7 +1335,7 @@ const boatHull=(L,W,H,col,stripe)=>{const g=new T.Group();const hm=new T.MeshSta
     const dk=new T.Mesh(new T.CircleGeometry(1,20),mat(0xc9a878,{roughness:0.8}));dk.rotation.x=-Math.PI/2;dk.scale.set(L*0.47,W*0.42,1);dk.position.y=H*0.88;g.add(dk);
     if(stripe){const st=new T.Mesh(hullGeo(L*1.01,W*1.02,H*0.18),mat(stripe,{roughness:0.5,side:T.DoubleSide}));st.position.y=H*0.75;g.add(st);}return g;};
 // Plaza de España materials: hand-laid brick, azulejo tiles, ceramic balustrade, paving
-const brickT=mkTex((c,s)=>{c.fillStyle='#d9c7a8';c.fillRect(0,0,s,s);const bh=s/16,bw=s/4;for(let r=0;r<16;r++)for(let k=-1;k<5;k++){const x=k*bw+(r%2?bw/2:0);const v=Math.random();c.fillStyle=v<0.3?'#b8643a':v<0.6?'#c46f42':v<0.85?'#ad5a34':'#cf8250';c.fillRect(x+1.5,r*bh+1.5,bw-3,bh-3);}_speck(c,s,1500,20,1);},2,2);
+const brickT=mkTex((c,s)=>{c.fillStyle='#caa983';c.fillRect(0,0,s,s);const bh=s/16,bw=s/4;for(let r=0;r<16;r++)for(let k=-1;k<5;k++){const x=k*bw+(r%2?bw/2:0);const v=Math.random();c.fillStyle=v<0.25?'#b86a3e':v<0.5?'#c47a4a':v<0.7?'#a95f37':v<0.88?'#cc8757':'#9c5733';c.fillRect(x+1.5,r*bh+1.5,bw-3,bh-3);}_speck(c,s,1500,20,1);},2,2);
 const azuT=mkTex((c,s)=>{c.fillStyle='#f4efe2';c.fillRect(0,0,s,s);const n=4,t=s/n;for(let y=0;y<n;y++)for(let x=0;x<n;x++){const cx=x*t+t/2,cy=y*t+t/2;
   c.fillStyle='#1f4f9a';c.beginPath();for(let k=0;k<8;k++){const a=k*Math.PI/4,r=k%2?t*0.18:t*0.42;c.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}c.closePath();c.fill();
   c.fillStyle='#f0b83a';c.beginPath();c.arc(cx,cy,t*0.12,0,Math.PI*2);c.fill();c.fillStyle='#2f7a4a';[[0,0],[t,0],[0,t],[t,t]].forEach(o=>{c.beginPath();c.arc(x*t+o[0],y*t+o[1],t*0.14,0,Math.PI*2);c.fill();});}
@@ -1076,6 +1344,82 @@ const balT=mkTex((c,s)=>{c.fillStyle='#f3ecdc';c.fillRect(0,0,s,s);c.fillStyle='
   for(let k=0;k<8;k++){const x=k*s/8+s/16;const gr=c.createLinearGradient(x-9,0,x+9,0);gr.addColorStop(0,'#c9c0ad');gr.addColorStop(0.5,'#ffffff');gr.addColorStop(1,'#c9c0ad');c.fillStyle=gr;
     c.beginPath();c.moveTo(x-5,s*0.2);c.quadraticCurveTo(x-13,s*0.45,x-6,s*0.8);c.lineTo(x+6,s*0.8);c.quadraticCurveTo(x+13,s*0.45,x+5,s*0.2);c.closePath();c.fill();}},4,1);
 const paveT=mkTex((c,s)=>{c.fillStyle='#e2cfa6';c.fillRect(0,0,s,s);const t=s/8;for(let y=0;y<8;y++)for(let x=0;x<8;x++){c.fillStyle=(x+y)%2?'#d9c49a':'#e8d7b2';c.fillRect(x*t+1,y*t+1,t-2,t-2);}_speck(c,s,2000,18,2);c.strokeStyle='#b0552f';c.lineWidth=3;c.strokeRect(1.5,1.5,s-3,s-3);},1,1);
+// glazed roof tiles (the wings' pale tiled roofs with a faint diamond lattice) and fish-scale dome tiles
+const roofTileT=mkTex((c,s)=>{c.fillStyle='#8f7c62';c.fillRect(0,0,s,s);const rows=16,cols=16,tw=s/cols,th=s/rows;
+  for(let r=0;r<rows;r++)for(let k=0;k<cols;k++){const d=(Math.abs(((k+r)%8)-4)+Math.abs(((k-r+64)%8)-4))%4===0,v=Math.random()*14;
+    c.fillStyle=d?'rgb('+Math.round(128+v)+','+Math.round(138+v)+','+Math.round(120+v)+')':'rgb('+Math.round(170+v)+','+Math.round(150+v)+','+Math.round(118+v)+')';
+    c.beginPath();c.moveTo(k*tw+1,r*th+th);c.lineTo(k*tw+1,r*th+3);c.quadraticCurveTo(k*tw+tw/2,r*th-1,k*tw+tw-1,r*th+3);c.lineTo(k*tw+tw-1,r*th+th);c.closePath();c.fill();
+    c.fillStyle='rgba(255,255,255,0.22)';c.fillRect(k*tw+tw*0.35,r*th+3,tw*0.18,th-5);c.fillStyle='rgba(40,30,20,0.35)';c.fillRect(k*tw,r*th+th-2,tw,2);}_speck(c,s,1500,16,1);},1,1);
+const scaleT=mkTex((c,s)=>{c.fillStyle='#4e5f66';c.fillRect(0,0,s,s);const n=16,w=s/n;for(let r=-1;r<n+1;r++)for(let k=-1;k<n+1;k++){const x=k*w+(r%2?w/2:0),y=r*w*0.6,v=Math.random()*20;
+    c.fillStyle=(r%6===0)?'rgb('+Math.round(190+v)+',162,80)':'rgb('+Math.round(96+v)+','+Math.round(122+v)+','+Math.round(128+v)+')';c.beginPath();c.arc(x+w/2,y,w/2,0,Math.PI);c.fill();
+    c.strokeStyle='rgba(20,30,35,0.5)';c.lineWidth=1;c.stroke();}},1,1);
+
+// ---- a 74 m end tower (Torre Norte / Torre Sur), modelled in metres from photos: broad base with corner
+// pavilions and domed turrets, square shaft, open arcaded belfry, two round drums, fish-scale dome, lantern, spire ----
+function plazaTower(M){const g=new T.Group();
+  const B=(w,h,d,m,x,y,z)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;g.add(o);return o;};
+  const C=(rt,rb,h,m,x,y,z,seg,open)=>{const o=new T.Mesh(new T.CylinderGeometry(rt,rb,h,seg||16,1,!!open),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;g.add(o);return o;};
+  const halfDisc=(r,m,x,y,z,ry)=>{const o=new T.Mesh(new T.CircleGeometry(r,14,0,Math.PI),m);o.position.set(x,y,z);o.rotation.y=ry||0;g.add(o);return o;};
+  const faces=[[0,1,0],[1,0,Math.PI/2],[0,-1,Math.PI],[-1,0,-Math.PI/2]];   // (dx,dz,yaw) for the four sides
+  const ring=(w,y,h)=>faces.forEach(([dx,dz,ry])=>{const o=B(w,h,0.3,M.bal,dx*w/2,y,dz*w/2);o.rotation.y=ry;});
+  // stage A: 0–19.6 m, core with four corner pavilions
+  B(13,19.6,13,M.brick,0,9.8,0);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>{const x=sx*7.2,z=sz*7.2;B(4.4,19.6,4.4,M.brickL,x,9.8,z);B(4.9,0.6,4.9,M.stone,x,19.9,z);
+    C(1.45,1.6,5.2,M.brick,x,22.8,z,8);C(1.85,1.85,0.45,M.stone,x,25.6,z,8);
+    const d=new T.Mesh(new T.SphereGeometry(1.55,12,8,0,Math.PI*2,0,Math.PI/2),M.dome);d.scale.y=1.25;d.position.set(x,25.8,z);d.castShadow=true;g.add(d);C(0.04,0.3,3.2,M.stone,x,29.3,z,6);
+    faces.forEach(([dx,dz,ry])=>{[8,14].forEach(y=>{const w=B(1.1,2.2,0.2,M.shade,x+dx*2.21,y,z+dz*2.21);w.rotation.y=ry;});});});
+  faces.forEach(([dx,dz,ry])=>{const o=(v,a)=>[dx*a+(dz?v:0)*1,dz*a+(dx?v:0)*-1];
+    // portal with a stone frame, pilasters and windows above
+    const [px,pz]=o(0,6.62);const op=B(5,8,0.3,M.shade,px,4,pz);op.rotation.y=ry;halfDisc(2.5,M.shade,px+dx*0.02,8,pz+dz*0.02,ry);
+    const fr=new T.Mesh(new T.TorusGeometry(2.9,0.4,6,16,Math.PI),M.stone);fr.position.set(px+dx*0.1,8,pz+dz*0.1);fr.rotation.y=ry;g.add(fr);
+    [-3.3,3.3].forEach(v=>{const [qx,qz]=o(v,6.7);const pl=B(0.8,8,0.5,M.stone,qx,4,qz);pl.rotation.y=ry;});
+    [-2.6,0,2.6].forEach(v=>{const [qx,qz]=o(v,6.56);const w=B(1.2,2.6,0.2,M.shade,qx,13.5,qz);w.rotation.y=ry;halfDisc(0.6,M.shade,qx+dx*0.11,14.8,qz+dz*0.11,ry);});
+    const [ax,az]=o(0,6.58);const az1=B(10.5,1.4,0.12,M.azu,ax,17.4,az);az1.rotation.y=ry;});
+  B(14.4,0.8,14.4,M.stone,0,19.9,0);ring(13.6,20.8,1.0);
+  // stage B: square shaft 20.3–35 m
+  B(9.4,14.7,9.4,M.brick,0,27.65,0);[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sz])=>B(0.8,14.7,0.8,M.stone,sx*4.5,27.65,sz*4.5));
+  faces.forEach(([dx,dz,ry])=>{[25.2,30.8].forEach(y=>{const w=B(1.5,3.0,0.2,M.shade,dx*4.72,y,dz*4.72);w.rotation.y=ry;halfDisc(0.75,M.shade,dx*4.83,y+1.5,dz*4.83,ry);
+      const s=new T.Mesh(new T.TorusGeometry(0.95,0.18,5,12,Math.PI),M.stone);s.position.set(dx*4.8,y+1.5,dz*4.8);s.rotation.y=ry;g.add(s);});
+    [-3.2,3.2].forEach(v=>{const p=B(0.7,11,0.1,M.azu,dx*4.72+(dz?v:0),27.4,dz*4.72+(dx?-v:0));p.rotation.y=ry;});});
+  B(11.6,0.6,11.6,M.stone,0,35.3,0);ring(11.2,36.1,0.9);
+  // stage C: open arcaded belfry 35.6–43.4 m
+  B(7.0,7.8,7.0,M.shade,0,39.5,0);
+  faces.forEach(([dx,dz,ry])=>{[-3.9,-1.3,1.3,3.9].forEach(v=>C(0.28,0.3,5.0,M.stone,dx*4.4+(dz?v:0),38.1,dz*4.4+(dx?-v:0),10));
+    [-2.6,0,2.6].forEach(v=>{const a=new T.Mesh(new T.TorusGeometry(1.3,0.28,6,12,Math.PI),M.brickL);a.position.set(dx*4.4+(dz?v:0),40.6,dz*4.4+(dx?-v:0));a.rotation.y=ry;g.add(a);});});
+  B(9.8,1.9,9.8,M.brick,0,42.45,0);B(10.6,0.5,10.6,M.stone,0,43.65,0);ring(10.2,44.35,0.9);
+  // stage D: round drum 43.9–49.7 m with a balcony
+  C(3.0,3.1,5.8,M.brick,0,46.8,0,20);for(let k=0;k<8;k++){const a=k/8*Math.PI*2,w=B(0.8,2.2,0.2,M.shade,Math.sin(a)*3.02,46.8,Math.cos(a)*3.02);w.rotation.y=a;}
+  C(3.5,3.5,0.35,M.stone,0,49.85,0,20);C(3.4,3.4,0.8,M.bal,0,50.4,0,20,true);
+  // stage E: upper drum 50–59.4 m with tall openings
+  C(2.25,2.35,9.4,M.brick,0,54.7,0,16);for(let k=0;k<6;k++){const a=k/6*Math.PI*2+0.26,w=B(0.75,3.6,0.2,M.shade,Math.sin(a)*2.27,55,Math.cos(a)*2.27);w.rotation.y=a;}
+  C(2.75,2.75,0.45,M.stone,0,59.6,0,16);
+  // fish-scale dome 59.8–65.4 m, lantern and spire to 74 m
+  const V=a=>a.map(p=>new T.Vector2(p[0],p[1]));
+  const dome=new T.Mesh(new T.LatheGeometry(V([[0,0],[2.55,0],[2.72,0.8],[2.6,2.0],[2.1,3.3],[1.3,4.4],[0.7,5.1],[0.55,5.6]]),20),M.dome);dome.position.y=59.8;dome.castShadow=true;g.add(dome);
+  C(0.62,0.72,2.4,M.brickL,0,66.6,0,8);C(0.85,0.85,0.25,M.stone,0,67.9,0,8);
+  const cap=new T.Mesh(new T.SphereGeometry(0.62,10,8,0,Math.PI*2,0,Math.PI/2),M.dome);cap.scale.y=1.3;cap.position.y=68;g.add(cap);
+  C(0.03,0.2,4.6,M.stone,0,71.1,0,6);const ball=new T.Mesh(new T.SphereGeometry(0.28,8,6),M.stone);ball.position.y=69.4;g.add(ball);
+  return g;}
+
+// ---- intermediate pavilion (one each side), in metres: arcaded front, loggia, pediment, hipped tiled roof, twin domed turrets ----
+function plazaPavilion(M){const g=new T.Group(),W=16,D=24,H=26,F=2;
+  const B=(w,h,d,m,x,y,z)=>{const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;g.add(o);return o;};
+  const C=(rt,rb,h,m,x,y,z,seg)=>{const o=new T.Mesh(new T.CylinderGeometry(rt,rb,h,seg||8),m);o.position.set(x,y,z);o.castShadow=true;g.add(o);return o;};
+  const half=(r,x,y,z)=>{const o=new T.Mesh(new T.CircleGeometry(r,14,0,Math.PI),M.shade);o.position.set(x,y,z);g.add(o);};
+  B(W,H,D,M.brick,0,H/2,F-D/2);
+  [-4.8,0,4.8].forEach(x=>{B(3.2,6.6,0.3,M.shade,x,3.3,F+0.02);half(1.6,x,6.6,F+0.18);const a=new T.Mesh(new T.TorusGeometry(1.85,0.3,6,14,Math.PI),M.stone);a.position.set(x,6.6,F+0.2);g.add(a);});
+  [-7.2,-2.4,2.4,7.2].forEach(x=>B(0.9,6.6,0.5,M.stone,x,3.3,F+0.2));
+  B(W+0.4,0.6,1.2,M.stone,0,9.0,F+0.3);B(W,1.0,0.35,M.bal,0,9.8,F+0.75);
+  [-4.8,0,4.8].forEach(x=>{B(1.8,3.2,0.2,M.shade,x,13,F+0.05);half(0.9,x,14.6,F+0.16);B(2.6,0.4,0.5,M.stone,x,11.2,F+0.3);B(0.6,11,0.1,M.azu,x+2.4,16,F+0.06);});
+  [-4.8,0,4.8].forEach(x=>{B(1.4,2.4,0.2,M.shade,x,18.2,F+0.05);half(0.7,x,19.4,F+0.16);});
+  for(let k=0;k<5;k++){const x=-5.6+k*2.8;B(1.6,2.6,0.2,M.shade,x,22.6,F+0.05);half(0.8,x,23.9,F+0.16);C(0.2,0.2,3.2,M.stone,x-1.4,22.9,F+0.35,8);}
+  B(W+0.8,0.7,D+0.8,M.stone,0,H+0.35,F-D/2);
+  const roof=new T.Mesh(new T.ConeGeometry(0.7071,1,4,1).rotateY(Math.PI/4),M.roof);roof.scale.set(W+0.6,8,D+0.6);roof.position.set(0,H+0.7+4,F-D/2);roof.castShadow=true;g.add(roof);
+  const tri=new T.Shape();tri.moveTo(-5,0);tri.lineTo(5,0);tri.lineTo(0,3.6);tri.closePath();const ped=new T.Mesh(new T.ExtrudeGeometry(tri,{depth:0.6,bevelEnabled:false}),M.brickL);ped.position.set(0,H+0.7,F-0.3);ped.castShadow=true;g.add(ped);
+  const oc=new T.Mesh(new T.CircleGeometry(0.9,16),M.shade);oc.position.set(0,H+2.0,F+0.32);g.add(oc);
+  [-1,1].forEach(s=>{const x=s*(W/2-0.2);C(1.3,1.4,5.2,M.brick,x,H+0.7+2.6,F-0.2);C(1.65,1.65,0.4,M.stone,x,H+5.5,F-0.2);
+    const d=new T.Mesh(new T.SphereGeometry(1.4,12,8,0,Math.PI*2,0,Math.PI/2),M.dome);d.scale.y=1.25;d.position.set(x,H+5.7,F-0.2);d.castShadow=true;g.add(d);C(0.04,0.28,3.0,M.stone,x,H+9.1,F-0.2,6);});
+  return g;}
 // ===================== PLAZA DE ESPAÑA at true scale (1.31 units per metre, same as the family) =====================
 // Semi-elliptical plan measured from OpenStreetMap: inner façade ≈ 270 m across × 88 m to the pavilion,
 // canal ≈ 12 m wide, Vicente Traver fountain ≈ 24 m across, end towers 74 m.
@@ -1084,7 +1428,9 @@ function buildPlaza(){
   plaza=new T.Group();plaza.visible=false;scene.add(plaza);
   const S=PLZ.s,FA=PLZ.fa*S,FB=PLZ.fb*S,CA=PLZ.ca*S,CB=PLZ.cb*S,CW=PLZ.cw*S,DEP=PLZ.depth*S,HT=PLZ.height*S,T0=PLZ.t0,T1=PLZ.t1;
   const cream=0xe7dcc4,tile=0x9c4a2a;
-  const mBrick=new T.MeshStandardMaterial({map:rep(brickT,1,1),color:0xf0d8c0,roughness:0.92}),mBrickL=new T.MeshStandardMaterial({map:rep(brickT,1,1),color:0xfff0de,roughness:0.92});
+  const mBrick=new T.MeshStandardMaterial({map:rep(brickT,1,1),color:0xffffff,roughness:0.92}),mBrickL=new T.MeshStandardMaterial({map:rep(brickT,1,1),color:0xfff6ec,roughness:0.92});
+  mBrick.map.anisotropy=mBrickL.map.anisotropy=8;
+  const mAzu=new T.MeshStandardMaterial({map:rep(azuT,1,1),roughness:0.35}),mDome=new T.MeshStandardMaterial({map:rep(scaleT,6,3),roughness:0.35,metalness:0.25}),mRoof=new T.MeshStandardMaterial({map:roofTileT,roughness:0.55}),mRoofC=new T.MeshStandardMaterial({map:rep(roofTileT,6,3),roughness:0.55}),mMarble=mat(0xf4f1ea,{roughness:0.35});
   const mCream=mat(cream,{roughness:0.85}),mTile=mat(tile,{roughness:0.9}),mShade=mat(0x2a2018,{roughness:1.0}),mBlue=mat(0x2f5f9e,{roughness:0.5});
   const water=new T.MeshStandardMaterial({color:0x2f7f9a,roughness:0.08,metalness:0.35,normalMap:(()=>{const t=rippleN.clone();t.needsUpdate=true;t.repeat.set(0.25,0.25);return t;})(),normalScale:new T.Vector2(0.3,0.3),side:T.DoubleSide});
   const E=(a,b,t)=>new T.Vector3(a*Math.cos(t),0,b*Math.sin(t));                         // point on an ellipse (z = b·sinθ, pavilion at θ=3π/2)
@@ -1113,6 +1459,7 @@ function buildPlaza(){
   [[CA-hw-0.6,CB-hw-0.6],[CA+hw+0.6,CB+hw+0.6]].forEach(([a,b])=>{const {ts}=arcT(a,b,Math.round(Math.PI*(a+b)/2*1.16/2.4));
     ts.forEach(t=>{if(nearBridge(t,a,b,5.0))return;const p=E(a,b,t),r=new T.Mesh(new T.BoxGeometry(2.45,1.1,0.4),balM);r.position.set(p.x,0.6,p.z);r.rotation.y=yawIn(a,b,t);plaza.add(r);
       const cap=new T.Mesh(new T.BoxGeometry(2.5,0.14,0.5),mBlue);cap.position.set(p.x,1.2,p.z);cap.rotation.y=r.rotation.y;plaza.add(cap);});});
+  const PM={brick:mBrick,brickL:mBrickL,stone:mCream,dome:mDome,shade:mShade,bal:balM,azu:mAzu,roof:mRoofC};
   bridgeT.forEach(t=>{const p=E(CA,CB,t),yaw=yawIn(CA,CB,t);const g=new T.Group();g.position.copy(p);g.rotation.y=yaw;plaza.add(g);
     const L=CW+4;const sh=new T.Shape();sh.moveTo(-L/2,0);sh.quadraticCurveTo(0,2.6,L/2,0);sh.lineTo(L/2,0.8);sh.quadraticCurveTo(0,3.4,-L/2,0.8);sh.closePath();
     const dg=new T.ExtrudeGeometry(sh,{depth:7,bevelEnabled:false,curveSegments:12});dg.translate(0,-0.1,-3.5);dg.rotateY(Math.PI/2);
@@ -1120,25 +1467,38 @@ function buildPlaza(){
     [-3.6,3.6].forEach(x=>{for(let k=-2;k<=2;k++){const r=new T.Mesh(new T.BoxGeometry(0.4,1.1,L/5),balM);const zz=k*L/5,yy=2.5*(1-(2*zz/L)**2)+0.75;r.position.set(x,yy+0.55,zz);r.rotation.x=Math.atan(2.5*8*zz/(L*L));g.add(r);}
       [-1,1].forEach(e=>{const post=new T.Mesh(new T.BoxGeometry(0.8,1.9,0.8),mBlue);post.position.set(x,1.4,e*L/2);g.add(post);const urn=new T.Mesh(new T.SphereGeometry(0.4,10,8),mCream);urn.position.set(x,2.6,e*L/2);g.add(urn);});});});
   // ---- the façade: 48 bays along the ellipse (ground-floor arcade, two storeys, terracotta balustrade) ----
-  const {ts:bayT,len:facLen}=arcT(FA,FB,PLZ.bays),bw=facLen/PLZ.bays;
+  const {ts:bayT,len:facLen}=arcT(FA,FB,PLZ.bays),bw=facLen/PLZ.bays,PAVT=[1.5*Math.PI-0.68,1.5*Math.PI+0.68];
   const arch=new T.TorusGeometry(1,0.13,8,18,Math.PI);
-  bayT.forEach((t,i)=>{const p=E(FA,FB,t),yaw=yawIn(FA,FB,t);if(Math.abs(t-1.5*Math.PI)<0.16)return;  // pavilion sits here
+  bayT.forEach((t,i)=>{const p=E(FA,FB,t),yaw=yawIn(FA,FB,t);if(Math.abs(t-1.5*Math.PI)<0.16||PAVT.some(q=>Math.abs(t-q)<0.1))return;  // pavilions sit here
     const g=new T.Group();g.position.copy(p);g.rotation.y=yaw;plaza.add(g);
     const mass=new T.Mesh(new T.BoxGeometry(bw+0.4,HT,DEP),mBrick);mass.position.set(0,HT/2,-DEP/2);mass.castShadow=true;mass.receiveShadow=true;g.add(mass);
-    const roofM=new T.Mesh(new T.BoxGeometry(bw+0.5,0.5,DEP),mTile);roofM.position.set(0,HT+0.25,-DEP/2);g.add(roofM);
     const pl=new T.Mesh(new T.BoxGeometry(bw,1.6,1.0),mCream);pl.position.set(0,0.8,0.4);g.add(pl);
     // arcade: two arches per bay
     [-bw/4,bw/4].forEach(x=>{const op=new T.Mesh(new T.BoxGeometry(bw*0.34,7.2,0.8),mShade);op.position.set(x,1.6+3.6,0.35);g.add(op);
       const a=new T.Mesh(arch,mCream);a.scale.setScalar(bw*0.17);a.position.set(x,1.6+7.2,0.8);g.add(a);});
-    [-bw/2,0,bw/2].forEach(x=>{const c=new T.Mesh(new T.BoxGeometry(0.9,9.2,1.0),mCream);c.position.set(x,1.6+4.6,0.8);g.add(c);});
+    [-bw/2,0,bw/2].forEach(x=>{[-0.38,0.38].forEach(o=>{const c=new T.Mesh(new T.CylinderGeometry(0.22,0.26,7.2,10),mMarble);c.position.set(x+o,1.6+3.6,0.9);c.castShadow=true;g.add(c);});
+      const cap=new T.Mesh(new T.BoxGeometry(1.4,0.5,0.8),mCream);cap.position.set(x,8.95,0.9);g.add(cap);});
     const band=new T.Mesh(new T.BoxGeometry(bw,1.2,1.3),mCream);band.position.set(0,12.2,0.55);g.add(band);
     // upper storeys: windows with cream surrounds + a tiled balcony
     [15.4,20.6].forEach((y,k)=>{[-bw/4,bw/4].forEach(x=>{const w=new T.Mesh(new T.BoxGeometry(2.2,3.2,0.3),mShade);w.position.set(x,y,0.12);g.add(w);
-        const sur=new T.Mesh(new T.BoxGeometry(2.9,0.5,0.5),mCream);sur.position.set(x,y+1.9,0.2);g.add(sur);
-        if(k===0){const bal=new T.Mesh(new T.BoxGeometry(3.2,1.0,0.9),balM);bal.position.set(x,y-1.9,0.55);g.add(bal);}});});
+        const hd=new T.Mesh(new T.CircleGeometry(1.1,12,0,Math.PI),mShade);hd.position.set(x,y+1.6,0.28);g.add(hd);
+        const sur=new T.Mesh(new T.TorusGeometry(1.28,0.18,5,12,Math.PI),mCream);sur.position.set(x,y+1.6,0.32);g.add(sur);
+        const sill=new T.Mesh(new T.BoxGeometry(2.7,0.25,0.5),mCream);sill.position.set(x,y-1.7,0.3);g.add(sill);});});
+    const ter=new T.Mesh(new T.BoxGeometry(bw,1.1,0.35),balM);ter.position.set(0,13.35,1.05);g.add(ter);
     const cor=new T.Mesh(new T.BoxGeometry(bw+0.5,0.9,1.4),mCream);cor.position.set(0,HT-0.8,0.4);g.add(cor);
     const par=new T.Mesh(new T.BoxGeometry(bw+0.4,1.2,0.6),balM);par.position.set(0,HT+0.6,0.2);g.add(par);
-    if(i%4===1){const sp=new T.Mesh(new T.ConeGeometry(0.9,3.4,8),mTile);sp.position.set(0,HT+2.9,0.2);sp.castShadow=true;g.add(sp);const fb=new T.Mesh(new T.SphereGeometry(0.4,8,6),mCream);fb.position.set(0,HT+4.8,0.2);g.add(fb);}});
+    const fbx=new T.Mesh(new T.BoxGeometry(0.6,0.6,0.6),mCream);fbx.position.set(-bw/2,HT+1.5,0.2);g.add(fbx);const fco=new T.Mesh(new T.ConeGeometry(0.26,1.3,6),mCream);fco.position.set(-bw/2,HT+2.45,0.2);g.add(fco);
+    if(i%2===0){const dmr=new T.Mesh(new T.BoxGeometry(1.7,1.9,1.7),mCream);dmr.position.set(0,HT+2.0,-3.2);g.add(dmr);const dw=new T.Mesh(new T.BoxGeometry(0.8,1.1,0.1),mShade);dw.position.set(0,HT+2.0,-2.33);g.add(dw);
+      const dr=new T.Mesh(new T.ConeGeometry(1.35,1.2,4).rotateY(Math.PI/4),mRoofC);dr.position.set(0,HT+3.55,-3.2);g.add(dr);}});
+  // pitched glazed-tile roof following the curve (front slope faces the plaza)
+  const roofStrip=(tA,tB)=>{const seg=Math.max(8,Math.round((tB-tA)*90)),P=[],U=[],I=[],rise=(DEP/2+0.8)*0.55,vs=Math.hypot(DEP/2+0.8,rise)/6.3;let arc=0,prev=null;
+    for(let i=0;i<=seg;i++){const t=tA+(tB-tA)*i/seg,e=E(FA,FB,t),n=N(FA,FB,t),f=e.clone().addScaledVector(n,-0.8),r=e.clone().addScaledVector(n,DEP/2),b=e.clone().addScaledVector(n,DEP+0.8);
+      if(prev)arc+=r.distanceTo(prev);prev=r;const u=arc/6.3;P.push(f.x,HT+0.25,f.z,r.x,HT+0.25+rise,r.z,r.x,HT+0.25+rise,r.z,b.x,HT+0.25,b.z);U.push(u,0,u,vs,u,0,u,vs);
+      if(i<seg){const k=i*4,m=k+4;I.push(k,m,k+1,k+1,m,m+1,k+2,m+2,k+3,k+3,m+2,m+3);}}
+    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(P,3));g.setAttribute('uv',new T.Float32BufferAttribute(U,2));g.setIndex(I);g.computeVertexNormals();
+    const me=new T.Mesh(g,mRoof);me.castShadow=true;me.receiveShadow=true;plaza.add(me);};
+  roofStrip(T0+0.02,1.5*Math.PI-0.16);roofStrip(1.5*Math.PI+0.16,T1-0.02);
+  PAVT.forEach(t=>{const pv=plazaPavilion(PM);pv.scale.setScalar(S);pv.position.copy(E(FA,FB,t));pv.rotation.y=yawIn(FA,FB,t);plaza.add(pv);});
   // ---- the 48 provincial alcoves in front of the façade: tiled bench, back wall and a little map ----
   const benchM=new T.MeshStandardMaterial({map:rep(azuT,2,0.7),roughness:0.35}),mapCols=[0x9fc8e8,0xe8d49a,0xb8e0b0,0xf0b8a0];
   const {ts:benchT}=arcT(FA-5.5,FB-5.5,PLZ.bays);
@@ -1157,7 +1517,13 @@ function buildPlaza(){
   const recess=box(5.6,7.6,2.2,0x241a12);recess.position.set(0,4.2,PD+1.4);pav.add(recess);
   const litWall=new T.Mesh(new T.BoxGeometry(4.4,5.2,0.3),new T.MeshStandardMaterial({color:0xcaa15a,emissive:0x6b4a18,emissiveIntensity:0.6,roughness:0.8}));litWall.position.set(0,3.6,PD+0.4);pav.add(litWall);
   [-4.4,-3.4,3.4,4.4].forEach(x=>{const c=cyl(0.42,0.46,7.2,cream,14);c.position.set(x,3.8,PD+3.0);pav.add(c);const cap=box(1.0,0.4,1.0,cream);cap.position.set(x,7.5,PD+3.0);pav.add(cap);});
-  [-7,7].forEach(x=>{const w=new T.Mesh(new T.BoxGeometry(2.2,2.6,0.3),mShade);w.position.set(x,8.4,PD+3.02);pav.add(w);const wa=new T.Mesh(new T.TorusGeometry(1.1,0.25,6,12,Math.PI),mCream);wa.position.set(x,9.6,PD+3.05);pav.add(wa);});
+  [-1,1].forEach(sd=>{const bl=new T.Mesh(new T.BoxGeometry(4.6,0.5,0.6),balM);bl.position.set(sd*7.5,7.9,PD+3.25);pav.add(bl);const ld=box(4.8,0.25,0.9,cream);ld.position.set(sd*7.5,7.55,PD+3.2);pav.add(ld);
+    [5.9,8.3].forEach(ax=>{const x=sd*ax,w=new T.Mesh(new T.BoxGeometry(1.5,2.4,0.3),mShade);w.position.set(x,9.6,PD+3.02);pav.add(w);const hd=new T.Mesh(new T.CircleGeometry(0.75,12,0,Math.PI),mShade);hd.position.set(x,10.8,PD+3.18);pav.add(hd);
+      const wa=new T.Mesh(new T.TorusGeometry(0.9,0.16,5,12,Math.PI),mCream);wa.position.set(x,10.8,PD+3.2);pav.add(wa);[-0.85,0.85].forEach(o=>{const c=cyl(0.1,0.1,2.4,0xf4f1ea,8);c.position.set(x+o,9.6,PD+3.2);pav.add(c);});});
+    const dr=new T.Mesh(new T.BoxGeometry(1.6,3.6,0.3),mShade);dr.position.set(sd*7.1,1.9,PD+3.02);pav.add(dr);const dh=new T.Mesh(new T.CircleGeometry(0.8,12,0,Math.PI),mShade);dh.position.set(sd*7.1,3.7,PD+3.18);pav.add(dh);
+    const df=new T.Mesh(new T.TorusGeometry(0.95,0.18,5,12,Math.PI),mCream);df.position.set(sd*7.1,3.7,PD+3.2);pav.add(df);
+    [5.6,7.4,9.2].forEach(ax=>{const w=new T.Mesh(new T.BoxGeometry(0.8,0.9,0.3),mShade);w.position.set(sd*ax,11.5,PD+3.02);pav.add(w);});
+    [5.1,9.9].forEach(ax=>{const az=new T.Mesh(new T.BoxGeometry(0.45,6.5,0.1),mAzu);az.position.set(sd*ax,4.4,PD+3.06);pav.add(az);});});
   const cor=box(21,1.0,7,cream);cor.position.set(0,12.6,PD);pav.add(cor);
   const attic=new T.Mesh(new T.BoxGeometry(13,3.2,4),mBrick);attic.position.set(0,14.6,PD);pav.add(attic);
   const ped=new T.Mesh(new T.CylinderGeometry(0.001,4.6,2.4,3),mCream);ped.rotation.y=Math.PI;ped.position.set(0,17.2,PD);pav.add(ped);
@@ -1168,21 +1534,18 @@ function buildPlaza(){
   const slim=side=>{const g2=new T.Group();const b=new T.Mesh(new T.BoxGeometry(3.4,16,3.4),mBrick);b.position.y=8;g2.add(b);
     [6,10,13].forEach(yy=>{const a=new T.Mesh(new T.TorusGeometry(0.6,0.16,6,10,Math.PI),mCream);a.position.set(0,yy,1.75);g2.add(a);});
     const c2=box(4,0.8,4,cream);c2.position.y=16.2;g2.add(c2);const a2=new T.Mesh(new T.BoxGeometry(2.6,2,2.6),mBrickL);a2.position.y=17.8;g2.add(a2);
-    const cup=new T.Mesh(new T.ConeGeometry(1.8,3.2,12),mTile);cup.position.y=20.4;g2.add(cup);const fin=new T.Mesh(new T.SphereGeometry(0.35,10,10),mCream);fin.position.y=22.4;g2.add(fin);g2.position.set(side*9.5,0,PD-0.5);return g2;};
+    const dm=new T.Mesh(new T.SphereGeometry(1.5,14,8,0,Math.PI*2,0,Math.PI/2),mDome);dm.scale.y=1.35;dm.position.y=18.8;g2.add(dm);
+    const ln=new T.Mesh(new T.CylinderGeometry(0.35,0.4,1.1,8),mCream);ln.position.y=21.3;g2.add(ln);const sp2=new T.Mesh(new T.ConeGeometry(0.12,2.2,6),mCream);sp2.position.y=22.9;g2.add(sp2);g2.position.set(side*9.5,0,PD-0.5);return g2;};
   pav.add(slim(-1));pav.add(slim(1));
   const back=new T.Mesh(new T.BoxGeometry(24,12,12),mBrick);back.position.set(0,6,-6);pav.add(back);
   pav.scale.setScalar(2.35);pav.position.set(0,0,-FB-1.5);plaza.add(pav);
   // ---- the two 74 m end towers ----
-  [T0,T1].forEach(t=>{const g=new T.Group();const base=new T.Mesh(new T.BoxGeometry(7,6,7),mBrickL);base.position.y=3;g.add(base);
-    const body=new T.Mesh(new T.BoxGeometry(5.6,12,5.6),mBrick);body.position.y=11;g.add(body);
-    [7,11,15].forEach(yy=>{const a=new T.Mesh(new T.TorusGeometry(0.9,0.22,6,12,Math.PI),mCream);a.position.set(0,yy,2.85);g.add(a);});
-    const cr=box(6.6,1,6.6,cream);cr.position.y=17.2;g.add(cr);const at=new T.Mesh(new T.BoxGeometry(4.4,3,4.4),mBrickL);at.position.y=19.3;g.add(at);
-    const cup=new T.Mesh(new T.ConeGeometry(3,5,4),mTile);cup.rotation.y=Math.PI/4;cup.position.y=23.3;g.add(cup);const fin=new T.Mesh(new T.SphereGeometry(0.5,10,10),mCream);fin.position.y=26.2;g.add(fin);
-    g.scale.setScalar(74*S/27);const p=E(FA,FB,t).add(N(FA,FB,t).multiplyScalar(DEP*0.45));g.position.copy(p);g.rotation.y=yawIn(FA,FB,t);plaza.add(g);});
-  // ---- lamp posts round the inner canal edge ----
-  {const {ts}=arcT(CA-hw-3,CB-hw-3,22);ts.forEach(t=>{const p=E(CA-hw-3,CB-hw-3,t);const post=cyl(0.14,0.2,5,0x22201c,8);post.position.set(p.x,2.5,p.z);plaza.add(post);
-    const arm=box(1.2,0.1,0.1,0x22201c);arm.position.set(p.x,4.9,p.z);arm.rotation.y=yawIn(CA,CB,t)+Math.PI/2;plaza.add(arm);
-    const lamp=new T.Mesh(new T.SphereGeometry(0.42,12,10),new T.MeshStandardMaterial({color:0xfff2b0,emissive:0x4a3a00}));lamp.position.set(p.x,5.25,p.z);plaza.add(lamp);});}
+  [T0,T1].forEach(t=>{const g=plazaTower(PM);g.scale.setScalar(S);const p=E(FA,FB,t).add(N(FA,FB,t).multiplyScalar(DEP*0.45));g.position.copy(p);g.rotation.y=yawIn(FA,FB,t);plaza.add(g);});
+  // ---- lamp posts round the inner canal edge: tiled ceramic base, iron post, hexagonal lantern ----
+  {const {ts}=arcT(CA-hw-3,CB-hw-3,22),iron=mat(0x1d1f22,{roughness:0.5,metalness:0.6}),glow=new T.MeshStandardMaterial({color:0xfff2b0,emissive:0x6a5410,roughness:0.3});
+   ts.forEach(t=>{const p=E(CA-hw-3,CB-hw-3,t),M=(geo,m,y)=>{const o=new T.Mesh(geo,m);o.position.set(p.x,y,p.z);o.castShadow=true;plaza.add(o);return o;};
+     M(new T.CylinderGeometry(0.45,0.55,1.4,12),mAzu,0.7);M(new T.CylinderGeometry(0.5,0.5,0.15,12),mCream,1.47);M(new T.CylinderGeometry(0.11,0.17,4.4,8),iron,3.75);
+     const rg=M(new T.TorusGeometry(0.3,0.04,4,12),iron,5.8);rg.rotation.x=Math.PI/2;M(new T.CylinderGeometry(0.42,0.26,1.0,6),glow,6.35);M(new T.ConeGeometry(0.55,0.6,6),iron,7.15);M(new T.SphereGeometry(0.12,6,6),iron,7.55);});}
   // ---- Vicente Traver fountain (24 m basin, tiered centrepiece) ----
   const FR=PLZ.fr*S;
   const fb=cyl(FR,FR+0.6,1.0,cream,48);fb.position.set(0,0.5,0);plaza.add(fb);
@@ -1197,6 +1560,7 @@ function buildPlaza(){
   const car=carMesh(0x2f6f9e);car.position.set(26,0,FB*0.25+DEP*0.2+32);car.rotation.y=Math.PI/2;plaza.add(car);plaza.userData.car={x:26,z:car.position.z};car.userData.home=car.position.clone();plaza.userData.carMesh=car;
   const ring=new T.Mesh(new T.RingGeometry(2,2.6,32),new T.MeshBasicMaterial({color:0xe8a838,side:T.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.set(0,0.05,30);plaza.add(ring);plaza.userData.photo={x:0,z:30};
   plaza.userData.start={x:0,z:52};
+  plaza.updateMatrixWorld(true);plaza.traverse(o=>{if(o.isMesh&&(o.material===mBrick||o.material===mBrickL))worldUV(o,1.6,1.3);});
   mergeStatic(plaza,new Set(plaza.userData.boats.map(b=>b.m).concat([spray,car])));
   // ---- collision ----
   plazaSolids.push({x:0,z:0,rx:FR+0.6,rz:FR+0.6});
@@ -2370,6 +2734,7 @@ function update(dt){
   if(scriptCam)lastScriptCam=scriptCam;camBlend+=((scriptCam?1:0)-camBlend)*Math.min(1,dt*2.2);if(!scriptCam&&camBlend<0.002)camBlend=0;
   if(camBlend>0&&lastScriptCam){const b=camBlend*camBlend*(3-2*camBlend);cam.position.copy(camFollow).lerp(lastScriptCam.p,b);_camLook.copy(_lookF).lerp(lastScriptCam.l,b);cam.lookAt(_camLook);}
   else{cam.position.copy(camFollow);cam.lookAt(_lookF);}
+  {const fw=(camBlend>0&&cam.aspect<1)?55+13*camBlend*camBlend*(3-2*camBlend):55;if(Math.abs(cam.fov-fw)>0.01){cam.fov=fw;cam.updateProjectionMatrix();}}
 
   // transition
   if(fadeDir===1){fade+=dt*2.2;if(fade>=1){fade=1;setScene(pending);fadeDir=-1;}}
@@ -2825,14 +3190,13 @@ function animateFamily(dt){FAMILY_ORDER.forEach(id=>{const p=fam[id].p;if(p.root
 
 // ---- hand props (built lazily per person, in hand space: −y runs from the wrist along the fingers) ----
 const PROP_BUILD={
-  cone:()=>{const g=new T.Group();const c=new T.Mesh(new T.ConeGeometry(0.055,0.17,12),stdM(0xd9a05a,0.8));c.position.set(0,-0.1,0.02);c.rotation.x=Math.PI;g.add(c);
+  cone:()=>{const g=new T.Group();const c=new T.Mesh(new T.ConeGeometry(0.055,0.17,12),mc('waffleM',()=>new T.MeshStandardMaterial({map:waffleT,roughness:0.8})));c.position.set(0,-0.1,0.02);c.rotation.x=Math.PI;g.add(c);
     const s1=new T.Mesh(new T.SphereGeometry(0.062,12,10),stdM(0xf2a0c0,0.6));s1.position.set(0,-0.2,0.02);g.add(s1);const s2=new T.Mesh(new T.SphereGeometry(0.05,12,10),stdM(0xfff0b0,0.6));s2.position.set(0,-0.27,0.02);g.add(s2);return g;},
   paddle:()=>{const g=new T.Group();const h=new T.Mesh(new T.CylinderGeometry(0.016,0.016,1.0,8),stdM(0xb08a5a,0.7));h.position.y=-0.42;g.add(h);
     const b=new T.Mesh(new T.BoxGeometry(0.11,0.17,0.02),stdM(0xa47c4c,0.7));b.position.y=-0.95;g.add(b);g.rotation.x=1.05;return g;},
   spatula:()=>{const g=new T.Group();const h=new T.Mesh(new T.CylinderGeometry(0.014,0.014,0.32,8),stdM(0x1a1a1a,0.5));h.position.y=-0.14;g.add(h);
     const b=new T.Mesh(new T.BoxGeometry(0.1,0.13,0.012),stdM(0xc9cdd2,0.25,{metalness:0.9}));b.position.y=-0.36;g.add(b);g.rotation.x=0.5;return g;},
-  jug:()=>{const g=new T.Group();const gl=new T.Mesh(new T.CylinderGeometry(0.08,0.095,0.24,14),mc('jugGlass',()=>new T.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:0.35,roughness:0.05})));
-    const lq=new T.Mesh(new T.CylinderGeometry(0.074,0.088,0.15,14),stdM(0x9c1f32,0.3));lq.position.y=-0.04;gl.add(lq);gl.rotation.x=Math.PI/2;gl.position.set(0,-0.07,0.12);g.add(gl);return g;},
+  jug:()=>{const g=new T.Group(),j=sangriaJugGroup();j.scale.setScalar(0.62);j.rotation.x=Math.PI/2;j.position.set(0,-0.07,0);g.add(j);return g;},
   bottle:()=>{const g=new T.Group();const b=new T.Mesh(new T.CylinderGeometry(0.04,0.044,0.17,10),stdM(0xffffff,0.5));b.position.y=-0.09;g.add(b);
     const l=new T.Mesh(new T.CylinderGeometry(0.045,0.045,0.07,10),stdM(0xf29a2e,0.5));l.position.y=-0.09;g.add(l);const c=new T.Mesh(new T.CylinderGeometry(0.025,0.03,0.05,8),stdM(0xff6633,0.5));c.position.y=-0.2;g.add(c);return g;},
   spade:()=>{const g=new T.Group();const h=new T.Mesh(new T.CylinderGeometry(0.016,0.016,0.36,8),stdM(0xe0402a,0.6));h.position.y=-0.16;g.add(h);
@@ -2866,7 +3230,8 @@ function stepScript(a,dt){
     if(s.go){const g=typeof s.go==='function'?s.go():s.go;a.tgt=g;a.path=(scn==='villa'&&!s.direct)?navPath(player.position.x,player.position.z,g[0],g[1]):[];a.path.push({x:g[0],z:g[1]});}
     if(s.do)s.do();
     if(s.prop!==undefined)setProp(P,s.prop,s.left);
-    if(s.cam!==undefined){const c=typeof s.cam==='function'?s.cam():s.cam;scriptCam=c?{p:vec3(c.p),l:vec3(c.l)}:null;}}
+    if(s.cam!==undefined){const c=typeof s.cam==='function'?s.cam():s.cam;scriptCam=c?{p:vec3(c.p),l:vec3(c.l)}:null;
+      if(scriptCam&&cam.aspect<1){const k=Math.min(1.6,1.2/cam.aspect);scriptCam.p.sub(scriptCam.l).multiplyScalar(k).add(scriptCam.l);}}}
   a.st+=dt;const t=a.st;let done=false;
   if(s.go){P.pose='auto';const w=a.path[0];
     if(w){const dx=w.x-player.position.x,dz=w.z-player.position.z,d=Math.hypot(dx,dz);
@@ -2896,12 +3261,14 @@ function scriptSauna(){const d=world.userData.saunaDoor,c=world.userData.saunaCh
     door(true),{do:()=>{player.visible=true;player.position.set(sx,0,sz+0.4);player.rotation.y=Math.PI;flush(playerP,true);}},{go:[sx,sz-1.6],direct:true,speed:2.6},door(false),
     {pose:'fan',dur:2.2,fx:(u,dt)=>{if(Math.random()<dt*3)puff(player.position.x,playerP.H*0.9,player.position.z,{size:0.35,vy:0.5,op:0.35,life:1.2});}},{do:()=>flush(playerP,false)}]);}
 function flush(p,on){p.root.traverse(o=>{if(o.isMesh&&o.material===skinM(p.def.skin)){o.material.emissive.copy(lin(p.def.skin).multiplyScalar(0.05));if(on)o.material.emissive.add(new T.Color(0.35,0.04,0.02));}});}
-function scriptPaella(){runScript([{go:[15.1,11.0]},{face:Math.PI/2,dur:0.35},{pose:'stir',prop:'paddle',dur:3.8,cam:{p:[19.6,4.3,7.2],l:[16.0,1.1,11.0]},fx:(u,dt)=>{if(Math.random()<dt*6)puff(17.5+(Math.random()-0.5)*1.6,1.75,11+(Math.random()-0.5)*1.6,{size:0.7,vy:1.1,op:0.45,life:1.9});}}]);}
-function scriptBBQ(){const fx=world.userData.bbqFx;
-  runScript([{go:[22.2,12.55]},{face:Math.PI,dur:0.35,do:()=>{fx.visible=true;}},
-    {pose:'flip',prop:'spatula',dur:4.0,cam:{p:[24.9,4.6,7.9],l:[22.0,1.1,12.0]},fx:(u,dt,t)=>{fx.children.forEach((f,i)=>{if(f.userData.flame){const k=0.7+0.5*Math.abs(Math.sin(t*9+i*1.7));f.scale.set(1,k,1);}});
-      if(Math.random()<dt*7)puff(22+(Math.random()-0.5)*1.4,1.9,11+(Math.random()-0.5)*0.8,{col:0x9a9690,size:0.8,vy:1.3,op:0.45,life:2.2,spread:0.4});}},
-    {do:()=>{fx.children.forEach(f=>{if(f.userData.flame)f.visible=false;});setTimeout(()=>{fx.visible=false;fx.children.forEach(f=>f.visible=true);},25000);}}]);}
+function scriptPaella(){const fx=world.userData.paellaFx,Q=world.userData.paellaAt;
+  runScript([{go:[Q.x-1.05,Q.z]},{face:Math.PI/2,dur:0.35,do:()=>{fx.visible=true;}},{pose:'stir',prop:'paddle',dur:3.8,cam:{p:[Q.x+2.2,3.1,Q.z-2.7],l:[Q.x-0.3,0.95,Q.z]},
+    fx:(u,dt,t)=>{fx.userData.tick(t);if(Math.random()<dt*7)puff(Q.x+(Math.random()-0.5)*0.9,1.05,Q.z+(Math.random()-0.5)*0.9,{size:0.5,vy:0.9,op:0.4,life:1.8});}},{do:()=>{fx.visible=false;}}]);}
+function scriptBBQ(){const fx=world.userData.bbqFx,F=fx.userData;
+  runScript([{go:[22.2,12.55]},{face:Math.PI,dur:0.35,do:()=>{F.off();fx.visible=true;}},
+    {pose:'flip',prop:'spatula',dur:4.0,cam:{p:[24.9,4.6,7.9],l:[22.0,1.2,11.9]},fx:(u,dt,t)=>{F.tick(t,u);
+      if(Math.random()<dt*7)puff(22+(Math.random()-0.5)*1.0,1.4,11+(Math.random()-0.5)*0.7,{col:0x9a9690,size:0.7,vy:1.3,op:0.4,life:2.2,spread:0.4});}},
+    {do:()=>{F.cool();setTimeout(()=>{fx.visible=false;F.off();},25000);}}]);}
 function scriptSea(){const x=Math.max(-60,Math.min(60,player.position.x));
   runScript([{go:[x,-42.6]},{go:[x,-48.6],direct:true,speed:3,y:-0.45,do:()=>kidHold({x:x+1.5,z:-46.4,yaw:Math.PI,pose:'wade',y:-0.1})},
     {face:Math.PI,pose:'wade',y:-0.5,dur:3.6,cam:{p:[x+3.5,1.8,-54.5],l:[x+0.6,0.2,-47.6]},fx:(u,dt)=>{if(Math.random()<dt*9)splash(player.position.x+(Math.random()-0.5)*0.9,0.15,player.position.z+(Math.random()-0.5)*0.9,3);
@@ -2920,12 +3287,13 @@ function scriptStargaze(){const px=16.5,pz=2.0;kidHold({x:px,z:pz+1.1,yaw:Math.P
   runScript([{go:[px,pz]},{face:Math.PI/2,dur:0.3},{pose:'stargaze',dur:5.0,cam:{p:[px+0.4,0.9,pz+3.6],l:[px-0.2,2.4,pz-3.5]}}]);}
 function scriptSunset(){const px=-10,pz=1.6;kidHold({x:px+1.0,z:pz+0.3,yaw:Math.PI,pose:'sitground'});
   runScript([{go:[px,pz]},{face:Math.PI,dur:0.35},{pose:'sitground',dur:5.0,cam:{p:[px+2.3,2.0,pz+4.8],l:[px-5,4.5,pz-90]}}]);}
-function scriptSandcastle(){const c=world.userData.castle;
-  kidHold({x:-10.7,z:-37.3,yaw:Math.PI/2,pose:'dig'});
-  runScript([{go:[-5.1,-37.4]},{face:[-8,-38],dur:0.35,do:()=>{c.scale.y=0.15;c.userData.flag.visible=false;}},
-    {pose:'dig',prop:'spade',dur:4.4,cam:{p:[-1.5,3.4,-42.5],l:[-7.4,0.6,-37.5]},fx:(u,dt)=>{c.scale.y=0.15+0.85*(1-Math.pow(1-u,2));if(Math.random()<dt*6)puff(-6.3+(Math.random()-0.5)*0.6,0.35,-37.7+(Math.random()-0.5)*0.6,{col:0xd9c08a,size:0.35,vy:0.5,op:0.7,life:0.9,grow:0.8});
-      if(kid.hold&&Math.random()<dt*4)puff(-9.8,0.3,-37.6,{col:0xd9c08a,size:0.3,vy:0.4,op:0.7,life:0.8,grow:0.8});}},
-    {do:()=>{c.userData.flag.visible=true;setProp(playerP,null);if(kid.hold)kid.hold.pose='cheer';spawnHeart(-8,-38,4);}},{pose:'cheer',dur:1.3}]);}
+function scriptSandcastle(){const c=world.userData.castle,build=c.userData.setBuild;
+  kidHold({x:-10.05,z:-38.0,yaw:Math.PI/2,pose:'dig'});
+  runScript([{go:[-5.95,-37.9]},{face:[-8,-38],dur:0.35,do:()=>{build(0.04);c.userData.flag.visible=false;}},
+    {pose:'dig',prop:'spade',dur:4.4,cam:{p:[-4.2,2.6,-42.0],l:[-8.0,0.45,-38.0]},fx:(u,dt)=>{build(0.04+0.96*(1-Math.pow(1-u,1.6)));
+      if(Math.random()<dt*6)puff(-7.0+(Math.random()-0.5)*0.5,0.3,-37.95+(Math.random()-0.5)*0.5,{col:0xd9c08a,size:0.3,vy:0.5,op:0.7,life:0.9,grow:0.8});
+      if(kid.hold&&Math.random()<dt*4)puff(-9.1,0.25,-38.0,{col:0xd9c08a,size:0.25,vy:0.4,op:0.7,life:0.8,grow:0.8});}},
+    {do:()=>{build(1);c.userData.flag.visible=true;setProp(playerP,null);if(kid.hold)kid.hold.pose='cheer';spawnHeart(-8,-38,4);}},{pose:'cheer',dur:1.3}]);}
 function scriptSunscreen(){runScript([{go:[-4,8.55]},{face:0,dur:0.3},{pose:'give',dur:0.45},{prop:'bottle',left:true,pose:'rub',dur:3.0,cam:{p:[-2.2,2.4,12.6],l:[-4,1.2,8.6]}}]);}
 // get in the car (nearest front door), the car pulls away, then fade to the next place
 function scriptCar(car,to){const h=car.userData.home,ry=car.rotation.y,f=new T.Vector3(Math.sin(ry),0,Math.cos(ry));
