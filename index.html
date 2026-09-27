@@ -2882,24 +2882,24 @@ function scriptSangria(){runScript([{go:[5.5,7.45]},{face:0,dur:0.35},{pose:'pou
 function scriptSauna(){const d=world.userData.saunaDoor,c=world.userData.saunaChim,sx=d.position.x+0.55,sz=d.position.z;
   const door=(to)=>({dur:0.55,fx:u=>{const e=u*u*(3-2*u);d.rotation.y=to?1.35*e:1.35*(1-e);}});
   kidHold({x:sx+2.4,z:sz-2.2,yaw:0,pose:'auto'});
-  runScript([{go:[sx,sz-1.3]},{face:0,dur:0.3},door(true),{go:[sx,sz+1.2],direct:true,speed:2.6},{do:()=>{player.visible=false;}},door(false),
+  runScript([{go:[sx,sz-1.3]},{face:0,dur:0.3,cam:{p:[sx+4.2,2.8,sz-6.0],l:[sx-0.2,1.9,sz+0.6]}},door(true),{go:[sx,sz+1.2],direct:true,speed:2.6},{do:()=>{player.visible=false;}},door(false),
     {dur:3.2,fx:(u,dt)=>{if(Math.random()<dt*9)puff(c[0],c[1],c[2],{size:1.1,vy:1.1,op:0.85,life:2.4,spread:0.5,col:0xf4f4f4});}},
     door(true),{do:()=>{player.visible=true;player.position.set(sx,0,sz+0.4);player.rotation.y=Math.PI;flush(playerP,true);}},{go:[sx,sz-1.6],direct:true,speed:2.6},door(false),
     {pose:'fan',dur:2.2,fx:(u,dt)=>{if(Math.random()<dt*3)puff(player.position.x,playerP.H*0.9,player.position.z,{size:0.35,vy:0.5,op:0.35,life:1.2});}},{do:()=>flush(playerP,false)}]);}
 function flush(p,on){p.root.traverse(o=>{if(o.isMesh&&o.material===skinM(p.def.skin)){o.material.emissive.copy(lin(p.def.skin).multiplyScalar(0.05));if(on)o.material.emissive.add(new T.Color(0.35,0.04,0.02));}});}
-function scriptPaella(){runScript([{go:[15.1,11.0]},{face:Math.PI/2,dur:0.35},{pose:'stir',prop:'paddle',dur:3.8,fx:(u,dt)=>{if(Math.random()<dt*6)puff(17.5+(Math.random()-0.5)*1.6,1.75,11+(Math.random()-0.5)*1.6,{size:0.7,vy:1.1,op:0.45,life:1.9});}}]);}
+function scriptPaella(){runScript([{go:[15.1,11.0]},{face:Math.PI/2,dur:0.35},{pose:'stir',prop:'paddle',dur:3.8,cam:{p:[19.6,4.3,7.2],l:[16.0,1.1,11.0]},fx:(u,dt)=>{if(Math.random()<dt*6)puff(17.5+(Math.random()-0.5)*1.6,1.75,11+(Math.random()-0.5)*1.6,{size:0.7,vy:1.1,op:0.45,life:1.9});}}]);}
 function scriptBBQ(){const fx=world.userData.bbqFx;
   runScript([{go:[22.2,12.55]},{face:Math.PI,dur:0.35,do:()=>{fx.visible=true;}},
-    {pose:'flip',prop:'spatula',dur:4.0,fx:(u,dt,t)=>{fx.children.forEach((f,i)=>{if(f.userData.flame){const k=0.7+0.5*Math.abs(Math.sin(t*9+i*1.7));f.scale.set(1,k,1);}});
+    {pose:'flip',prop:'spatula',dur:4.0,cam:{p:[24.9,4.6,7.9],l:[22.0,1.1,12.0]},fx:(u,dt,t)=>{fx.children.forEach((f,i)=>{if(f.userData.flame){const k=0.7+0.5*Math.abs(Math.sin(t*9+i*1.7));f.scale.set(1,k,1);}});
       if(Math.random()<dt*7)puff(22+(Math.random()-0.5)*1.4,1.9,11+(Math.random()-0.5)*0.8,{col:0x9a9690,size:0.8,vy:1.3,op:0.45,life:2.2,spread:0.4});}},
     {do:()=>{fx.children.forEach(f=>{if(f.userData.flame)f.visible=false;});setTimeout(()=>{fx.visible=false;fx.children.forEach(f=>f.visible=true);},25000);}}]);}
 function scriptSea(){const x=Math.max(-60,Math.min(60,player.position.x));
   runScript([{go:[x,-42.6]},{go:[x,-48.6],direct:true,speed:3,y:-0.45,do:()=>kidHold({x:x+1.5,z:-46.4,yaw:Math.PI,pose:'wade',y:-0.1})},
-    {face:Math.PI,pose:'wade',y:-0.5,dur:3.6,fx:(u,dt)=>{if(Math.random()<dt*9)splash(player.position.x+(Math.random()-0.5)*0.9,0.15,player.position.z+(Math.random()-0.5)*0.9,3);
+    {face:Math.PI,pose:'wade',y:-0.5,dur:3.6,cam:{p:[x+3.5,1.8,-54.5],l:[x+0.6,0.2,-47.6]},fx:(u,dt)=>{if(Math.random()<dt*9)splash(player.position.x+(Math.random()-0.5)*0.9,0.15,player.position.z+(Math.random()-0.5)*0.9,3);
       if(kid.hold&&Math.random()<dt*5)splash(kid.p.root.position.x,0.12,kid.p.root.position.z,2);}},
-    {go:[x,-42.4],direct:true,speed:4,do:()=>{if(kid.hold)kid.hold=null;}}]);}
+    {go:[x,-42.4],direct:true,speed:4,cam:null,do:()=>{if(kid.hold)kid.hold=null;}}]);}
 function scriptIce(){
-  runScript([{go:[30,-16.35]},{face:0,dur:0.4,do:()=>{vendor.pose='give';kidHold({x:31.3,z:-16.9,yaw:0,pose:'auto'});}},{dur:1.0},
+  runScript([{go:[30,-16.35]},{face:0,dur:0.4,cam:{p:[27.2,2.3,-21.5],l:[31,1.2,-15.6]},do:()=>{vendor.pose='give';kidHold({x:31.3,z:-16.9,yaw:0,pose:'auto'});}},{dur:1.0},
     {do:()=>{setProp(playerP,'cone');if(kid.hold)kid.hold.prop='cone';vendor.pose='wave';}},{face:Math.PI,dur:0.5,do:()=>{if(kid.hold){kid.hold.yaw=Math.PI;kid.hold.pose='lick';}}},
     {pose:'lick',dur:2.8},{do:()=>{vendor.pose='auto';}}]);}
 function scriptNap(night){
@@ -2914,10 +2914,10 @@ function scriptSunset(){const px=-10,pz=1.6;kidHold({x:px+1.0,z:pz+0.3,yaw:Math.
 function scriptSandcastle(){const c=world.userData.castle;
   kidHold({x:-10.7,z:-37.3,yaw:Math.PI/2,pose:'dig'});
   runScript([{go:[-5.1,-37.4]},{face:[-8,-38],dur:0.35,do:()=>{c.scale.y=0.15;c.userData.flag.visible=false;}},
-    {pose:'dig',prop:'spade',dur:4.4,fx:(u,dt)=>{c.scale.y=0.15+0.85*(1-Math.pow(1-u,2));if(Math.random()<dt*6)puff(-6.3+(Math.random()-0.5)*0.6,0.35,-37.7+(Math.random()-0.5)*0.6,{col:0xd9c08a,size:0.35,vy:0.5,op:0.7,life:0.9,grow:0.8});
+    {pose:'dig',prop:'spade',dur:4.4,cam:{p:[-1.5,3.4,-42.5],l:[-7.4,0.6,-37.5]},fx:(u,dt)=>{c.scale.y=0.15+0.85*(1-Math.pow(1-u,2));if(Math.random()<dt*6)puff(-6.3+(Math.random()-0.5)*0.6,0.35,-37.7+(Math.random()-0.5)*0.6,{col:0xd9c08a,size:0.35,vy:0.5,op:0.7,life:0.9,grow:0.8});
       if(kid.hold&&Math.random()<dt*4)puff(-9.8,0.3,-37.6,{col:0xd9c08a,size:0.3,vy:0.4,op:0.7,life:0.8,grow:0.8});}},
     {do:()=>{c.userData.flag.visible=true;setProp(playerP,null);if(kid.hold)kid.hold.pose='cheer';spawnHeart(-8,-38,4);}},{pose:'cheer',dur:1.3}]);}
-function scriptSunscreen(){runScript([{go:[-4,8.55]},{face:0,dur:0.3},{pose:'give',dur:0.45},{prop:'bottle',left:true,pose:'rub',dur:3.0}]);}
+function scriptSunscreen(){runScript([{go:[-4,8.55]},{face:0,dur:0.3},{pose:'give',dur:0.45},{prop:'bottle',left:true,pose:'rub',dur:3.0,cam:{p:[-2.2,2.4,12.6],l:[-4,1.2,8.6]}}]);}
 // get in the car (nearest front door), the car pulls away, then fade to the next place
 function scriptCar(car,to){const h=car.userData.home,ry=car.rotation.y,f=new T.Vector3(Math.sin(ry),0,Math.cos(ry));
   const side=k=>{const o=new T.Vector3(k*1.55,0,0.35).applyAxisAngle(new T.Vector3(0,1,0),ry);return [h.x+o.x,h.z+o.z];};
